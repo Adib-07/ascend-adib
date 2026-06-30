@@ -14,7 +14,618 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      academic_projects: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          id: string
+          name: string
+          notes: string | null
+          status: string | null
+          tech_stack: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string | null
+          tech_stack?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string | null
+          tech_stack?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      clients: {
+        Row: {
+          contact: string | null
+          created_at: string
+          id: string
+          name: string
+          platform: string | null
+          rating: number | null
+          revenue: number
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          platform?: string | null
+          rating?: number | null
+          revenue?: number
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          platform?: string | null
+          rating?: number | null
+          revenue?: number
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      coding_problems: {
+        Row: {
+          created_at: string
+          difficulty: string | null
+          id: string
+          link: string | null
+          notes: string | null
+          platform: string | null
+          solved: boolean
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: string | null
+          id?: string
+          link?: string | null
+          notes?: string | null
+          platform?: string | null
+          solved?: boolean
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: string | null
+          id?: string
+          link?: string | null
+          notes?: string | null
+          platform?: string | null
+          solved?: boolean
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_intentions: {
+        Row: {
+          created_at: string
+          day: string
+          id: string
+          intention: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          day: string
+          id?: string
+          intention?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          day?: string
+          id?: string
+          intention?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      exams: {
+        Row: {
+          created_at: string
+          exam_date: string | null
+          id: string
+          name: string
+          prep_status: string | null
+          subject: string | null
+          syllabus: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          exam_date?: string | null
+          id?: string
+          name: string
+          prep_status?: string | null
+          subject?: string | null
+          syllabus?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          exam_date?: string | null
+          id?: string
+          name?: string
+          prep_status?: string | null
+          subject?: string | null
+          syllabus?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      finance_entries: {
+        Row: {
+          account: string | null
+          amount: number
+          category: string | null
+          created_at: string
+          description: string
+          entry_date: string
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          account?: string | null
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description: string
+          entry_date?: string
+          id?: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          account?: string | null
+          amount?: number
+          category?: string | null
+          created_at?: string
+          description?: string
+          entry_date?: string
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flashcard_decks: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flashcards: {
+        Row: {
+          back: string
+          created_at: string
+          deck_id: string
+          front: string
+          id: string
+          known: boolean
+          user_id: string
+        }
+        Insert: {
+          back: string
+          created_at?: string
+          deck_id: string
+          front: string
+          id?: string
+          known?: boolean
+          user_id: string
+        }
+        Update: {
+          back?: string
+          created_at?: string
+          deck_id?: string
+          front?: string
+          id?: string
+          known?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flashcards_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "flashcard_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goals: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          done: boolean
+          id: string
+          scope: string
+          text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          done?: boolean
+          id?: string
+          scope: string
+          text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          done?: boolean
+          id?: string
+          scope?: string
+          text?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habit_logs: {
+        Row: {
+          day: string
+          done: boolean
+          habit_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          day: string
+          done?: boolean
+          habit_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          day?: string
+          done?: boolean
+          habit_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_logs_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          last_done: string | null
+          name: string
+          streak: number
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_done?: string | null
+          name: string
+          streak?: number
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          last_done?: string | null
+          name?: string
+          streak?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      learn_topics: {
+        Row: {
+          created_at: string
+          deadline: string | null
+          difficulty: string | null
+          id: string
+          progress: number
+          skill: string
+          source: string | null
+          status: string
+          topic: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deadline?: string | null
+          difficulty?: string | null
+          id?: string
+          progress?: number
+          skill?: string
+          source?: string | null
+          status?: string
+          topic: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deadline?: string | null
+          difficulty?: string | null
+          id?: string
+          progress?: number
+          skill?: string
+          source?: string | null
+          status?: string
+          topic?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          tag: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          tag?: string | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          tag?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      outreach: {
+        Row: {
+          created_at: string
+          id: string
+          lead_name: string
+          outreach_date: string
+          platform: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_name: string
+          outreach_date?: string
+          platform?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_name?: string
+          outreach_date?: string
+          platform?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      quiz_items: {
+        Row: {
+          answer: string
+          created_at: string
+          id: string
+          question: string
+          topic: string | null
+          user_id: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          id?: string
+          question: string
+          topic?: string | null
+          user_id: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          id?: string
+          question?: string
+          topic?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      services: {
+        Row: {
+          created_at: string
+          delivery_time: string | null
+          id: string
+          name: string
+          price_range: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_time?: string | null
+          id?: string
+          name: string
+          price_range?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_time?: string | null
+          id?: string
+          name?: string
+          price_range?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          done: boolean
+          due_date: string | null
+          id: string
+          mit_slot: number | null
+          priority: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done?: boolean
+          due_date?: string | null
+          id?: string
+          mit_slot?: number | null
+          priority?: string
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done?: boolean
+          due_date?: string | null
+          id?: string
+          mit_slot?: number | null
+          priority?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      work_projects: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          deadline: string | null
+          id: string
+          name: string
+          progress: number
+          revenue: number
+          status: string | null
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          name: string
+          progress?: number
+          revenue?: number
+          status?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          deadline?: string | null
+          id?: string
+          name?: string
+          progress?: number
+          revenue?: number
+          status?: string | null
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_projects_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
