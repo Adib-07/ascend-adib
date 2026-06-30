@@ -8,7 +8,12 @@ import { useQueryClient } from "@tanstack/react-query";
 
 import DailyTasks from "@/components/ascend/DailyTasks";
 import LearningHub from "@/components/ascend/LearningHub";
-import Placeholder from "@/components/ascend/Placeholder";
+import HabitsView from "@/components/ascend/HabitsView";
+import GoalsView from "@/components/ascend/GoalsView";
+import ClientsView from "@/components/ascend/ClientsView";
+import WorkProjectsView from "@/components/ascend/WorkProjectsView";
+import IncomeView from "@/components/ascend/IncomeView";
+import PipelineView from "@/components/ascend/PipelineView";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({ meta: [{ title: "Ascend" }] }),
@@ -81,11 +86,16 @@ function AppShell() {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
-        {mode === "student" && tab === "Daily Tasks" && <DailyTasks />}
-        {mode === "student" && tab === "Learning Hub" && <LearningHub />}
-        {mode === "student" && tab === "Habits" && <Placeholder title="Habits" subtitle="Coming next — daily habit grid with streaks." />}
-        {mode === "student" && tab === "Goals" && <Placeholder title="Goals" subtitle="North star, 90-day and 1-year goals — coming next." />}
-        {mode === "work" && <Placeholder title={tab} subtitle="Work Mode sections are coming next. Foundation first." />}
+        <div className="animate-in fade-in duration-300" key={`${mode}-${tab}`}>
+          {mode === "student" && tab === "Daily Tasks" && <DailyTasks />}
+          {mode === "student" && tab === "Learning Hub" && <LearningHub />}
+          {mode === "student" && tab === "Habits" && <HabitsView />}
+          {mode === "student" && tab === "Goals" && <GoalsView />}
+          {mode === "work" && tab === "Clients" && <ClientsView />}
+          {mode === "work" && tab === "Projects" && <WorkProjectsView />}
+          {mode === "work" && tab === "Income" && <IncomeView />}
+          {mode === "work" && tab === "Pipeline" && <PipelineView />}
+        </div>
       </main>
     </div>
   );
