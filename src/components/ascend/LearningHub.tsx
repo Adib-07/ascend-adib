@@ -2,7 +2,12 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import LearnTab from "./LearnTab";
 import FlashcardsTab from "./FlashcardsTab";
-import Placeholder from "./Placeholder";
+import NotesTab from "./NotesTab";
+import CodingTab from "./CodingTab";
+import QuizTab from "./QuizTab";
+import ExamPrepTab from "./ExamPrepTab";
+import AcademicProjectsTab from "./AcademicProjectsTab";
+import ProgressTab from "./ProgressTab";
 
 const SUBS = ["Learn", "Notes", "Coding", "Quiz", "Flashcards", "Exam Prep", "Projects", "Progress"] as const;
 
@@ -33,11 +38,16 @@ export default function LearningHub() {
         </nav>
       </div>
 
-      {sub === "Learn" && <LearnTab />}
-      {sub === "Flashcards" && <FlashcardsTab />}
-      {sub !== "Learn" && sub !== "Flashcards" && (
-        <Placeholder title={sub} subtitle="This sub-tab will be built next. Foundation: Learn & Flashcards first." />
-      )}
+      <div className="animate-in fade-in duration-300">
+        {sub === "Learn" && <LearnTab />}
+        {sub === "Notes" && <NotesTab />}
+        {sub === "Coding" && <CodingTab />}
+        {sub === "Quiz" && <QuizTab />}
+        {sub === "Flashcards" && <FlashcardsTab />}
+        {sub === "Exam Prep" && <ExamPrepTab />}
+        {sub === "Projects" && <AcademicProjectsTab />}
+        {sub === "Progress" && <ProgressTab />}
+      </div>
     </div>
   );
 }
