@@ -545,6 +545,7 @@ export type Database = {
           id: string
           mit_slot: number | null
           priority: string
+          reminder_time: string | null
           title: string
           type: string
           updated_at: string
@@ -557,6 +558,7 @@ export type Database = {
           id?: string
           mit_slot?: number | null
           priority?: string
+          reminder_time?: string | null
           title: string
           type?: string
           updated_at?: string
@@ -569,6 +571,7 @@ export type Database = {
           id?: string
           mit_slot?: number | null
           priority?: string
+          reminder_time?: string | null
           title?: string
           type?: string
           updated_at?: string

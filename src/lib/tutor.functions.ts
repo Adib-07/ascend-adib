@@ -89,3 +89,25 @@ The "correct" field is the 0-indexed integer of the right option in the options 
     } catch { /* noop */ }
     return { questions: [] as { question: string; options: string[]; correct: number; explanation: string }[] };
   });
+
+const CHAT_SYSTEM = `You are Adib's personal CSE tutor and AI Engineering mentor. He is a B.Tech CSE student targeting an AI Engineer role. Previous focus: DBMS Normalization. Current focus: DBMS Transactions + ACID, Python OOP. Be concise, practical, and use concrete examples. Format code in backticks or fenced code blocks. Never invent facts.`;
+
+const messageSchema = z.object({
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string().min(1).max(4000),
+});
+
+export const chatTutor = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({ messages: z.array(messageSchema).min(1).max(30) }).parse(d))
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const gateway = createLovableAiGatewayProvider(key);
+    const { text } = await generateText({
+      model: gateway(MODEL),
+      system: CHAT_SYSTEM,
+      messages: data.messages,
+    });
+    return { text };
+  });
+
