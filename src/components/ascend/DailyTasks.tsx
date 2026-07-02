@@ -535,15 +535,6 @@ function TaskDialog({
             </div>
           )}
 
-          <div>
-            <Label className="text-xs">Notes (optional)</Label>
-            <Textarea
-              value={form.notes ?? ""}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
-              className="mt-1"
-              rows={2}
-            />
-          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
