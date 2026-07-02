@@ -39,15 +39,43 @@ function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusOpen, setFocusOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [focusSessionsToday, setFocusSessionsToday] = useState(0);
   const [email, setEmail] = useState<string>("");
   const navigate = useNavigate();
   const qc = useQueryClient();
+
+  const tasksQ = useTasks();
+  const examsQ = useExams().list;
 
   const tabs = mode === "student" ? STUDENT_TABS : WORK_TABS;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
+    requestNotificationPermission();
   }, []);
+
+  useEffect(() => {
+    const recalc = () => {
+      const today = todayISO();
+      setFocusSessionsToday(
+        getFocusSessions().filter((s) => s.date === today && s.type === "Deep Work").length,
+      );
+    };
+    recalc();
+    const id = window.setInterval(recalc, 30_000);
+    return () => window.clearInterval(id);
+  }, [focusOpen]);
+
+  const notifications: AppNotification[] = useMemo(() => {
+    const raw = buildDailyNotifications(tasksQ.data ?? [], examsQ.data ?? []);
+    return raw
+      .filter((n) => !dismissed.has(n.id))
+      .map((n) => ({ ...n, read: readIds.has(n.id) }));
+  }, [tasksQ.data, examsQ.data, dismissed, readIds]);
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     document.title = `${tab} — Ascend`;
