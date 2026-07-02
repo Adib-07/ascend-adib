@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LogOut, Search, Focus, ChevronDown, Command as CmdIcon } from "lucide-react";
+import { LogOut, Search, Focus, ChevronDown, Command as CmdIcon, Bell } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -18,7 +18,11 @@ import PipelineView from "@/components/ascend/PipelineView";
 import CSETutorView from "@/components/ascend/CSETutorView";
 import WorkDashboard from "@/components/ascend/WorkDashboard";
 import CommandPalette from "@/components/ascend/CommandPalette";
-import FocusMode from "@/components/ascend/FocusMode";
+import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
+import NotificationPanel from "@/components/ascend/NotificationPanel";
+import { useTasks, todayISO } from "@/lib/ascend-data";
+import { useExams } from "@/lib/ascend-hooks";
+import { buildDailyNotifications, requestNotificationPermission, type AppNotification } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({ meta: [{ title: "Ascend" }] }),
@@ -35,15 +39,43 @@ function AppShell() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusOpen, setFocusOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [readIds, setReadIds] = useState<Set<string>>(new Set());
+  const [focusSessionsToday, setFocusSessionsToday] = useState(0);
   const [email, setEmail] = useState<string>("");
   const navigate = useNavigate();
   const qc = useQueryClient();
+
+  const tasksQ = useTasks();
+  const examsQ = useExams().list;
 
   const tabs = mode === "student" ? STUDENT_TABS : WORK_TABS;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
+    requestNotificationPermission();
   }, []);
+
+  useEffect(() => {
+    const recalc = () => {
+      const today = todayISO();
+      setFocusSessionsToday(
+        getFocusSessions().filter((s) => s.date === today && s.type === "Deep Work").length,
+      );
+    };
+    recalc();
+    const id = window.setInterval(recalc, 30_000);
+    return () => window.clearInterval(id);
+  }, [focusOpen]);
+
+  const notifications: AppNotification[] = useMemo(() => {
+    const raw = buildDailyNotifications(tasksQ.data ?? [], examsQ.data ?? []);
+    return raw
+      .filter((n) => !dismissed.has(n.id))
+      .map((n) => ({ ...n, read: readIds.has(n.id) }));
+  }, [tasksQ.data, examsQ.data, dismissed, readIds]);
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     document.title = `${tab} — Ascend`;
@@ -111,9 +143,42 @@ function AppShell() {
             <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setPaletteOpen(true)} aria-label="Search">
               <Search className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setFocusOpen(true)} aria-label="Focus mode" title="Focus mode">
+            <button
+              onClick={() => setFocusOpen(true)}
+              className="relative h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Focus mode"
+              title="Focus mode"
+            >
               <Focus className="h-4 w-4" />
-            </Button>
+              {focusSessionsToday > 0 && (
+                <span className="absolute top-0.5 right-0.5 h-4 min-w-4 px-1 text-[9px] font-bold rounded-full bg-[var(--gold)] text-white inline-flex items-center justify-center">
+                  {focusSessionsToday}
+                </span>
+              )}
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen((o) => !o)}
+                className="relative h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 h-4 min-w-4 px-1 text-[9px] font-bold rounded-full bg-[var(--destructive)] text-[var(--destructive-foreground)] inline-flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              <NotificationPanel
+                open={notifOpen}
+                onClose={() => setNotifOpen(false)}
+                notifications={notifications}
+                onMarkAllRead={() => setReadIds(new Set(notifications.map((n) => n.id)))}
+                onDismiss={(id) => setDismissed((prev) => { const next = new Set(prev); next.add(id); return next; })}
+              />
+            </div>
 
             <div className="relative">
               <button
