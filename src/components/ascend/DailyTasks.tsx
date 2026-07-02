@@ -421,8 +421,8 @@ function TaskDialog({
         due_date: initial?.due_date ?? null,
         mit_slot: initial?.mit_slot ?? null,
         reminder_time: initial?.reminder_time ?? null,
-        notes: initial?.notes ?? null,
       });
+
     }
   }, [open, initial]);
 
