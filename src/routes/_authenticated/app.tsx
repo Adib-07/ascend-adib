@@ -143,9 +143,42 @@ function AppShell() {
             <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setPaletteOpen(true)} aria-label="Search">
               <Search className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => setFocusOpen(true)} aria-label="Focus mode" title="Focus mode">
+            <button
+              onClick={() => setFocusOpen(true)}
+              className="relative h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
+              aria-label="Focus mode"
+              title="Focus mode"
+            >
               <Focus className="h-4 w-4" />
-            </Button>
+              {focusSessionsToday > 0 && (
+                <span className="absolute top-0.5 right-0.5 h-4 min-w-4 px-1 text-[9px] font-bold rounded-full bg-[var(--gold)] text-white inline-flex items-center justify-center">
+                  {focusSessionsToday}
+                </span>
+              )}
+            </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setNotifOpen((o) => !o)}
+                className="relative h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0.5 right-0.5 h-4 min-w-4 px-1 text-[9px] font-bold rounded-full bg-[var(--destructive)] text-[var(--destructive-foreground)] inline-flex items-center justify-center">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+              <NotificationPanel
+                open={notifOpen}
+                onClose={() => setNotifOpen(false)}
+                notifications={notifications}
+                onMarkAllRead={() => setReadIds(new Set(notifications.map((n) => n.id)))}
+                onDismiss={(id) => setDismissed((prev) => { const next = new Set(prev); next.add(id); return next; })}
+              />
+            </div>
 
             <div className="relative">
               <button
