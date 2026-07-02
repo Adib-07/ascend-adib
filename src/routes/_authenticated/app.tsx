@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LogOut, Search, Focus, ChevronDown, Command as CmdIcon } from "lucide-react";
+import { LogOut, Search, Focus, ChevronDown, Command as CmdIcon, Bell } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -18,7 +18,11 @@ import PipelineView from "@/components/ascend/PipelineView";
 import CSETutorView from "@/components/ascend/CSETutorView";
 import WorkDashboard from "@/components/ascend/WorkDashboard";
 import CommandPalette from "@/components/ascend/CommandPalette";
-import FocusMode from "@/components/ascend/FocusMode";
+import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
+import NotificationPanel from "@/components/ascend/NotificationPanel";
+import { useTasks, todayISO } from "@/lib/ascend-data";
+import { useExams } from "@/lib/ascend-hooks";
+import { buildDailyNotifications, requestNotificationPermission, type AppNotification } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({ meta: [{ title: "Ascend" }] }),
