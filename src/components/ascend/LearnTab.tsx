@@ -20,7 +20,11 @@ export default function LearnTab() {
   const [editing, setEditing] = useState<LearnTopic | null>(null);
   const [skill, setSkill] = useState<string>("All");
 
-  const topics = (q.data ?? []).filter((t) => skill === "All" || t.skill === skill);
+  const STATUS_ORDER: Record<string, number> = { "In Progress": 0, "Not Started": 1, "Completed": 2 };
+  const topics = (q.data ?? [])
+    .filter((t) => skill === "All" || t.skill === skill)
+    .slice()
+    .sort((a, b) => (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3));
 
   return (
     <div className="space-y-4">
@@ -54,7 +58,12 @@ export default function LearnTab() {
           </div>
         )}
         {topics.map((t) => (
-          <div key={t.id} className="card-elegant p-4">
+          <div key={t.id} className={cn("card-elegant p-4 border-l-4",
+            t.status === "In Progress" ? "border-l-[var(--gold)]" :
+            t.status === "Completed" ? "border-l-[var(--forest)]" :
+            "border-l-muted-foreground/30"
+          )}>
+
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-widest text-[var(--gold)]">{t.skill}</p>

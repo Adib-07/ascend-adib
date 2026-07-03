@@ -5,24 +5,24 @@ import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
 const MODEL = "google/gemini-3-flash-preview";
 
-const TEACH_SYSTEM = `You are an expert CSE tutor for a B.Tech student aspiring to become an AI Engineer. Teach the requested concept from first principles using this exact structure with markdown headers:
+const TEACH_SYSTEM = `You are an expert CSE tutor for Adib, a B.Tech student becoming an AI Engineer. Last completed: DBMS Normalization. When teaching, structure response with exactly these 5 sections using ## headers:
 
 ## 1. Simple Explanation
-A plain-English explanation with a real-world analogy.
+Plain language with a real-world analogy.
 
 ## 2. Technical Deep Dive
-The proper technical mechanics, terminology, and how it actually works.
+Proper mechanics, terminology, how it actually works.
 
-## 3. Common Mistakes to Avoid
+## 3. Common Mistakes
 Bullet list of pitfalls students make.
 
-## 4. Interview-Level Explanation
-How to explain this crisply in a technical interview (2-3 sentences).
+## 4. Interview-Level Answer
+How to explain this crisply in an interview (2-3 sentences).
 
-## 5. Quick Revision Summary
+## 5. Quick Revision
 Concise bullet points for last-minute revision.
 
-Be precise, honest, and clear. Use code blocks where helpful.`;
+Use clear language, real examples, and be encouraging.`;
 
 export const teachTopic = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(200) }).parse(d))
@@ -90,7 +90,7 @@ The "correct" field is the 0-indexed integer of the right option in the options 
     return { questions: [] as { question: string; options: string[]; correct: number; explanation: string }[] };
   });
 
-const CHAT_SYSTEM = `You are Adib's personal CSE tutor and AI Engineering mentor. He is a B.Tech CSE student targeting an AI Engineer role. Previous focus: DBMS Normalization. Current focus: DBMS Transactions + ACID, Python OOP. Be concise, practical, and use concrete examples. Format code in backticks or fenced code blocks. Never invent facts.`;
+const CHAT_SYSTEM = `You are Adib's personal CSE tutor and AI Engineering mentor. B.Tech student, goal: AI Engineer. Completed: DBMS Normalization. Current focus: DBMS Transactions + ACID Properties, Python OOP. Be concise, practical, use examples. Format code in backticks.`;
 
 const messageSchema = z.object({
   role: z.enum(["user", "assistant", "system"]),
@@ -110,4 +110,30 @@ export const chatTutor = createServerFn({ method: "POST" })
     });
     return { text };
   });
+
+const KIND_SYSTEMS: Record<string, string> = {
+  coding: `You are a coding coach for a B.Tech CSE student. For the given problem, output markdown with these sections in order using ## headers: ## Problem Statement, ## Approach, ## Step-by-step Solution, ## Python Code (use \`\`\`python fenced block), ## Time & Space Complexity. Be precise and idiomatic.`,
+  debug: `You are a senior engineer debugging student code. Analyze the provided code and description. Output markdown with: ## What's Wrong, ## Root Cause, ## Fixed Code (\`\`\`python fenced), ## Explanation. Be honest and concrete.`,
+  exam: `You are an exam-prep strategist for a B.Tech CSE student (2 hours/day study budget). Output markdown with: ## 80/20 Priority Topics, ## Top 10 Predicted Exam Questions, ## Memory Tricks & Mnemonics, ## Day-wise Revision Plan. Be tactical.`,
+  project: `You are a senior AI engineer mentoring project builds. Output markdown with: ## Architecture Overview, ## Tech Stack (with justification), ## Step-by-step Implementation Plan, ## Key APIs & Libraries, ## Resume Bullet Points. Be practical and aimed at portfolio impact.`,
+  flashcards: `Generate exactly 8 flashcards for the topic. Return ONLY a JSON array (no fences, no prose) with shape: [{"q":"...","a":"...","category":"..."}]. Keep answers under 40 words.`,
+};
+
+export const askTutor = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => z.object({
+    kind: z.enum(["coding", "debug", "exam", "project", "flashcards"]),
+    prompt: z.string().min(1).max(4000),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const gateway = createLovableAiGatewayProvider(key);
+    const { text } = await generateText({
+      model: gateway(MODEL),
+      system: KIND_SYSTEMS[data.kind],
+      prompt: data.prompt,
+    });
+    return { text };
+  });
+
 
