@@ -127,18 +127,32 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[110] bg-[var(--ivory)] animate-in fade-in duration-200 overflow-y-auto">
-      <div className="min-h-full flex flex-col items-center justify-center px-6 py-10">
-        <button onClick={onClose} className="absolute top-6 right-6 text-muted-foreground hover:text-primary transition-colors" aria-label="Exit focus mode">
+    <div className="fixed inset-0 z-[110] bg-[var(--forest)] text-white animate-in fade-in duration-200 overflow-y-auto">
+      <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 relative">
+        <button onClick={onClose} className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors active:scale-95" aria-label="Exit focus mode">
           <X className="h-6 w-6" />
         </button>
 
-        <p className="text-[11px] tracking-[0.3em] uppercase text-[var(--gold)]">{type}</p>
-        <p className="mt-1 text-xs text-muted-foreground">Session {sessionNo} of 4</p>
+        <div className="inline-flex rounded-full border border-white/15 bg-white/5 p-1 mb-8">
+          {(["Deep Work", "Short Break", "Long Break"] as SessionType[]).map((t) => (
+            <button
+              key={t}
+              onClick={() => setType(t)}
+              className={cn(
+                "px-4 py-1.5 text-xs rounded-full transition-all active:scale-95",
+                type === t ? "bg-[var(--gold)] text-[var(--forest)] font-medium" : "text-white/70 hover:text-white",
+              )}
+            >
+              {t} · {DURATIONS[t] / 60}m
+            </button>
+          ))}
+        </div>
 
-        <div className="relative mt-8">
+        <p className="text-xs text-white/50">Session {sessionNo} of 4</p>
+
+        <div className="relative mt-6">
           <svg width="300" height="300" viewBox="0 0 300 300" className="-rotate-90">
-            <circle cx="150" cy="150" r="130" stroke="var(--linen)" strokeWidth="8" fill="none" />
+            <circle cx="150" cy="150" r="130" stroke="rgba(255,255,255,0.12)" strokeWidth="8" fill="none" />
             <circle
               cx="150" cy="150" r="130"
               stroke="var(--gold)" strokeWidth="8" fill="none"
@@ -149,37 +163,37 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="font-serif text-6xl md:text-7xl text-primary tabular-nums">{mm}:{ss}</p>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground mt-2">remaining</p>
+            <p className="font-serif text-6xl md:text-7xl text-white tabular-nums">{mm}:{ss}</p>
+            <p className="text-[10px] uppercase tracking-widest text-white/50 mt-2">remaining</p>
           </div>
         </div>
 
         <div className="mt-6 max-w-md text-center">
-          <p className="text-[10px] tracking-widest uppercase text-muted-foreground">Now focusing on</p>
+          <p className="text-[10px] tracking-widest uppercase text-white/50">Now focusing on</p>
           <input
             value={customTask}
             onChange={(e) => setCustomTask(e.target.value)}
             placeholder={activeTaskLabel}
-            className="mt-1 w-full text-center bg-transparent border-0 outline-none font-serif text-xl text-primary placeholder:text-primary/70"
+            className="mt-1 w-full text-center bg-transparent border-0 outline-none font-serif italic text-xl text-white placeholder:text-white/60"
           />
         </div>
 
         <div className="mt-8 flex items-center gap-3">
-          <Button onClick={toggle} size="lg" className="min-w-[120px]">
+          <Button onClick={toggle} size="lg" variant="outline" className="min-w-[120px] bg-[var(--gold)] text-[var(--forest)] border-[var(--gold)] hover:bg-[var(--gold)]/90 hover:text-[var(--forest)] active:scale-95">
             {running ? <><Pause className="h-4 w-4 mr-1" />Pause</> : <><Play className="h-4 w-4 mr-1" />Start</>}
           </Button>
-          <Button variant="outline" onClick={reset} size="lg"><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
-          <Button variant="ghost" onClick={skip} size="lg"><SkipForward className="h-4 w-4 mr-1" />Skip</Button>
+          <Button variant="ghost" onClick={reset} size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
+          <Button variant="ghost" onClick={skip} size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><SkipForward className="h-4 w-4 mr-1" />Skip</Button>
         </div>
 
         <div className="mt-8 flex items-center gap-2">
           {[1, 2, 3, 4].map((n) => (
-            <span key={n} className={cn("h-2 w-2 rounded-full transition-colors", n <= sessionCountToday ? "bg-[var(--gold)]" : "bg-linen")} />
+            <span key={n} className={cn("h-2 w-2 rounded-full transition-colors", n <= sessionCountToday ? "bg-[var(--gold)]" : "bg-white/20")} />
           ))}
-          <span className="ml-3 text-xs text-muted-foreground">{sessionCountToday} deep sessions today</span>
+          <span className="ml-3 text-xs text-white/60">{sessionCountToday} deep sessions today</span>
         </div>
 
-        <button onClick={onClose} className="mt-12 text-xs text-muted-foreground hover:text-primary underline underline-offset-4">
+        <button onClick={onClose} className="mt-12 text-xs text-white/50 hover:text-white underline underline-offset-4">
           Exit focus mode
         </button>
       </div>
