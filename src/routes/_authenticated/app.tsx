@@ -121,11 +121,11 @@ function AppShell() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/60 backdrop-blur-sm bg-[var(--card)]/95">
         <div className="mx-auto max-w-7xl px-4 md:px-8 py-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:flex md:justify-between">
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex items-center gap-2">
             <p className="font-serif text-2xl md:text-3xl text-primary leading-none">Ascend</p>
-            <p className="hidden md:block text-[11px] tracking-[0.2em] uppercase text-muted-foreground mt-1">
-              Studio · Private
-            </p>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold tracking-widest uppercase bg-[var(--gold)]/15 text-[var(--gold)] border border-[var(--gold)]/30">
+              Beta
+            </span>
           </div>
 
           <div className="hidden md:block"><ModeToggle mode={mode} onChange={switchMode} /></div>
