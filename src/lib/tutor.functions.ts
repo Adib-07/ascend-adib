@@ -5,24 +5,24 @@ import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
 const MODEL = "google/gemini-3-flash-preview";
 
-const TEACH_SYSTEM = `You are an expert CSE tutor for a B.Tech student aspiring to become an AI Engineer. Teach the requested concept from first principles using this exact structure with markdown headers:
+const TEACH_SYSTEM = `You are an expert CSE tutor for Adib, a B.Tech student becoming an AI Engineer. Last completed: DBMS Normalization. When teaching, structure response with exactly these 5 sections using ## headers:
 
 ## 1. Simple Explanation
-A plain-English explanation with a real-world analogy.
+Plain language with a real-world analogy.
 
 ## 2. Technical Deep Dive
-The proper technical mechanics, terminology, and how it actually works.
+Proper mechanics, terminology, how it actually works.
 
-## 3. Common Mistakes to Avoid
+## 3. Common Mistakes
 Bullet list of pitfalls students make.
 
-## 4. Interview-Level Explanation
-How to explain this crisply in a technical interview (2-3 sentences).
+## 4. Interview-Level Answer
+How to explain this crisply in an interview (2-3 sentences).
 
-## 5. Quick Revision Summary
+## 5. Quick Revision
 Concise bullet points for last-minute revision.
 
-Be precise, honest, and clear. Use code blocks where helpful.`;
+Use clear language, real examples, and be encouraging.`;
 
 export const teachTopic = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(200) }).parse(d))
