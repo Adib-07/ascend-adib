@@ -20,7 +20,11 @@ export default function LearnTab() {
   const [editing, setEditing] = useState<LearnTopic | null>(null);
   const [skill, setSkill] = useState<string>("All");
 
-  const topics = (q.data ?? []).filter((t) => skill === "All" || t.skill === skill);
+  const STATUS_ORDER: Record<string, number> = { "In Progress": 0, "Not Started": 1, "Completed": 2 };
+  const topics = (q.data ?? [])
+    .filter((t) => skill === "All" || t.skill === skill)
+    .slice()
+    .sort((a, b) => (STATUS_ORDER[a.status] ?? 3) - (STATUS_ORDER[b.status] ?? 3));
 
   return (
     <div className="space-y-4">
