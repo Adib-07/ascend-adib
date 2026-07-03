@@ -16,7 +16,7 @@ import WorkProjectsView from "@/components/ascend/WorkProjectsView";
 import IncomeView from "@/components/ascend/IncomeView";
 import PipelineView from "@/components/ascend/PipelineView";
 import CSETutorView from "@/components/ascend/CSETutorView";
-import WorkDashboard from "@/components/ascend/WorkDashboard";
+import WorkOverview from "@/components/ascend/WorkOverview";
 import CommandPalette from "@/components/ascend/CommandPalette";
 import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
 import NotificationPanel from "@/components/ascend/NotificationPanel";
@@ -245,7 +245,7 @@ function AppShell() {
           {mode === "student" && tab === "Habits" && <HabitsView />}
           {mode === "student" && tab === "Goals" && <GoalsView />}
           {mode === "student" && tab === "CSE Tutor" && <CSETutorView />}
-          {mode === "work" && tab === "Overview" && <WorkDashboard />}
+          {mode === "work" && tab === "Overview" && <WorkOverview onStartFocus={() => setFocusOpen(true)} onNavigate={(t) => switchTo("work", t)} />}
           {mode === "work" && tab === "Clients" && <ClientsView />}
           {mode === "work" && tab === "Projects" && <WorkProjectsView />}
           {mode === "work" && tab === "Income" && <IncomeView />}
