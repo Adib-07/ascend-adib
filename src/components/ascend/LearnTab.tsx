@@ -58,7 +58,12 @@ export default function LearnTab() {
           </div>
         )}
         {topics.map((t) => (
-          <div key={t.id} className="card-elegant p-4">
+          <div key={t.id} className={cn("card-elegant p-4 border-l-4",
+            t.status === "In Progress" ? "border-l-[var(--gold)]" :
+            t.status === "Completed" ? "border-l-[var(--forest)]" :
+            "border-l-muted-foreground/30"
+          )}>
+
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] uppercase tracking-widest text-[var(--gold)]">{t.skill}</p>
