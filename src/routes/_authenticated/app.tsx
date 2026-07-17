@@ -246,6 +246,7 @@ function AppShell() {
           {mode === "student" && tab === "Habits" && <HabitsView />}
           {mode === "student" && tab === "Goals" && <GoalsView />}
           {mode === "student" && tab === "CSE Tutor" && <CSETutorView />}
+          {mode === "student" && tab === "🧠 Life Skills" && <LifeSkillsProfessor />}
           {mode === "work" && tab === "Overview" && <WorkOverview onStartFocus={() => setFocusOpen(true)} onNavigate={(t) => switchTo("work", t)} />}
           {mode === "work" && tab === "Clients" && <ClientsView />}
           {mode === "work" && tab === "Projects" && <WorkProjectsView />}
