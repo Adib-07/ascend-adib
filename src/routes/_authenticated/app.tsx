@@ -16,6 +16,7 @@ import WorkProjectsView from "@/components/ascend/WorkProjectsView";
 import IncomeView from "@/components/ascend/IncomeView";
 import PipelineView from "@/components/ascend/PipelineView";
 import CSETutorView from "@/components/ascend/CSETutorView";
+import LifeSkillsProfessor from "@/components/ascend/LifeSkillsProfessor";
 import WorkOverview from "@/components/ascend/WorkOverview";
 import CommandPalette from "@/components/ascend/CommandPalette";
 import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
