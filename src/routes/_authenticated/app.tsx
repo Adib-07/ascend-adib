@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/app")({
 });
 
 type Mode = "student" | "work";
-const STUDENT_TABS = ["Daily Tasks", "Learning Hub", "Habits", "Goals", "CSE Tutor"] as const;
+const STUDENT_TABS = ["Daily Tasks", "Learning Hub", "Habits", "Goals", "CSE Tutor", "🧠 Life Skills"] as const;
 const WORK_TABS = ["Overview", "Clients", "Projects", "Income", "Pipeline"] as const;
 
 function AppShell() {
