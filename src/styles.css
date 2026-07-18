@@ -133,11 +133,16 @@
   body { font-family: var(--font-sans); font-feature-settings: "ss01", "cv01"; }
   h1, h2, h3, h4, .font-serif { font-family: var(--font-serif); letter-spacing: -0.01em; }
 
-  /* Global focus ring for all inputs */
+  /* Global focus rings — inner glow on inputs, visible gold outline on interactive elements */
   input:focus-visible, textarea:focus-visible, select:focus-visible, [role="combobox"]:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px rgba(176, 141, 87, 0.35);
     border-color: var(--gold);
+  }
+  a:focus-visible, button:focus-visible, [role="button"]:focus-visible, [role="tab"]:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+    border-radius: 6px;
   }
 
   button:active { transform: scale(0.97); }
