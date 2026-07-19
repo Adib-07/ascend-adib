@@ -805,7 +805,7 @@ function MentorTab() {
       {showStarters && (
         <div className="flex flex-wrap gap-2">
           {MENTOR_STARTERS.map((s) => (
-            <button key={s} onClick={() => void send(s)} className="px-3 py-1.5 rounded-full bg-[var(--linen)] hover:bg-[var(--gold)]/20 text-xs text-primary">{s}</button>
+            <button key={s} onClick={() => setInput(s)} className="px-3 py-1.5 rounded-full bg-[var(--linen)] hover:bg-[var(--gold)]/20 text-xs text-primary">{s}</button>
           ))}
         </div>
       )}
