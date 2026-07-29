@@ -1,0 +1,58 @@
+import { createServerFn } from "@tanstack/react-start";
+import { generateText } from "ai";
+import { z } from "zod";
+import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { COACH_SYSTEM, MODEL } from "./english-coach.server";
+
+const messageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(4000),
+});
+
+export const coachChat = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        messages: z.array(messageSchema).min(1).max(80),
+        sessionDay: z.number().optional(),
+        mode: z.string().max(400).optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const gateway = createLovableAiGatewayProvider(key);
+    const system =
+      COACH_SYSTEM +
+      (data.sessionDay ? `\n\nCURRENT SESSION DAY: ${data.sessionDay}.` : "") +
+      (data.mode ? `\n\n${data.mode}` : "");
+    const { text } = await generateText({
+      model: gateway(MODEL),
+      system,
+      messages: data.messages,
+    });
+    return { text };
+  });
+
+export const coachReply = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        kind: z.enum(["speaking", "interview", "general"]),
+        prompt: z.string().min(1).max(6000),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) => {
+    const key = process.env.LOVABLE_API_KEY;
+    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const gateway = createLovableAiGatewayProvider(key);
+    const { KIND_EXTENSIONS } = await import("./english-coach.server");
+    const { text } = await generateText({
+      model: gateway(MODEL),
+      system: COACH_SYSTEM + (KIND_EXTENSIONS[data.kind] ?? ""),
+      prompt: data.prompt,
+    });
+    return { text };
+  });

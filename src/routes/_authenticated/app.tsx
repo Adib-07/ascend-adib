@@ -17,6 +17,7 @@ import IncomeView from "@/components/ascend/IncomeView";
 import PipelineView from "@/components/ascend/PipelineView";
 import CSETutorView from "@/components/ascend/CSETutorView";
 import LifeSkillsProfessor from "@/components/ascend/LifeSkillsProfessor";
+import EnglishCoach from "@/components/ascend/EnglishCoach";
 import WorkOverview from "@/components/ascend/WorkOverview";
 import CommandPalette from "@/components/ascend/CommandPalette";
 import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/app")({
 });
 
 type Mode = "student" | "work";
-const STUDENT_TABS = ["Daily Tasks", "Learning Hub", "Habits", "Goals", "CSE Tutor", "🧠 Life Skills"] as const;
+const STUDENT_TABS = ["Daily Tasks", "Learning Hub", "Habits", "Goals", "CSE Tutor", "🧠 Life Skills", "🗣 English"] as const;
 const WORK_TABS = ["Overview", "Clients", "Projects", "Income", "Pipeline"] as const;
 
 function AppShell() {
@@ -79,7 +80,7 @@ function AppShell() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    document.title = `${tab} — Ascend`;
+    document.title = `${tab === "🗣 English" ? "English Coach" : tab} — Ascend`;
   }, [tab]);
 
   useEffect(() => {
@@ -247,6 +248,7 @@ function AppShell() {
           {mode === "student" && tab === "Goals" && <GoalsView />}
           {mode === "student" && tab === "CSE Tutor" && <CSETutorView />}
           {mode === "student" && tab === "🧠 Life Skills" && <LifeSkillsProfessor />}
+          {mode === "student" && tab === "🗣 English" && <EnglishCoach />}
           {mode === "work" && tab === "Overview" && <WorkOverview onStartFocus={() => setFocusOpen(true)} onNavigate={(t) => switchTo("work", t)} />}
           {mode === "work" && tab === "Clients" && <ClientsView />}
           {mode === "work" && tab === "Projects" && <WorkProjectsView />}
