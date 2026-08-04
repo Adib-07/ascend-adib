@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Card, SectionHeader, EmptyState, Badge, ProgressBar, Stat, formatDate } from "./ui-bits";
+import { Card, SectionHeader, EmptyState, Badge, ProgressBar, Stat, formatDate, AIThinking } from "./ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -245,9 +245,7 @@ function ChatPanel({
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-[var(--secondary)] rounded-2xl rounded-tl-none px-4 py-2.5">
-              <p className="text-sm italic text-muted-foreground">Coach is thinking…</p>
-            </div>
+            <AIThinking messages={["Coach is thinking…", "Listening closely…", "Finding the natural phrasing…"]} />
           </div>
         )}
       </div>

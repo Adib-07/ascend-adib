@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Loader2, RotateCw, Send, Bug, ChevronLeft, ChevronRight, Check, X, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { Card } from "./ui-bits";
+import { Card, AIThinking, AIError } from "./ui-bits";
 import { teachTopic, practiceQuestions, generateQuiz, chatTutor, askTutor } from "@/lib/tutor.functions";
 
 // ---------- localStorage utilities ----------
