@@ -296,6 +296,8 @@ function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial:
         </Card>
       )}
 
+      {teachM.isPending && <AIThinking messages={["Preparing your lesson…", "Structuring the deep dive…", "Adding interview answers…"]} />}
+      {teachM.isError && !teachM.isPending && <AIError message={teachM.error instanceof Error ? teachM.error.message : "Something went wrong"} onRetry={() => teachM.mutate(topic)} />}
       {lesson && (
         <Card>
           <LessonRender text={lesson} />
