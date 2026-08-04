@@ -376,6 +376,11 @@ export default function PipelineView() {
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Niche</Label><Input value={leadDraft.niche} onChange={(e) => setLeadDraft({ ...leadDraft, niche: e.target.value })} placeholder="SaaS, agency…" /></div>
+              <div><Label>Expected Value ₹</Label><Input type="number" min="0" value={leadDraft.expected_value} onChange={(e) => setLeadDraft({ ...leadDraft, expected_value: e.target.value })} /></div>
+            </div>
+            <div><Label>Notes</Label><Textarea rows={3} value={leadDraft.notes} onChange={(e) => setLeadDraft({ ...leadDraft, notes: e.target.value })} /></div>
             <div><Label>Date</Label><Input type="date" value={leadDraft.outreach_date} onChange={(e) => setLeadDraft({ ...leadDraft, outreach_date: e.target.value })} /></div>
           </div>
           <DialogFooter><Button onClick={saveLead}>Save</Button></DialogFooter>
