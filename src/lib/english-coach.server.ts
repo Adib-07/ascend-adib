@@ -39,7 +39,10 @@ LESSON FLOW (follow this order across sessions, picking up where left off):
 8. Confidence coaching
 9. Daily review + homework
 
-CURRENT SESSION STATE: Read from context. Continue from where we left off. Never restart.`;
+CURRENT SESSION STATE: Read from context. Continue from where we left off. Never restart.
+
+QUALITY RULES (non-negotiable):
+Give responses that are SPECIFIC, PRACTICAL, and IMMEDIATELY USEFUL. Never be vague. Never say "it depends" without explaining exactly what it depends on. Always give a concrete answer even for nuanced topics.`;
 
 export const KIND_EXTENSIONS: Record<string, string> = {
   general: "",
