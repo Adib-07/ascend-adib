@@ -137,3 +137,45 @@ export function daysUntil(iso: string | null | undefined): number | null {
   const now = new Date(); now.setHours(0, 0, 0, 0);
   return Math.round((target - now.getTime()) / 86400000);
 }
+
+export const AI_LOADING_MESSAGES = [
+  "Thinking deeply...",
+  "Connecting the dots...",
+  "Drawing from the best minds...",
+  "Crafting your response...",
+  "Almost ready...",
+];
+
+export function AIThinking({ messages = AI_LOADING_MESSAGES }: { messages?: string[] }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => setIdx((i) => (i + 1) % messages.length), 2000);
+    return () => window.clearInterval(id);
+  }, [messages.length]);
+  return (
+    <div className="flex items-center gap-3 p-4 bg-secondary/50 rounded-xl">
+      <div className="flex gap-1">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-2 h-2 rounded-full bg-[var(--gold)] animate-bounce"
+            style={{ animationDelay: `${i * 150}ms` }}
+          />
+        ))}
+      </div>
+      <p className="text-sm text-muted-foreground font-serif italic">{messages[idx]}</p>
+    </div>
+  );
+}
+
+export function AIError({ message, onRetry }: { message: string; onRetry?: () => void }) {
+  return (
+    <div className="rounded-xl bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive">
+      <p className="font-medium">Could not get a response</p>
+      <p className="mt-1 text-xs opacity-80">{message}</p>
+      {onRetry && (
+        <button onClick={onRetry} className="mt-2 text-xs underline">Try again</button>
+      )}
+    </div>
+  );
+}
