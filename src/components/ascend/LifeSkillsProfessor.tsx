@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Card, SectionHeader, EmptyState } from "./ui-bits";
+import { Card, SectionHeader, EmptyState, AIThinking, AIError, AI_LOADING_MESSAGES } from "./ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
