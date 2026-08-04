@@ -2,39 +2,28 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
-
-const MODEL = "google/gemini-3-flash-preview";
-
-const TEACH_SYSTEM = `You are an expert CSE tutor for Adib, a B.Tech student becoming an AI Engineer. Last completed: DBMS Normalization. When teaching, structure response with exactly these 5 sections using ## headers:
-
-## 1. Simple Explanation
-Plain language with a real-world analogy.
-
-## 2. Technical Deep Dive
-Proper mechanics, terminology, how it actually works.
-
-## 3. Common Mistakes
-Bullet list of pitfalls students make.
-
-## 4. Interview-Level Answer
-How to explain this crisply in an interview (2-3 sentences).
-
-## 5. Quick Revision
-Concise bullet points for last-minute revision.
-
-Use clear language, real examples, and be encouraging.`;
+import {
+  CHAT_SYSTEM,
+  KIND_SYSTEMS,
+  MODEL,
+  PRACTICE_SYSTEM,
+  QUIZ_SYSTEM,
+  TEACH_SYSTEM,
+  stripFences,
+} from "./tutor.server";
 
 export const teachTopic = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(200) }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    if (!key) throw new Error("AI service not configured");
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
       system: TEACH_SYSTEM,
       prompt: `Teach me: ${data.topic}`,
     });
+    if (!text?.trim()) throw new Error("Empty response from AI");
     return { text };
   });
 
@@ -42,18 +31,19 @@ export const practiceQuestions = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(200) }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    if (!key) throw new Error("AI service not configured");
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: `Generate exactly 3 short practice questions on the given topic for a B.Tech CSE student. Return ONLY a JSON array of strings, no prose, no markdown fences. Example: ["Q1?","Q2?","Q3?"]`,
+      system: PRACTICE_SYSTEM,
       prompt: data.topic,
     });
     try {
-      const cleaned = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = JSON.parse(stripFences(text));
       if (Array.isArray(parsed)) return { questions: parsed.slice(0, 3).map(String) };
-    } catch { /* noop */ }
+    } catch {
+      /* fall through to empty */
+    }
     return { questions: [] as string[] };
   });
 
@@ -61,18 +51,15 @@ export const generateQuiz = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(100) }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    if (!key) throw new Error("AI service not configured");
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: `Generate exactly 5 multiple-choice questions on the given topic for a B.Tech CSE student. Return ONLY a valid JSON array (no markdown fences, no prose) with this exact shape:
-[{"question":"...","options":["A","B","C","D"],"correct":0,"explanation":"..."}]
-The "correct" field is the 0-indexed integer of the right option in the options array.`,
+      system: QUIZ_SYSTEM,
       prompt: data.topic,
     });
     try {
-      const cleaned = text.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = JSON.parse(stripFences(text));
       if (Array.isArray(parsed)) {
         return {
           questions: parsed
@@ -81,59 +68,64 @@ The "correct" field is the 0-indexed integer of the right option in the options 
             .map((q) => ({
               question: String(q.question),
               options: q.options.slice(0, 4).map(String),
-              correct: Math.max(0, Math.min(3, Number(q.correct) || 0)),
+              correct: Number(q.correct) || 0,
               explanation: String(q.explanation ?? ""),
             })),
         };
       }
-    } catch { /* noop */ }
+    } catch {
+      /* fall through to empty */
+    }
     return { questions: [] as { question: string; options: string[]; correct: number; explanation: string }[] };
   });
 
-const CHAT_SYSTEM = `You are Adib's personal CSE tutor and AI Engineering mentor. B.Tech student, goal: AI Engineer. Completed: DBMS Normalization. Current focus: DBMS Transactions + ACID Properties, Python OOP. Be concise, practical, use examples. Format code in backticks.`;
-
-const messageSchema = z.object({
-  role: z.enum(["user", "assistant", "system"]),
-  content: z.string().min(1).max(4000),
-});
-
 export const chatTutor = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ messages: z.array(messageSchema).min(1).max(30) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        messages: z
+          .array(
+            z.object({
+              role: z.enum(["user", "assistant", "system"]),
+              content: z.string().min(1).max(4000),
+            }),
+          )
+          .min(1)
+          .max(30),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    if (!key) throw new Error("AI service not configured");
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
       system: CHAT_SYSTEM,
       messages: data.messages,
     });
+    if (!text?.trim()) throw new Error("Empty response from AI");
     return { text };
   });
 
-const KIND_SYSTEMS: Record<string, string> = {
-  coding: `You are a coding coach for a B.Tech CSE student. For the given problem, output markdown with these sections in order using ## headers: ## Problem Statement, ## Approach, ## Step-by-step Solution, ## Python Code (use \`\`\`python fenced block), ## Time & Space Complexity. Be precise and idiomatic.`,
-  debug: `You are a senior engineer debugging student code. Analyze the provided code and description. Output markdown with: ## What's Wrong, ## Root Cause, ## Fixed Code (\`\`\`python fenced), ## Explanation. Be honest and concrete.`,
-  exam: `You are an exam-prep strategist for a B.Tech CSE student (2 hours/day study budget). Output markdown with: ## 80/20 Priority Topics, ## Top 10 Predicted Exam Questions, ## Memory Tricks & Mnemonics, ## Day-wise Revision Plan. Be tactical.`,
-  project: `You are a senior AI engineer mentoring project builds. Output markdown with: ## Architecture Overview, ## Tech Stack (with justification), ## Step-by-step Implementation Plan, ## Key APIs & Libraries, ## Resume Bullet Points. Be practical and aimed at portfolio impact.`,
-  flashcards: `Generate exactly 8 flashcards for the topic. Return ONLY a JSON array (no fences, no prose) with shape: [{"q":"...","a":"...","category":"..."}]. Keep answers under 40 words.`,
-};
-
 export const askTutor = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({
-    kind: z.enum(["coding", "debug", "exam", "project", "flashcards"]),
-    prompt: z.string().min(1).max(4000),
-  }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        kind: z.enum(["coding", "debug", "exam", "project", "flashcards"]),
+        prompt: z.string().min(1).max(4000),
+      })
+      .parse(d),
+  )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    if (!key) throw new Error("AI service not configured");
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
-      system: KIND_SYSTEMS[data.kind],
+      system: KIND_SYSTEMS[data.kind] ?? CHAT_SYSTEM,
       prompt: data.prompt,
     });
+    if (!text?.trim()) throw new Error("Empty response from AI");
     return { text };
   });
-
-
