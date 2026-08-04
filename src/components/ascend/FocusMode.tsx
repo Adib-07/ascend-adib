@@ -182,11 +182,11 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
         </div>
 
         <div className="mt-8 flex items-center gap-3">
-          <Button onClick={toggle} size="lg" variant="outline" className="min-w-[120px] bg-[var(--gold)] text-[var(--forest)] border-[var(--gold)] hover:bg-[var(--gold)]/90 hover:text-[var(--forest)] active:scale-95">
+          <Button onClick={toggle} aria-label={running ? "Pause timer" : "Start focus timer"} size="lg" variant="outline" className="min-w-[120px] bg-[var(--gold)] text-[var(--forest)] border-[var(--gold)] hover:bg-[var(--gold)]/90 hover:text-[var(--forest)] active:scale-95">
             {running ? <><Pause className="h-4 w-4 mr-1" />Pause</> : <><Play className="h-4 w-4 mr-1" />Start</>}
           </Button>
-          <Button variant="ghost" onClick={reset} size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
-          <Button variant="ghost" onClick={skip} size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><SkipForward className="h-4 w-4 mr-1" />Skip</Button>
+          <Button variant="ghost" onClick={reset} aria-label="Reset timer" size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
+          <Button variant="ghost" onClick={skip} aria-label="Skip to next session" size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><SkipForward className="h-4 w-4 mr-1" />Skip</Button>
         </div>
 
         <div className="mt-8 flex items-center gap-2">

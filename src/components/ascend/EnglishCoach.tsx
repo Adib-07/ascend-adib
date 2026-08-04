@@ -311,14 +311,14 @@ export default function EnglishCoach() {
         <p className="text-sm text-muted-foreground mt-2">Your personal tutor — speak more, hesitate less, sound natural.</p>
       </div>
 
-      <div className="border-b border-border overflow-x-auto">
-        <nav className="flex gap-1 min-w-max">
+      <div className="border-b border-border">
+        <nav className="flex overflow-x-auto gap-1 pb-1 scrollbar-hide -mx-4 px-4">
           {SUBS.map((s) => (
             <button
               key={s}
               onClick={() => setSub(s)}
               className={cn(
-                "px-3 py-2 text-sm whitespace-nowrap transition-colors border-b-2 -mb-px",
+                "px-3 py-2 text-sm whitespace-nowrap flex-shrink-0 transition-colors border-b-2 -mb-px",
                 sub === s ? "border-[var(--gold)] text-primary font-medium" : "border-transparent text-muted-foreground hover:text-primary",
               )}
             >
