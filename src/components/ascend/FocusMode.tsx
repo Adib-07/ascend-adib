@@ -89,7 +89,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
 
   function onSessionEnd() {
     setRunning(false);
-    beep();
+    playBell();
     pushSession({ type, date: todayISO(), duration: DURATIONS[type] });
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
       new Notification("Ascend — Session complete", { body: `${type} finished. Take a breath.` });
