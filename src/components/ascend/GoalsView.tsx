@@ -32,7 +32,10 @@ function useNorthStar() {
         const { error } = await supabase.from("goals").update({ text }).eq("id", q.data.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("goals").insert({ user_id: u.user.id, scope: "north_star", text });
+        const { error } = await supabase.from("goals").upsert(
+          { user_id: u.user.id, scope: "north_star", text, done: false },
+          { onConflict: "user_id,scope" },
+        );
         if (error) throw error;
       }
     },

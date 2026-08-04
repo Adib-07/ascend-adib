@@ -56,6 +56,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          niche: string | null
           platform: string | null
           rating: number | null
           revenue: number
@@ -68,6 +69,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          niche?: string | null
           platform?: string | null
           rating?: number | null
           revenue?: number
@@ -80,6 +82,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          niche?: string | null
           platform?: string | null
           rating?: number | null
           revenue?: number
@@ -456,8 +459,13 @@ export type Database = {
       outreach: {
         Row: {
           created_at: string
+          expected_value: number | null
           id: string
           lead_name: string
+          message_type: string | null
+          niche: string | null
+          notes: string | null
+          outcome: string | null
           outreach_date: string
           platform: string | null
           status: string | null
@@ -465,8 +473,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          expected_value?: number | null
           id?: string
           lead_name: string
+          message_type?: string | null
+          niche?: string | null
+          notes?: string | null
+          outcome?: string | null
           outreach_date?: string
           platform?: string | null
           status?: string | null
@@ -474,8 +487,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          expected_value?: number | null
           id?: string
           lead_name?: string
+          message_type?: string | null
+          niche?: string | null
+          notes?: string | null
+          outcome?: string | null
           outreach_date?: string
           platform?: string | null
           status?: string | null
@@ -516,7 +534,10 @@ export type Database = {
           delivery_time: string | null
           id: string
           name: string
+          premium_price: number | null
           price_range: string | null
+          standard_price: number | null
+          starter_price: number | null
           user_id: string
         }
         Insert: {
@@ -524,7 +545,10 @@ export type Database = {
           delivery_time?: string | null
           id?: string
           name: string
+          premium_price?: number | null
           price_range?: string | null
+          standard_price?: number | null
+          starter_price?: number | null
           user_id: string
         }
         Update: {
@@ -532,7 +556,10 @@ export type Database = {
           delivery_time?: string | null
           id?: string
           name?: string
+          premium_price?: number | null
           price_range?: string | null
+          standard_price?: number | null
+          starter_price?: number | null
           user_id?: string
         }
         Relationships: []

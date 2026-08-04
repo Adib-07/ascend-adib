@@ -105,7 +105,12 @@ export default function WorkProjectsView() {
                 </div>
                 {total > 0 && <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3">{formatMoney(total)} total</p>}
                 <div className="space-y-2">
-                  {cards.length === 0 ? <p className="text-xs text-muted-foreground italic py-3 text-center">Empty</p> : cards.map(p => {
+                  {cards.length === 0 ? (
+                    <div className="text-center py-10 px-4">
+                      <p className="font-serif text-sm text-muted-foreground">No projects yet</p>
+                      <button onClick={() => openNew(s)} className="mt-2 text-xs text-[var(--gold)] hover:text-primary font-medium">+ Add project</button>
+                    </div>
+                  ) : cards.map(p => {
                     const client = clients.find(c => c.id === p.client_id);
                     const d = daysUntil(p.deadline);
                     let deadlineText = "";

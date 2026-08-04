@@ -64,27 +64,45 @@ export default function PipelineView() {
   // Lead dialog
   const [leadOpen, setLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<Outreach | null>(null);
-  const [leadDraft, setLeadDraft] = useState({ lead_name: "", platform: "LinkedIn", status: "Lead" as string, outreach_date: today() });
+  const [leadDraft, setLeadDraft] = useState({ lead_name: "", platform: "LinkedIn", status: "Lead" as string, outreach_date: today(), niche: "", expected_value: "", notes: "" });
 
   function openNewLead(stage: Stage = "Lead") {
     setEditLead(null);
-    setLeadDraft({ lead_name: "", platform: "LinkedIn", status: stage, outreach_date: today() });
+    setLeadDraft({ lead_name: "", platform: "LinkedIn", status: stage, outreach_date: today(), niche: "", expected_value: "", notes: "" });
     setLeadOpen(true);
   }
   function openEditLead(o: Outreach) {
     setEditLead(o);
-    setLeadDraft({ lead_name: o.lead_name, platform: o.platform ?? "LinkedIn", status: o.status ?? "Lead", outreach_date: o.outreach_date });
+    setLeadDraft({
+      lead_name: o.lead_name,
+      platform: o.platform ?? "LinkedIn",
+      status: o.status ?? "Lead",
+      outreach_date: o.outreach_date,
+      niche: o.niche ?? "",
+      expected_value: o.expected_value != null ? String(o.expected_value) : "",
+      notes: o.notes ?? "",
+    });
     setLeadOpen(true);
   }
   async function saveLead() {
     if (!leadDraft.lead_name.trim()) { toast.error("Name required"); return; }
+    const payload = {
+      lead_name: leadDraft.lead_name,
+      platform: leadDraft.platform,
+      status: leadDraft.status,
+      outreach_date: leadDraft.outreach_date,
+      niche: leadDraft.niche || null,
+      expected_value: leadDraft.expected_value ? Number(leadDraft.expected_value) : 0,
+      notes: leadDraft.notes || null,
+    };
     try {
-      if (editLead) await outreach.update.mutateAsync({ id: editLead.id, ...leadDraft });
-      else await outreach.create.mutateAsync(leadDraft);
+      if (editLead) await outreach.update.mutateAsync({ id: editLead.id, ...payload });
+      else await outreach.create.mutateAsync(payload);
       setLeadOpen(false);
       toast.success(editLead ? "Lead updated" : "Lead added");
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed"); }
   }
+
   function moveTo(id: string, status: string) {
     outreach.update.mutate({ id, status });
   }
@@ -358,6 +376,11 @@ export default function PipelineView() {
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Niche</Label><Input value={leadDraft.niche} onChange={(e) => setLeadDraft({ ...leadDraft, niche: e.target.value })} placeholder="SaaS, agency…" /></div>
+              <div><Label>Expected Value ₹</Label><Input type="number" min="0" value={leadDraft.expected_value} onChange={(e) => setLeadDraft({ ...leadDraft, expected_value: e.target.value })} /></div>
+            </div>
+            <div><Label>Notes</Label><Textarea rows={3} value={leadDraft.notes} onChange={(e) => setLeadDraft({ ...leadDraft, notes: e.target.value })} /></div>
             <div><Label>Date</Label><Input type="date" value={leadDraft.outreach_date} onChange={(e) => setLeadDraft({ ...leadDraft, outreach_date: e.target.value })} /></div>
           </div>
           <DialogFooter><Button onClick={saveLead}>Save</Button></DialogFooter>

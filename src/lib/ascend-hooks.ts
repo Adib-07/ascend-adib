@@ -134,6 +134,32 @@ export function useToggleHabitLog() {
         const { error } = await supabase.from("habit_logs").insert({ user_id, habit_id, day, done });
         if (error) throw error;
       }
+
+      if (done) {
+        const { data: logs } = await supabase
+          .from("habit_logs")
+          .select("day, done")
+          .eq("habit_id", habit_id)
+          .eq("done", true)
+          .order("day", { ascending: false })
+          .limit(365);
+
+        let streak = 0;
+        const checkDate = new Date();
+        for (const log of logs ?? []) {
+          const logDay = new Date(log.day + "T00:00:00").toDateString();
+          if (logDay === checkDate.toDateString()) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+          } else break;
+        }
+        await supabase.from("habits").update({ streak, last_done: day }).eq("id", habit_id);
+      } else {
+        const { data: habit } = await supabase.from("habits").select("streak").eq("id", habit_id).maybeSingle();
+        if (habit) {
+          await supabase.from("habits").update({ streak: Math.max(0, (habit.streak ?? 1) - 1), last_done: null }).eq("id", habit_id);
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["habit_logs"] });

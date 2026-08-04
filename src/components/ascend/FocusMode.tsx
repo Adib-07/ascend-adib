@@ -28,20 +28,23 @@ function pushSession(s: Session) {
   } catch { /* noop */ }
 }
 
-function beep() {
+function playBell() {
   try {
     const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
     const ctx = new Ctx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = "sine"; osc.frequency.value = 660;
-    gain.gain.setValueAtTime(0.001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.4);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(); osc.stop(ctx.currentTime + 1.4);
-  } catch { /* noop */ }
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.8);
+    setTimeout(() => { void ctx.close(); }, 1000);
+  } catch { /* AudioContext unavailable */ }
 }
+
 
 export default function FocusMode({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [type, setType] = useState<SessionType>("Deep Work");
@@ -86,7 +89,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
 
   function onSessionEnd() {
     setRunning(false);
-    beep();
+    playBell();
     pushSession({ type, date: todayISO(), duration: DURATIONS[type] });
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
       new Notification("Ascend — Session complete", { body: `${type} finished. Take a breath.` });
@@ -179,11 +182,11 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
         </div>
 
         <div className="mt-8 flex items-center gap-3">
-          <Button onClick={toggle} size="lg" variant="outline" className="min-w-[120px] bg-[var(--gold)] text-[var(--forest)] border-[var(--gold)] hover:bg-[var(--gold)]/90 hover:text-[var(--forest)] active:scale-95">
+          <Button onClick={toggle} aria-label={running ? "Pause timer" : "Start focus timer"} size="lg" variant="outline" className="min-w-[120px] bg-[var(--gold)] text-[var(--forest)] border-[var(--gold)] hover:bg-[var(--gold)]/90 hover:text-[var(--forest)] active:scale-95">
             {running ? <><Pause className="h-4 w-4 mr-1" />Pause</> : <><Play className="h-4 w-4 mr-1" />Start</>}
           </Button>
-          <Button variant="ghost" onClick={reset} size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
-          <Button variant="ghost" onClick={skip} size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><SkipForward className="h-4 w-4 mr-1" />Skip</Button>
+          <Button variant="ghost" onClick={reset} aria-label="Reset timer" size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
+          <Button variant="ghost" onClick={skip} aria-label="Skip to next session" size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><SkipForward className="h-4 w-4 mr-1" />Skip</Button>
         </div>
 
         <div className="mt-8 flex items-center gap-2">
