@@ -28,20 +28,23 @@ function pushSession(s: Session) {
   } catch { /* noop */ }
 }
 
-function beep() {
+function playBell() {
   try {
     const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
     const ctx = new Ctx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = "sine"; osc.frequency.value = 660;
-    gain.gain.setValueAtTime(0.001, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.4);
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.start(); osc.stop(ctx.currentTime + 1.4);
-  } catch { /* noop */ }
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.8);
+    setTimeout(() => { void ctx.close(); }, 1000);
+  } catch { /* AudioContext unavailable */ }
 }
+
 
 export default function FocusMode({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [type, setType] = useState<SessionType>("Deep Work");
