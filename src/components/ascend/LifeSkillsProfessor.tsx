@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Card, SectionHeader, EmptyState } from "./ui-bits";
+import { Card, SectionHeader, EmptyState, AIThinking, AIError, AI_LOADING_MESSAGES } from "./ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -433,14 +433,11 @@ function ResponseView({ text, storageKeyForChecks }: { text: string; storageKeyF
   );
 }
 
-function LoadingSkeleton({ label = "The Professor is thinking..." }: { label?: string }) {
+function LoadingSkeleton({ label }: { label?: string }) {
   return (
-    <div className="space-y-3">
-      <p className="font-serif italic text-muted-foreground">{label}</p>
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="rounded-xl bg-[var(--linen)] h-16 animate-pulse" />
-      ))}
-    </div>
+    <AIThinking
+      messages={label ? [label, ...AI_LOADING_MESSAGES] : ["The Professor is thinking...", ...AI_LOADING_MESSAGES]}
+    />
   );
 }
 
@@ -450,21 +447,45 @@ function LearnTab({ seed, onConsumed }: { seed: { topic: string; category?: stri
   const [prompt, setPrompt] = useState("");
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastAsk, setLastAsk] = useState<{ topic: string; cat: string } | null>(null);
+  const revealRef = useRef<number | null>(null);
   const askFn = useServerFn(askProfessor);
+
+  useEffect(() => () => { if (revealRef.current) window.clearInterval(revealRef.current); }, []);
+
+  function revealProgressively(full: string) {
+    if (revealRef.current) window.clearInterval(revealRef.current);
+    const words = full.split(" ");
+    let i = 0;
+    setText("");
+    revealRef.current = window.setInterval(() => {
+      if (i >= words.length) {
+        if (revealRef.current) window.clearInterval(revealRef.current);
+        revealRef.current = null;
+        return;
+      }
+      setText((prev) => prev + (i > 0 ? " " : "") + words[i]);
+      i++;
+    }, 15);
+  }
 
   const submit = async (topicOverride?: string, catOverride?: string) => {
     const topic = (topicOverride ?? prompt).trim();
     if (!topic) return;
     const cat = catOverride ?? category;
-    setLoading(true); setText("");
+    setLoading(true); setText(""); setError(null); setLastAsk({ topic, cat });
     try {
       const full = cat ? `[Category: ${cat}] ${topic}` : topic;
       const res = await askFn({ data: { kind: "learn", prompt: full } });
-      setText(res.text);
+      revealProgressively(res.text);
       const hist = loadLS<HistoryEntry[]>("ascend_lifeskills_history", []);
       const entry: HistoryEntry = { topic, category: cat || undefined, timestamp: Date.now() };
       saveLS("ascend_lifeskills_history", [entry, ...hist.filter((h) => h.topic !== topic)].slice(0, 50));
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong");
+      toast.error("AI is unavailable right now. Please try again.");
+    }
     finally { setLoading(false); }
   };
 
@@ -547,8 +568,11 @@ function LearnTab({ seed, onConsumed }: { seed: { topic: string; category?: stri
 
       <div>
         {loading && <LoadingSkeleton />}
-        {!loading && !text && <EmptyState title="Ready when you are." hint="Ask a question — the Professor will teach it with clarity, examples, and action steps." />}
-        {!loading && text && (
+        {!loading && error && (
+          <AIError message={error} onRetry={() => { if (lastAsk) void submit(lastAsk.topic, lastAsk.cat); }} />
+        )}
+        {!loading && !error && !text && <EmptyState title="Ready when you are." hint="Ask a question — the Professor will teach it with clarity, examples, and action steps." />}
+        {!loading && !error && text && (
           <div className="space-y-4">
             <ResponseView text={text} storageKeyForChecks={`ascend_lifeskills_check_${prompt.slice(0, 40)}`} />
             <div className="flex flex-wrap gap-2 pt-2">

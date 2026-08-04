@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, Loader2, RotateCw, Send, Bug, ChevronLeft, ChevronRight, Check, X, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import { Card } from "./ui-bits";
+import { Card, AIThinking, AIError } from "./ui-bits";
 import { teachTopic, practiceQuestions, generateQuiz, chatTutor, askTutor } from "@/lib/tutor.functions";
 
 // ---------- localStorage utilities ----------
@@ -296,6 +296,8 @@ function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial:
         </Card>
       )}
 
+      {teachM.isPending && <AIThinking messages={["Preparing your lesson…", "Structuring the deep dive…", "Adding interview answers…"]} />}
+      {teachM.isError && !teachM.isPending && <AIError message={teachM.error instanceof Error ? teachM.error.message : "Something went wrong"} onRetry={() => teachM.mutate(topic)} />}
       {lesson && (
         <Card>
           <LessonRender text={lesson} />
