@@ -34,7 +34,7 @@ export const chatMentor = createServerFn({ method: "POST" })
           .array(
             z.object({
               role: z.enum(["user", "assistant"]),
-              content: z.string().min(1).max(4000),
+              content: z.string().min(1).max(8000),
             }),
           )
           .min(1)
