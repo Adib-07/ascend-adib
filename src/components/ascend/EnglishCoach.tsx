@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { coachChat, coachReply } from "@/lib/english-coach.functions";
-import { Send, RotateCcw, X, ChevronDown, Play } from "lucide-react";
+import { Send, RotateCcw, X, ChevronDown, Play, Mic, Square } from "lucide-react";
 
 const SUBS = ["🏠 Home", "📚 Lesson", "🎭 Roleplay", "🎤 Speaking", "💼 Interview", "📊 Progress"] as const;
 type Sub = (typeof SUBS)[number];
@@ -186,8 +186,98 @@ function CoachText({ text }: { text: string }) {
         if (t.startsWith("⭐")) return <p key={i} className="text-[var(--gold)] font-medium">{t}</p>;
         if (t.startsWith("💡")) return <p key={i} className="text-muted-foreground italic">{t}</p>;
         if (t.startsWith("🎤")) return <p key={i} className="text-[var(--forest)] font-semibold">{t}</p>;
+        if (t.startsWith("Now say:")) return <p key={i} className="text-[var(--forest)] font-medium bg-[var(--forest)]/10 px-3 py-1.5 rounded-lg mt-1">{t}</p>;
         return <p key={i} className="text-foreground">{t}</p>;
       })}
+    </div>
+  );
+}
+
+/* ---------- voice input ---------- */
+function useSpeechRecognition(onResult: (text: string) => void) {
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<{ stop: () => void } | null>(null);
+  const resultRef = useRef(onResult);
+  resultRef.current = onResult;
+
+  const startListening = () => {
+    const w = window as unknown as Record<string, unknown>;
+    const SpeechRecognition = (w["SpeechRecognition"] ?? w["webkitSpeechRecognition"]) as
+      | (new () => Record<string, unknown> & { start: () => void; stop: () => void })
+      | undefined;
+    if (!SpeechRecognition) {
+      toast.error("Voice input is not supported in this browser. Use Chrome, Edge or Safari.");
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition["continuous"] = false;
+    recognition["interimResults"] = true;
+    recognition["lang"] = "en-US";
+    recognition["onstart"] = () => setListening(true);
+    recognition["onresult"] = (event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => {
+      const transcript = Array.from(event.results).map((r) => r[0].transcript).join("");
+      resultRef.current(transcript);
+    };
+    recognition["onend"] = () => setListening(false);
+    recognition["onerror"] = () => {
+      setListening(false);
+      toast.error("Could not hear you. Please try again.");
+    };
+    recognitionRef.current = recognition;
+    setListening(true);
+    recognition.start();
+  };
+
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setListening(false);
+  };
+
+  useEffect(() => () => { recognitionRef.current?.stop(); }, []);
+
+  return { listening, startListening, stopListening };
+}
+
+function MicButton({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const baseRef = useRef("");
+  const { listening, startListening, stopListening } = useSpeechRecognition((text) => {
+    onChange((baseRef.current ? baseRef.current.trimEnd() + " " : "") + text);
+  });
+
+  return (
+    <div className="flex flex-col items-center">
+      <button
+        type="button"
+        onClick={() => {
+          if (listening) { stopListening(); return; }
+          baseRef.current = value;
+          startListening();
+        }}
+        aria-label={listening ? "Stop listening" : "Start voice input"}
+        title={listening ? "Listening… click to stop" : "Click to speak"}
+        className={cn(
+          "shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all",
+          listening
+            ? "bg-[var(--destructive)] text-white animate-pulse shadow-[var(--shadow-md)]"
+            : "bg-secondary text-muted-foreground hover:bg-[var(--forest)]/10 hover:text-[var(--forest)]",
+        )}
+      >
+        {listening ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}
+      </button>
+    </div>
+  );
+}
+
+function VoiceHint({ listening }: { listening?: boolean }) {
+  if (!listening) return null;
+  return (
+    <div className="flex items-center gap-2 px-1">
+      <div className="flex gap-0.5 items-end">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className="w-1 h-3 bg-[var(--destructive)] rounded-full animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
+        ))}
+      </div>
+      <p className="text-xs text-[var(--destructive)] font-medium">Listening… speak now</p>
     </div>
   );
 }
@@ -275,6 +365,7 @@ function ChatPanel({
           placeholder={placeholder}
           className="flex-1 resize-none"
         />
+        <MicButton value={input} onChange={setInput} />
         <Button onClick={() => submit()} disabled={loading} className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90">
           <Send className="h-4 w-4 mr-1" /> Send
         </Button>
@@ -360,6 +451,20 @@ function HomeTab({ day, goal, tip, stats, onStart, onGo }: {
 
   return (
     <div className="space-y-6">
+      <div className="rounded-2xl bg-gradient-to-br from-[var(--forest)] to-[var(--forest)]/80 p-6">
+        <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--gold)] font-medium mb-1">Featured</p>
+        <h2 className="font-serif text-2xl text-[#F5F2EB] mb-2">Start Speaking Today</h2>
+        <p className="text-sm text-[#F5F2EB]/80 mb-4">Your AI coach listens, corrects, and helps you sound natural. Use your microphone for real speaking practice.</p>
+        <div className="flex flex-wrap gap-3">
+          <button onClick={onStart} className="px-4 py-2 bg-[var(--gold)] text-[#2B2B2B] rounded-lg text-sm font-medium hover:opacity-90 active:scale-95 transition-all">
+            Start Lesson →
+          </button>
+          <button onClick={() => onGo("🎭 Roleplay")} className="px-4 py-2 bg-white/15 text-[#F5F2EB] rounded-lg text-sm font-medium hover:bg-white/25 active:scale-95 transition-all">
+            Try Roleplay
+          </button>
+        </div>
+      </div>
+
       <div className="rounded-xl bg-[var(--forest)] p-6 md:p-8 shadow-[var(--shadow-md)]">
         <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">Start Today's Session</p>
         <p className="font-serif text-3xl md:text-4xl text-[#F5F2EB] mt-2">Day {day}</p>
@@ -623,7 +728,10 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
             <Badge variant="gold">{active.time}</Badge>
           </div>
           <p className="text-sm font-semibold text-[var(--forest)]">🎤 SPEAK FIRST. Speak aloud for {active.time}. Then type exactly what you said.</p>
-          <Textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type what you said..." />
+          <div className="flex gap-2 items-end">
+            <Textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type what you said, or speak using the mic..." className="flex-1" />
+            <MicButton value={answer} onChange={setAnswer} />
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={submit} disabled={loading || !answer.trim()} className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90">
               {loading ? "Coach is thinking…" : "Submit for Feedback →"}
@@ -787,7 +895,10 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
         <Card className="space-y-4">
           <h3 className="font-serif text-2xl text-primary">{question}</h3>
           <p className="text-sm font-semibold text-[var(--forest)]">🎤 Answer aloud first, then type your response:</p>
-          <Textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type your answer..." />
+          <div className="flex gap-2 items-end">
+            <Textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type your answer or speak using the mic..." className="flex-1" />
+            <MicButton value={answer} onChange={setAnswer} />
+          </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={submit} disabled={loading || !answer.trim()} className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90">
               {loading ? "Coach is thinking…" : "Submit Answer →"}
