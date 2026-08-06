@@ -13,7 +13,7 @@ import {
 } from "./tutor.server";
 
 export const teachTopic = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(200) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(4000) }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -28,7 +28,7 @@ export const teachTopic = createServerFn({ method: "POST" })
   });
 
 export const practiceQuestions = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(200) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(4000) }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -48,7 +48,7 @@ export const practiceQuestions = createServerFn({ method: "POST" })
   });
 
 export const generateQuiz = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(100) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(4000) }).parse(d))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -87,7 +87,7 @@ export const chatTutor = createServerFn({ method: "POST" })
           .array(
             z.object({
               role: z.enum(["user", "assistant", "system"]),
-              content: z.string().min(1).max(4000),
+              content: z.string().min(1).max(8000),
             }),
           )
           .min(1)
