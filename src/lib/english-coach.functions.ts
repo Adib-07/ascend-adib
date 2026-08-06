@@ -18,7 +18,7 @@ export const coachChat = createServerFn({ method: "POST" })
           .min(1)
           .max(80),
         sessionDay: z.number().optional(),
-        mode: z.string().max(400).optional(),
+        mode: z.string().max(4000).optional(),
       })
       .parse(d),
   )
