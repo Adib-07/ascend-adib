@@ -264,23 +264,11 @@ function MicButton({ value, onChange }: { value: string; onChange: (v: string) =
       >
         {listening ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}
       </button>
+      {listening && <span className="text-[10px] text-[var(--destructive)] font-medium mt-1">Listening…</span>}
     </div>
   );
 }
 
-function VoiceHint({ listening }: { listening?: boolean }) {
-  if (!listening) return null;
-  return (
-    <div className="flex items-center gap-2 px-1">
-      <div className="flex gap-0.5 items-end">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className="w-1 h-3 bg-[var(--destructive)] rounded-full animate-pulse" style={{ animationDelay: `${i * 100}ms` }} />
-        ))}
-      </div>
-      <p className="text-xs text-[var(--destructive)] font-medium">Listening… speak now</p>
-    </div>
-  );
-}
 
 /* ---------- reusable chat panel ---------- */
 function ChatPanel({
