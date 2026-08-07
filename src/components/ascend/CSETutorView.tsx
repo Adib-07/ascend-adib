@@ -135,6 +135,71 @@ function LessonRender({ text }: { text: string }) {
   );
 }
 
+function CodeBlock({ code }: { code: string }) {
+  return (
+    <div className="my-3 rounded-xl overflow-hidden border border-border">
+      <div className="bg-[#2B2B2B] px-4 py-2 flex items-center justify-between">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Code</span>
+        <button
+          onClick={() => { navigator.clipboard.writeText(code).then(() => toast.success("Copied")).catch(() => toast.error("Copy failed")); }}
+          className="text-[10px] text-[var(--gold)] hover:text-[var(--ivory)] transition-colors"
+        >
+          Copy
+        </button>
+      </div>
+      <pre className="bg-[#1a1a1a] text-[#F5F2EB] p-4 overflow-x-auto text-xs leading-relaxed font-mono">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+function formatTutorResponse(text: string) {
+  return text.split("\n").map((line, i) => {
+    if (line.startsWith("## ")) {
+      return (
+        <h3 key={i} className="font-serif text-lg text-[var(--forest)] font-semibold mt-6 mb-2 pb-1 border-b border-border">
+          {line.replace("## ", "")}
+        </h3>
+      );
+    }
+    if (line.startsWith("### ")) {
+      return <h4 key={i} className="font-serif text-base text-[var(--gold)] font-medium mt-4 mb-1">{line.replace("### ", "")}</h4>;
+    }
+    if (line.startsWith("🎯")) {
+      return (
+        <div key={i} className="bg-[var(--forest)]/10 border-l-4 border-[var(--forest)] px-4 py-3 rounded-r-xl my-3">
+          <p className="text-sm font-medium text-[var(--forest)]">{line}</p>
+        </div>
+      );
+    }
+    if (line.startsWith("✅") || line.startsWith("✓")) return <p key={i} className="text-emerald-700 text-sm py-0.5">{line}</p>;
+    if (line.startsWith("❌") || line.startsWith("✗")) return <p key={i} className="text-red-600 text-sm py-0.5">{line}</p>;
+    if (line.startsWith("⚠️")) return <p key={i} className="text-amber-600 text-sm py-0.5">{line}</p>;
+    if (line.startsWith("- ") || line.startsWith("• ")) {
+      return (
+        <p key={i} className="text-sm text-foreground pl-4 py-0.5 before:content-['•'] before:mr-2 before:text-[var(--gold)]">
+          {line.replace(/^[-•]\s/, "")}
+        </p>
+      );
+    }
+    if (/^\d+\.\s/.test(line)) return <p key={i} className="text-sm text-foreground pl-4 py-0.5">{line}</p>;
+    if (line.trim() === "") return <div key={i} className="h-2" />;
+    return <p key={i} className="text-sm text-foreground leading-relaxed py-0.5">{line}</p>;
+  });
+}
+
+function renderTutorResponse(text: string) {
+  return text.split(/(```[\s\S]*?```)/g).map((part, i) => {
+    if (part.startsWith("```")) {
+      const code = part.replace(/^```\w*\n?/, "").replace(/```$/, "");
+      return <CodeBlock key={i} code={code} />;
+    }
+    return <div key={i}>{formatTutorResponse(part)}</div>;
+  });
+}
+
+
 // ============================================================
 // HOME
 // ============================================================
@@ -223,6 +288,17 @@ const LEARN_SUBJECTS = [
   { emoji: "📦", name: "OOP", tag: "4 pillars" },
 ];
 
+const DEEP_TOPICS = [
+  { label: "Python from Scratch", prompt: "I am starting Python from absolute zero. Teach me from first principles — what Python is, why it exists, and start with variables. Go very deep, use real examples, check my understanding after each concept." },
+  { label: "DBMS Transactions", prompt: "Teach me DBMS Transactions and ACID properties deeply. I've completed normalization. Build on that knowledge and explain transactions from first principles with real database examples." },
+  { label: "How VPN Works", prompt: "Teach me how a VPN actually works from first principles — the technical mechanism, tunneling, encryption, protocols. Not a summary — deep technical understanding with real examples." },
+  { label: "OOP in Python", prompt: "Teach me Object Oriented Programming in Python from scratch. Start with WHY OOP exists, what problem it solves. Then teach class, object, __init__, inheritance, polymorphism — one by one with real code examples." },
+  { label: "Data Structures", prompt: "Teach me the most important data structures in depth: Arrays, Linked Lists, Stacks, Queues, Trees, Hash Tables. For each: what it is, how it works internally, when to use it, real examples, time complexity." },
+  { label: "How Internet Works", prompt: "Teach me how the internet actually works — from typing google.com to seeing the page. Every step in deep technical detail: DNS, TCP/IP, HTTP, routing, packets. Make it a complete journey." },
+  { label: "Machine Learning Basics", prompt: "Teach me machine learning from first principles. What is it really? Why does it work? Start with the intuition before any math or code. Build my mental model from scratch." },
+  { label: "OS & Memory", prompt: "Teach me how a computer's operating system manages memory. What is RAM really? How does the OS allocate memory to programs? What are stack and heap? Go deep with real examples." },
+];
+
 function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial: () => void }) {
   const [topic, setTopic] = useState(initial);
   const [lesson, setLesson] = useState("");
@@ -275,6 +351,21 @@ function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial:
         </div>
       </Card>
 
+      <div className="-mx-1 px-1 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 w-max pb-1">
+          {DEEP_TOPICS.map((t) => (
+            <button
+              key={t.label}
+              onClick={() => run(t.prompt)}
+              disabled={teachM.isPending}
+              className="whitespace-nowrap px-3 py-1.5 rounded-full border border-border text-xs text-muted-foreground hover:text-primary hover:border-[var(--gold)]/50 transition-colors disabled:opacity-50"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div>
         <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] mb-3">Pick a subject</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -300,7 +391,13 @@ function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial:
       {teachM.isError && !teachM.isPending && <AIError message={teachM.error instanceof Error ? teachM.error.message : "Something went wrong"} onRetry={() => teachM.mutate(topic)} />}
       {lesson && (
         <Card>
-          <LessonRender text={lesson} />
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <div className="w-2 h-2 rounded-full bg-[var(--forest)] animate-pulse" />
+            <span className="text-[11px] uppercase tracking-[0.15em] text-[var(--gold)] font-medium">
+              Professor Ascend · Deep Teaching Mode
+            </span>
+          </div>
+          {renderTutorResponse(lesson)}
         </Card>
       )}
 
