@@ -288,6 +288,17 @@ const LEARN_SUBJECTS = [
   { emoji: "📦", name: "OOP", tag: "4 pillars" },
 ];
 
+const DEEP_TOPICS = [
+  { label: "Python from Scratch", prompt: "I am starting Python from absolute zero. Teach me from first principles — what Python is, why it exists, and start with variables. Go very deep, use real examples, check my understanding after each concept." },
+  { label: "DBMS Transactions", prompt: "Teach me DBMS Transactions and ACID properties deeply. I've completed normalization. Build on that knowledge and explain transactions from first principles with real database examples." },
+  { label: "How VPN Works", prompt: "Teach me how a VPN actually works from first principles — the technical mechanism, tunneling, encryption, protocols. Not a summary — deep technical understanding with real examples." },
+  { label: "OOP in Python", prompt: "Teach me Object Oriented Programming in Python from scratch. Start with WHY OOP exists, what problem it solves. Then teach class, object, __init__, inheritance, polymorphism — one by one with real code examples." },
+  { label: "Data Structures", prompt: "Teach me the most important data structures in depth: Arrays, Linked Lists, Stacks, Queues, Trees, Hash Tables. For each: what it is, how it works internally, when to use it, real examples, time complexity." },
+  { label: "How Internet Works", prompt: "Teach me how the internet actually works — from typing google.com to seeing the page. Every step in deep technical detail: DNS, TCP/IP, HTTP, routing, packets. Make it a complete journey." },
+  { label: "Machine Learning Basics", prompt: "Teach me machine learning from first principles. What is it really? Why does it work? Start with the intuition before any math or code. Build my mental model from scratch." },
+  { label: "OS & Memory", prompt: "Teach me how a computer's operating system manages memory. What is RAM really? How does the OS allocate memory to programs? What are stack and heap? Go deep with real examples." },
+];
+
 function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial: () => void }) {
   const [topic, setTopic] = useState(initial);
   const [lesson, setLesson] = useState("");
