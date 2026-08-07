@@ -351,6 +351,21 @@ function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial:
         </div>
       </Card>
 
+      <div className="-mx-1 px-1 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 w-max pb-1">
+          {DEEP_TOPICS.map((t) => (
+            <button
+              key={t.label}
+              onClick={() => run(t.prompt)}
+              disabled={teachM.isPending}
+              className="whitespace-nowrap px-3 py-1.5 rounded-full border border-border text-xs text-muted-foreground hover:text-primary hover:border-[var(--gold)]/50 transition-colors disabled:opacity-50"
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div>
         <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] mb-3">Pick a subject</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -376,7 +391,13 @@ function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial:
       {teachM.isError && !teachM.isPending && <AIError message={teachM.error instanceof Error ? teachM.error.message : "Something went wrong"} onRetry={() => teachM.mutate(topic)} />}
       {lesson && (
         <Card>
-          <LessonRender text={lesson} />
+          <div className="flex items-center gap-2 mb-4 px-1">
+            <div className="w-2 h-2 rounded-full bg-[var(--forest)] animate-pulse" />
+            <span className="text-[11px] uppercase tracking-[0.15em] text-[var(--gold)] font-medium">
+              Professor Ascend · Deep Teaching Mode
+            </span>
+          </div>
+          {renderTutorResponse(lesson)}
         </Card>
       )}
 
