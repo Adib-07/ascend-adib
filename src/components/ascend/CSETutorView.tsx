@@ -135,6 +135,71 @@ function LessonRender({ text }: { text: string }) {
   );
 }
 
+function CodeBlock({ code }: { code: string }) {
+  return (
+    <div className="my-3 rounded-xl overflow-hidden border border-border">
+      <div className="bg-[#2B2B2B] px-4 py-2 flex items-center justify-between">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Code</span>
+        <button
+          onClick={() => { navigator.clipboard.writeText(code).then(() => toast.success("Copied")).catch(() => toast.error("Copy failed")); }}
+          className="text-[10px] text-[var(--gold)] hover:text-[var(--ivory)] transition-colors"
+        >
+          Copy
+        </button>
+      </div>
+      <pre className="bg-[#1a1a1a] text-[#F5F2EB] p-4 overflow-x-auto text-xs leading-relaxed font-mono">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
+
+function formatTutorResponse(text: string) {
+  return text.split("\n").map((line, i) => {
+    if (line.startsWith("## ")) {
+      return (
+        <h3 key={i} className="font-serif text-lg text-[var(--forest)] font-semibold mt-6 mb-2 pb-1 border-b border-border">
+          {line.replace("## ", "")}
+        </h3>
+      );
+    }
+    if (line.startsWith("### ")) {
+      return <h4 key={i} className="font-serif text-base text-[var(--gold)] font-medium mt-4 mb-1">{line.replace("### ", "")}</h4>;
+    }
+    if (line.startsWith("🎯")) {
+      return (
+        <div key={i} className="bg-[var(--forest)]/10 border-l-4 border-[var(--forest)] px-4 py-3 rounded-r-xl my-3">
+          <p className="text-sm font-medium text-[var(--forest)]">{line}</p>
+        </div>
+      );
+    }
+    if (line.startsWith("✅") || line.startsWith("✓")) return <p key={i} className="text-emerald-700 text-sm py-0.5">{line}</p>;
+    if (line.startsWith("❌") || line.startsWith("✗")) return <p key={i} className="text-red-600 text-sm py-0.5">{line}</p>;
+    if (line.startsWith("⚠️")) return <p key={i} className="text-amber-600 text-sm py-0.5">{line}</p>;
+    if (line.startsWith("- ") || line.startsWith("• ")) {
+      return (
+        <p key={i} className="text-sm text-foreground pl-4 py-0.5 before:content-['•'] before:mr-2 before:text-[var(--gold)]">
+          {line.replace(/^[-•]\s/, "")}
+        </p>
+      );
+    }
+    if (/^\d+\.\s/.test(line)) return <p key={i} className="text-sm text-foreground pl-4 py-0.5">{line}</p>;
+    if (line.trim() === "") return <div key={i} className="h-2" />;
+    return <p key={i} className="text-sm text-foreground leading-relaxed py-0.5">{line}</p>;
+  });
+}
+
+function renderTutorResponse(text: string) {
+  return text.split(/(```[\s\S]*?```)/g).map((part, i) => {
+    if (part.startsWith("```")) {
+      const code = part.replace(/^```\w*\n?/, "").replace(/```$/, "");
+      return <CodeBlock key={i} code={code} />;
+    }
+    return <div key={i}>{formatTutorResponse(part)}</div>;
+  });
+}
+
+
 // ============================================================
 // HOME
 // ============================================================
