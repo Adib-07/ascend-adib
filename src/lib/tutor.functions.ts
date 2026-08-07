@@ -5,10 +5,12 @@ import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import {
   CHAT_SYSTEM,
   KIND_SYSTEMS,
+  MAX_TOKENS,
   MODEL,
   PRACTICE_SYSTEM,
   QUIZ_SYSTEM,
   TEACH_SYSTEM,
+  TEMPERATURE,
   stripFences,
 } from "./tutor.server";
 
@@ -20,6 +22,8 @@ export const teachTopic = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
+      temperature: TEMPERATURE,
+      maxOutputTokens: MAX_TOKENS,
       system: TEACH_SYSTEM,
       prompt: `Teach me: ${data.topic}`,
     });
@@ -35,6 +39,8 @@ export const practiceQuestions = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
+      temperature: TEMPERATURE,
+      maxOutputTokens: MAX_TOKENS,
       system: PRACTICE_SYSTEM,
       prompt: data.topic,
     });
@@ -55,6 +61,8 @@ export const generateQuiz = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
+      temperature: TEMPERATURE,
+      maxOutputTokens: MAX_TOKENS,
       system: QUIZ_SYSTEM,
       prompt: data.topic,
     });
@@ -101,6 +109,8 @@ export const chatTutor = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
+      temperature: TEMPERATURE,
+      maxOutputTokens: MAX_TOKENS,
       system: CHAT_SYSTEM,
       messages: data.messages,
     });
@@ -123,6 +133,8 @@ export const askTutor = createServerFn({ method: "POST" })
     const gateway = createLovableAiGatewayProvider(key);
     const { text } = await generateText({
       model: gateway(MODEL),
+      temperature: TEMPERATURE,
+      maxOutputTokens: MAX_TOKENS,
       system: KIND_SYSTEMS[data.kind] ?? CHAT_SYSTEM,
       prompt: data.prompt,
     });
