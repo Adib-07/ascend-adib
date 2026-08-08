@@ -666,10 +666,21 @@ function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay, onRes
           <span className="text-muted-foreground">🎯 {goal}</span>
           <Badge variant="gold">Level: Elementary</Badge>
         </div>
-        <Button variant="outline" size="sm" onClick={newSession}>
-          <RotateCcw className="h-3.5 w-3.5 mr-1" /> New Session
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={newSession}>
+            <RotateCcw className="h-3.5 w-3.5 mr-1" /> New Session
+          </Button>
+          <button
+            onClick={onReset}
+            className="text-[#6B6A67] hover:text-red-500 transition-colors p-1.5"
+            aria-label="Reset progress"
+            title="Reset and start from Day 1"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
+
 
       <ChatPanel
         messages={messages}
