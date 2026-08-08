@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { coachChat, coachReply } from "@/lib/english-coach.functions";
-import { Send, RotateCcw, X, ChevronDown, Play, Mic, Square } from "lucide-react";
+import { Send, RotateCcw, X, ChevronDown, Play, Mic, Square, AlertTriangle } from "lucide-react";
 
 const SUBS = ["🏠 Home", "📚 Lesson", "🎭 Roleplay", "🎤 Speaking", "💼 Interview", "📊 Progress"] as const;
 type Sub = (typeof SUBS)[number];
@@ -145,6 +145,80 @@ function loadLS<T>(key: string, fallback: T): T {
   try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }
 }
 function saveLS<T>(key: string, val: T) { try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* noop */ } }
+
+/* ---------- reset (English Coach data only) ---------- */
+function resetEnglishCoach() {
+  const ENGLISH_KEYS = [
+    "ascend_english_chat",
+    "ascend_english_day",
+    "ascend_english_stats",
+    "ascend_english_sessions",
+    "ascend_english_vocab",
+    "ascend_english_speaking",
+    "ascend_english_interview",
+  ];
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("ascend_english_")) localStorage.removeItem(key);
+    });
+    ENGLISH_KEYS.forEach((key) => localStorage.removeItem(key));
+    localStorage.setItem("ascend_english_stats", JSON.stringify(DEFAULT_STATS));
+    localStorage.setItem("ascend_english_day", JSON.stringify({ day: 1, lastDate: new Date().toDateString() }));
+  } catch { /* noop */ }
+}
+
+function ResetDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-[#2B2B2B]/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="bg-[#F5F2EB] rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-6 h-6 text-red-500" />
+        </div>
+        <h2 className="font-serif text-xl text-center text-[#2B2B2B] mb-2">Start Again from Day 1?</h2>
+        <p className="text-sm text-[#6B6A67] text-center leading-relaxed mb-6">
+          Are you sure you want to restart your English Speaking journey from Day 1? Your current progress, chat
+          history, speaking records, vocabulary bank, and session data will all be permanently reset.
+          <br /><br />
+          <span className="text-[#2F4F3E] font-medium">This will not affect any other part of Ascend.</span>
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-3 rounded-xl border border-[#EAE4D8] text-[#6B6A67] text-sm font-medium hover:bg-[#EAE4D8] active:scale-95 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 active:scale-95 transition-all"
+          >
+            Start Again from Day 1
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResetLink({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="mt-8 pt-6 border-t border-[#EAE4D8] flex justify-center">
+      <button
+        onClick={onClick}
+        className="flex items-center gap-2 text-sm text-[#6B6A67] hover:text-red-500 transition-colors group"
+      >
+        <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" />
+        Reset Progress / Start Again from Day 1
+      </button>
+    </div>
+  );
+}
 
 function loadStats(): Stats {
   const s = loadLS<Partial<Stats>>("ascend_english_stats", {});
@@ -369,6 +443,8 @@ export default function EnglishCoach() {
   const [day, setDay] = useState(1);
   const [stats, setStats] = useState<Stats>(DEFAULT_STATS);
   const [autoStart, setAutoStart] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     setDay(getOrInitDay());
@@ -379,6 +455,18 @@ export default function EnglishCoach() {
   const tip = DAILY_TIPS[(Math.max(1, day) - 1) % DAILY_TIPS.length];
 
   const refreshStats = useCallback(() => setStats(loadStats()), []);
+  const openReset = useCallback(() => setShowResetDialog(true), []);
+
+  function confirmReset() {
+    resetEnglishCoach();
+    setShowResetDialog(false);
+    setDay(1);
+    setStats(loadStats());
+    setAutoStart(false);
+    setResetKey((k) => k + 1);
+    setSub("🏠 Home");
+    toast.success("Progress reset. Welcome back to Day 1! 🎯");
+  }
 
   return (
     <div className="space-y-6">
@@ -407,28 +495,32 @@ export default function EnglishCoach() {
 
       {sub === "🏠 Home" && (
         <HomeTab
+          key={`home-${resetKey}`}
           day={day}
           goal={goal}
           tip={tip}
           stats={stats}
           onStart={() => { setAutoStart(true); setSub("📚 Lesson"); }}
           onGo={setSub}
+          onReset={openReset}
         />
       )}
       {sub === "📚 Lesson" && (
-        <LessonTab day={day} goal={goal} autoStart={autoStart} onAutoStarted={() => setAutoStart(false)} onStats={refreshStats} setDay={setDay} />
+        <LessonTab key={`lesson-${resetKey}`} day={day} goal={goal} autoStart={autoStart} onAutoStarted={() => setAutoStart(false)} onStats={refreshStats} setDay={setDay} onReset={openReset} />
       )}
-      {sub === "🎭 Roleplay" && <RoleplayTab onStats={refreshStats} />}
-      {sub === "🎤 Speaking" && <SpeakingTab onStats={refreshStats} />}
-      {sub === "💼 Interview" && <InterviewTab onStats={refreshStats} />}
-      {sub === "📊 Progress" && <ProgressTab stats={stats} onStats={refreshStats} />}
+      {sub === "🎭 Roleplay" && <RoleplayTab key={`rp-${resetKey}`} onStats={refreshStats} />}
+      {sub === "🎤 Speaking" && <SpeakingTab key={`sp-${resetKey}`} onStats={refreshStats} />}
+      {sub === "💼 Interview" && <InterviewTab key={`iv-${resetKey}`} onStats={refreshStats} />}
+      {sub === "📊 Progress" && <ProgressTab key={`pg-${resetKey}`} stats={stats} onStats={refreshStats} onReset={openReset} />}
+
+      <ResetDialog open={showResetDialog} onCancel={() => setShowResetDialog(false)} onConfirm={confirmReset} />
     </div>
   );
 }
 
 /* ---------- HOME ---------- */
-function HomeTab({ day, goal, tip, stats, onStart, onGo }: {
-  day: number; goal: string; tip: string; stats: Stats; onStart: () => void; onGo: (s: Sub) => void;
+function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
+  day: number; goal: string; tip: string; stats: Stats; onStart: () => void; onGo: (s: Sub) => void; onReset: () => void;
 }) {
   const quick: { emoji: string; title: string; desc: string; target: Sub }[] = [
     { emoji: "🎭", title: "Roleplay", desc: "Practice real scenarios", target: "🎭 Roleplay" },
@@ -482,13 +574,15 @@ function HomeTab({ day, goal, tip, stats, onStart, onGo }: {
         <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">Today's Tip</p>
         <p className="text-sm text-foreground mt-2">{tip}</p>
       </Card>
+
+      <ResetLink onClick={onReset} />
     </div>
   );
 }
 
 /* ---------- LESSON ---------- */
-function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay }: {
-  day: number; goal: string; autoStart: boolean; onAutoStarted: () => void; onStats: () => void; setDay: (d: number) => void;
+function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay, onReset }: {
+  day: number; goal: string; autoStart: boolean; onAutoStarted: () => void; onStats: () => void; setDay: (d: number) => void; onReset: () => void;
 }) {
   const chat = useServerFn(coachChat);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -572,10 +666,21 @@ function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay }: {
           <span className="text-muted-foreground">🎯 {goal}</span>
           <Badge variant="gold">Level: Elementary</Badge>
         </div>
-        <Button variant="outline" size="sm" onClick={newSession}>
-          <RotateCcw className="h-3.5 w-3.5 mr-1" /> New Session
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={newSession}>
+            <RotateCcw className="h-3.5 w-3.5 mr-1" /> New Session
+          </Button>
+          <button
+            onClick={onReset}
+            className="text-[#6B6A67] hover:text-red-500 transition-colors p-1.5"
+            aria-label="Reset progress"
+            title="Reset and start from Day 1"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
+
 
       <ChatPanel
         messages={messages}
@@ -932,7 +1037,7 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
 /* ---------- PROGRESS ---------- */
 type VocabEntry = { word: string; meaning: string; example: string; dateAdded: string };
 
-function ProgressTab({ stats, onStats }: { stats: Stats; onStats: () => void }) {
+function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () => void; onReset: () => void }) {
   const [editing, setEditing] = useState(false);
   const [scores, setScores] = useState<Record<string, number>>(stats.scores);
   const [sessions, setSessions] = useState<{ date: string; day: number; goal: string }[]>([]);
@@ -1082,6 +1187,24 @@ function ProgressTab({ stats, onStats }: { stats: Stats; onStats: () => void }) 
             ))}
           </div>
         )}
+      </div>
+
+      <div className="mt-8 p-4 rounded-xl bg-red-50 border border-red-100">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-[#2B2B2B]">Reset English Coach Progress</p>
+            <p className="text-xs text-[#6B6A67] mt-0.5">
+              Clear all sessions, chat history, speaking records and start fresh from Day 1. This only affects English
+              Coach data.
+            </p>
+          </div>
+          <button
+            onClick={onReset}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 active:scale-95 transition-all whitespace-nowrap"
+          >
+            Reset Progress
+          </button>
+        </div>
       </div>
     </div>
   );
