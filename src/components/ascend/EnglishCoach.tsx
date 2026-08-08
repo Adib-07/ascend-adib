@@ -581,8 +581,8 @@ function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
 }
 
 /* ---------- LESSON ---------- */
-function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay }: {
-  day: number; goal: string; autoStart: boolean; onAutoStarted: () => void; onStats: () => void; setDay: (d: number) => void;
+function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay, onReset }: {
+  day: number; goal: string; autoStart: boolean; onAutoStarted: () => void; onStats: () => void; setDay: (d: number) => void; onReset: () => void;
 }) {
   const chat = useServerFn(coachChat);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
