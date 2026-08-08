@@ -519,8 +519,8 @@ export default function EnglishCoach() {
 }
 
 /* ---------- HOME ---------- */
-function HomeTab({ day, goal, tip, stats, onStart, onGo }: {
-  day: number; goal: string; tip: string; stats: Stats; onStart: () => void; onGo: (s: Sub) => void;
+function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
+  day: number; goal: string; tip: string; stats: Stats; onStart: () => void; onGo: (s: Sub) => void; onReset: () => void;
 }) {
   const quick: { emoji: string; title: string; desc: string; target: Sub }[] = [
     { emoji: "🎭", title: "Roleplay", desc: "Practice real scenarios", target: "🎭 Roleplay" },
