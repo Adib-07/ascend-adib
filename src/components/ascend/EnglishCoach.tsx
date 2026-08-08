@@ -574,6 +574,8 @@ function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
         <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">Today's Tip</p>
         <p className="text-sm text-foreground mt-2">{tip}</p>
       </Card>
+
+      <ResetLink onClick={onReset} />
     </div>
   );
 }
