@@ -1037,7 +1037,7 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
 /* ---------- PROGRESS ---------- */
 type VocabEntry = { word: string; meaning: string; example: string; dateAdded: string };
 
-function ProgressTab({ stats, onStats }: { stats: Stats; onStats: () => void }) {
+function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () => void; onReset: () => void }) {
   const [editing, setEditing] = useState(false);
   const [scores, setScores] = useState<Record<string, number>>(stats.scores);
   const [sessions, setSessions] = useState<{ date: string; day: number; goal: string }[]>([]);
