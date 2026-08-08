@@ -443,6 +443,8 @@ export default function EnglishCoach() {
   const [day, setDay] = useState(1);
   const [stats, setStats] = useState<Stats>(DEFAULT_STATS);
   const [autoStart, setAutoStart] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     setDay(getOrInitDay());
@@ -453,6 +455,18 @@ export default function EnglishCoach() {
   const tip = DAILY_TIPS[(Math.max(1, day) - 1) % DAILY_TIPS.length];
 
   const refreshStats = useCallback(() => setStats(loadStats()), []);
+  const openReset = useCallback(() => setShowResetDialog(true), []);
+
+  function confirmReset() {
+    resetEnglishCoach();
+    setShowResetDialog(false);
+    setDay(1);
+    setStats(loadStats());
+    setAutoStart(false);
+    setResetKey((k) => k + 1);
+    setSub("🏠 Home");
+    toast.success("Progress reset. Welcome back to Day 1! 🎯");
+  }
 
   return (
     <div className="space-y-6">
@@ -481,21 +495,25 @@ export default function EnglishCoach() {
 
       {sub === "🏠 Home" && (
         <HomeTab
+          key={`home-${resetKey}`}
           day={day}
           goal={goal}
           tip={tip}
           stats={stats}
           onStart={() => { setAutoStart(true); setSub("📚 Lesson"); }}
           onGo={setSub}
+          onReset={openReset}
         />
       )}
       {sub === "📚 Lesson" && (
-        <LessonTab day={day} goal={goal} autoStart={autoStart} onAutoStarted={() => setAutoStart(false)} onStats={refreshStats} setDay={setDay} />
+        <LessonTab key={`lesson-${resetKey}`} day={day} goal={goal} autoStart={autoStart} onAutoStarted={() => setAutoStart(false)} onStats={refreshStats} setDay={setDay} onReset={openReset} />
       )}
-      {sub === "🎭 Roleplay" && <RoleplayTab onStats={refreshStats} />}
-      {sub === "🎤 Speaking" && <SpeakingTab onStats={refreshStats} />}
-      {sub === "💼 Interview" && <InterviewTab onStats={refreshStats} />}
-      {sub === "📊 Progress" && <ProgressTab stats={stats} onStats={refreshStats} />}
+      {sub === "🎭 Roleplay" && <RoleplayTab key={`rp-${resetKey}`} onStats={refreshStats} />}
+      {sub === "🎤 Speaking" && <SpeakingTab key={`sp-${resetKey}`} onStats={refreshStats} />}
+      {sub === "💼 Interview" && <InterviewTab key={`iv-${resetKey}`} onStats={refreshStats} />}
+      {sub === "📊 Progress" && <ProgressTab key={`pg-${resetKey}`} stats={stats} onStats={refreshStats} onReset={openReset} />}
+
+      <ResetDialog open={showResetDialog} onCancel={() => setShowResetDialog(false)} onConfirm={confirmReset} />
     </div>
   );
 }
