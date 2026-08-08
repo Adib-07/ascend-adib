@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { coachChat, coachReply } from "@/lib/english-coach.functions";
-import { Send, RotateCcw, X, ChevronDown, Play, Mic, Square } from "lucide-react";
+import { Send, RotateCcw, X, ChevronDown, Play, Mic, Square, AlertTriangle } from "lucide-react";
 
 const SUBS = ["🏠 Home", "📚 Lesson", "🎭 Roleplay", "🎤 Speaking", "💼 Interview", "📊 Progress"] as const;
 type Sub = (typeof SUBS)[number];
