@@ -103,8 +103,19 @@ export default function DailyTasks() {
   }
 
   function toggleDone(t: Task) {
-    update.mutate({ id: t.id, done: !t.done });
+    update.mutate({ id: t.id, done: !t.done }, {
+      onSuccess: () => toast.success(t.done ? "Task reopened" : "Task completed"),
+      onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update task"),
+    });
   }
+
+  function deleteTask(id: string) {
+    remove.mutate(id, {
+      onSuccess: () => toast.success("Task deleted"),
+      onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete task"),
+    });
+  }
+
 
   function scheduleReminder(t: Partial<Task>) {
     if (t.reminder_time) {
@@ -324,7 +335,7 @@ export default function DailyTasks() {
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <button
-                  onClick={() => remove.mutate(t.id)}
+                  onClick={() => deleteTask(t.id)}
                   className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-muted-foreground hover:text-red-600"
                   aria-label="Delete task"
                 >

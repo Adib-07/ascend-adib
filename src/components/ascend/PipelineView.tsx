@@ -205,8 +205,8 @@ export default function PipelineView() {
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-serif text-sm font-medium text-primary min-w-0 truncate">{l.lead_name}</p>
                           <div className="flex opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditLead(l)}><Pencil className="h-2.5 w-2.5" /></Button>
-                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => outreach.remove.mutate(l.id)}><Trash2 className="h-2.5 w-2.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => openEditLead(l)} aria-label="Edit lead"><Pencil className="h-2.5 w-2.5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => outreach.remove.mutate(l.id)} aria-label="Delete lead"><Trash2 className="h-2.5 w-2.5" /></Button>
                           </div>
                         </div>
                         <div className="flex gap-1.5 flex-wrap">
@@ -265,8 +265,8 @@ export default function PipelineView() {
                       <td className="px-3 py-2 text-right whitespace-nowrap text-[var(--gold)] font-medium">{formatMoney(s.premium)}</td>
                       <td className="px-3 py-2 text-muted-foreground">{s.delivery}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditSrv(s)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => delSrv(s.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditSrv(s)} aria-label="Edit service"><Pencil className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => delSrv(s.id)} aria-label="Delete service"><Trash2 className="h-3.5 w-3.5" /></Button>
                       </td>
                     </tr>
                   ))}
@@ -319,8 +319,8 @@ export default function PipelineView() {
                           <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-medium", logStatusChip(o.status))}>{o.status}</span>
                         </td>
                         <td className="px-3 py-2 text-right whitespace-nowrap">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditLog(o)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => outreach.remove.mutate(o.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditLog(o)} aria-label="Edit outreach log"><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => outreach.remove.mutate(o.id)} aria-label="Delete outreach log"><Trash2 className="h-3.5 w-3.5" /></Button>
                         </td>
                       </tr>
                     ))}
@@ -343,8 +343,8 @@ export default function PipelineView() {
                       </div>
                     </div>
                     <div className="flex">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditLog(o)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => outreach.remove.mutate(o.id)}><Trash2 className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditLog(o)} aria-label="Edit outreach log"><Pencil className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => outreach.remove.mutate(o.id)} aria-label="Delete outreach log"><Trash2 className="h-3 w-3" /></Button>
                     </div>
                   </div>
                 </Card>

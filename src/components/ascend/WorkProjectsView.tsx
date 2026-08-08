@@ -67,9 +67,10 @@ export default function WorkProjectsView() {
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Something went wrong — try again"); }
   }
   async function moveTo(p: WorkProject, status: string) {
-    try { await update.mutateAsync({ id: p.id, status }); }
-    catch { toast.error("Failed to move card"); }
+    try { await update.mutateAsync({ id: p.id, status }); toast.success("Status updated"); }
+    catch { toast.error("Failed to update status"); }
   }
+
   async function del(id: string) {
     try { await remove.mutateAsync(id); toast.success("Project removed"); }
     catch { toast.error("Something went wrong — try again"); }

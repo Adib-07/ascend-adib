@@ -244,8 +244,8 @@ export default function IncomeView() {
                       </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <div className="opacity-0 group-hover:opacity-100 transition-opacity inline-flex">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(e)}><Pencil className="h-3.5 w-3.5" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => del(e.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(e)} aria-label="Edit entry"><Pencil className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => del(e.id)} aria-label="Delete entry"><Trash2 className="h-3.5 w-3.5" /></Button>
                         </div>
                       </td>
                     </tr>
@@ -275,8 +275,8 @@ export default function IncomeView() {
                       {e.type === "Expense" ? "−" : e.type === "Income" ? "+" : ""}{formatMoney(e.amount)}
                     </p>
                     <div className="flex justify-end mt-1">
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(e)}><Pencil className="h-3 w-3" /></Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => del(e.id)}><Trash2 className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(e)} aria-label="Edit entry"><Pencil className="h-3 w-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => del(e.id)} aria-label="Delete entry"><Trash2 className="h-3 w-3" /></Button>
                     </div>
                   </div>
                 </div>

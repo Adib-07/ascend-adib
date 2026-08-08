@@ -80,8 +80,13 @@ function AppShell() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    document.title = `${tab === "🗣 English" ? "English Coach" : tab} — Ascend`;
+    const titles: Record<string, string> = {
+      "🗣 English": "English Coach",
+      "🧠 Life Skills": "Life Skills",
+    };
+    document.title = `${titles[tab] ?? tab} — Ascend`;
   }, [tab]);
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -162,6 +167,7 @@ function AppShell() {
             <div className="relative">
               <button
                 onClick={() => setNotifOpen((o) => !o)}
+                data-notif-toggle
                 className="relative h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Notifications"
                 title="Notifications"
