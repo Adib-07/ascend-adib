@@ -1188,6 +1188,24 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
           </div>
         )}
       </div>
+
+      <div className="mt-8 p-4 rounded-xl bg-red-50 border border-red-100">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-[#2B2B2B]">Reset English Coach Progress</p>
+            <p className="text-xs text-[#6B6A67] mt-0.5">
+              Clear all sessions, chat history, speaking records and start fresh from Day 1. This only affects English
+              Coach data.
+            </p>
+          </div>
+          <button
+            onClick={onReset}
+            className="flex-shrink-0 px-3 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 active:scale-95 transition-all whitespace-nowrap"
+          >
+            Reset Progress
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
