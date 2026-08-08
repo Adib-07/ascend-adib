@@ -103,8 +103,19 @@ export default function DailyTasks() {
   }
 
   function toggleDone(t: Task) {
-    update.mutate({ id: t.id, done: !t.done });
+    update.mutate({ id: t.id, done: !t.done }, {
+      onSuccess: () => toast.success(t.done ? "Task reopened" : "Task completed"),
+      onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update task"),
+    });
   }
+
+  function deleteTask(id: string) {
+    remove.mutate(id, {
+      onSuccess: () => toast.success("Task deleted"),
+      onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to delete task"),
+    });
+  }
+
 
   function scheduleReminder(t: Partial<Task>) {
     if (t.reminder_time) {

@@ -1,6 +1,8 @@
 import { Bell, X, CheckCheck } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { AppNotification } from "@/lib/notifications";
+
 
 const TYPE_ICONS: Record<AppNotification["type"], string> = {
   "task-due": "📋",

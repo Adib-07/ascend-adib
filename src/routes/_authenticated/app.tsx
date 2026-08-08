@@ -80,8 +80,13 @@ function AppShell() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    document.title = `${tab === "🗣 English" ? "English Coach" : tab} — Ascend`;
+    const titles: Record<string, string> = {
+      "🗣 English": "English Coach",
+      "🧠 Life Skills": "Life Skills",
+    };
+    document.title = `${titles[tab] ?? tab} — Ascend`;
   }, [tab]);
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
