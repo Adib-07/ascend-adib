@@ -53,27 +53,33 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
   const [sessionNo, setSessionNo] = useState(1);
   const [customTask, setCustomTask] = useState("");
   const startedAtRef = useRef<number | null>(null);
+  const endsAtRef = useRef<number | null>(null);
 
   const tasksQ = useTasks();
   const firstMit = (tasksQ.data ?? []).find((t) => t.mit_slot && !t.done);
   const activeTaskLabel = customTask || firstMit?.title || "Deep work session";
 
   // Reset timer when session type changes
-  useEffect(() => { setRemaining(DURATIONS[type]); setRunning(false); }, [type]);
+  useEffect(() => { endsAtRef.current = null; setRemaining(DURATIONS[type]); setRunning(false); }, [type]);
 
   useEffect(() => {
     if (!running) return;
-    const id = window.setInterval(() => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          window.clearInterval(id);
+    if (endsAtRef.current == null) endsAtRef.current = Date.now() + remaining * 1000;
+    const tick = () => {
+      const end = endsAtRef.current;
+      const left = end == null ? 0 : Math.max(0, Math.round((end - Date.now()) / 1000));
+      setRemaining(() => {
+        if (left <= 0) {
           onSessionEnd();
           return 0;
         }
-        return r - 1;
+        return left;
       });
-    }, 1000);
-    return () => window.clearInterval(id);
+    };
+    const id = window.setInterval(tick, 500);
+    const onVis = () => { if (!document.hidden) tick(); };
+    document.addEventListener("visibilitychange", onVis);
+    return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
@@ -89,6 +95,7 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
 
   function onSessionEnd() {
     setRunning(false);
+    endsAtRef.current = null;
     playBell();
     pushSession({ type, date: todayISO(), duration: DURATIONS[type] });
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
@@ -108,11 +115,12 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
     if (!running && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(() => {});
     }
-    if (!running) startedAtRef.current = Date.now();
+    if (!running) { startedAtRef.current = Date.now(); endsAtRef.current = Date.now() + remaining * 1000; }
+    else endsAtRef.current = null;
     setRunning((r) => !r);
   }
 
-  function reset() { setRemaining(DURATIONS[type]); setRunning(false); }
+  function reset() { endsAtRef.current = null; setRemaining(DURATIONS[type]); setRunning(false); }
   function skip() { setRemaining(0); onSessionEnd(); }
 
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
