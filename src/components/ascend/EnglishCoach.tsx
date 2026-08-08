@@ -146,6 +146,80 @@ function loadLS<T>(key: string, fallback: T): T {
 }
 function saveLS<T>(key: string, val: T) { try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* noop */ } }
 
+/* ---------- reset (English Coach data only) ---------- */
+function resetEnglishCoach() {
+  const ENGLISH_KEYS = [
+    "ascend_english_chat",
+    "ascend_english_day",
+    "ascend_english_stats",
+    "ascend_english_sessions",
+    "ascend_english_vocab",
+    "ascend_english_speaking",
+    "ascend_english_interview",
+  ];
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("ascend_english_")) localStorage.removeItem(key);
+    });
+    ENGLISH_KEYS.forEach((key) => localStorage.removeItem(key));
+    localStorage.setItem("ascend_english_stats", JSON.stringify(DEFAULT_STATS));
+    localStorage.setItem("ascend_english_day", JSON.stringify({ day: 1, lastDate: new Date().toDateString() }));
+  } catch { /* noop */ }
+}
+
+function ResetDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-[200] bg-[#2B2B2B]/60 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onCancel}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="bg-[#F5F2EB] rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+          <AlertTriangle className="w-6 h-6 text-red-500" />
+        </div>
+        <h2 className="font-serif text-xl text-center text-[#2B2B2B] mb-2">Start Again from Day 1?</h2>
+        <p className="text-sm text-[#6B6A67] text-center leading-relaxed mb-6">
+          Are you sure you want to restart your English Speaking journey from Day 1? Your current progress, chat
+          history, speaking records, vocabulary bank, and session data will all be permanently reset.
+          <br /><br />
+          <span className="text-[#2F4F3E] font-medium">This will not affect any other part of Ascend.</span>
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-3 rounded-xl border border-[#EAE4D8] text-[#6B6A67] text-sm font-medium hover:bg-[#EAE4D8] active:scale-95 transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-3 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 active:scale-95 transition-all"
+          >
+            Start Again from Day 1
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ResetLink({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="mt-8 pt-6 border-t border-[#EAE4D8] flex justify-center">
+      <button
+        onClick={onClick}
+        className="flex items-center gap-2 text-sm text-[#6B6A67] hover:text-red-500 transition-colors group"
+      >
+        <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-300" />
+        Reset Progress / Start Again from Day 1
+      </button>
+    </div>
+  );
+}
+
 function loadStats(): Stats {
   const s = loadLS<Partial<Stats>>("ascend_english_stats", {});
   return { ...DEFAULT_STATS, ...s, scores: { ...DEFAULT_STATS.scores, ...(s.scores ?? {}) } };
