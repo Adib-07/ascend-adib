@@ -335,7 +335,7 @@ export default function DailyTasks() {
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <button
-                  onClick={() => remove.mutate(t.id)}
+                  onClick={() => deleteTask(t.id)}
                   className="w-7 h-7 rounded-lg hover:bg-red-50 flex items-center justify-center text-muted-foreground hover:text-red-600"
                   aria-label="Delete task"
                 >
