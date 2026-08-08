@@ -22,14 +22,29 @@ type Props = {
 };
 
 export default function NotificationPanel({ open, onClose, notifications, onMarkAllRead, onDismiss }: Props) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
+    }
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
   const unread = notifications.filter((n) => !n.read).length;
 
   return (
-    <>
-      <div className="fixed inset-0 z-[90]" onClick={onClose} />
-      <div className="absolute right-0 top-11 w-80 max-w-[92vw] bg-[var(--card)] border border-border rounded-2xl shadow-[var(--shadow-lg)] z-[100] overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+    <div ref={panelRef} className="absolute right-0 top-11 w-80 max-w-[92vw] bg-[var(--card)] border border-border rounded-2xl shadow-[var(--shadow-lg)] z-[100] overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+
           <div className="flex items-center gap-2">
             <Bell size={16} className="text-primary" />
             <span className="font-medium text-sm text-foreground">Notifications</span>
