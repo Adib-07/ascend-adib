@@ -26,7 +26,8 @@ export default function NotificationPanel({ open, onClose, notifications, onMark
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      const target = e.target as Node;
+      const target = e.target as HTMLElement;
+      if (target.closest?.("[data-notif-toggle]")) return;
       if (panelRef.current && !panelRef.current.contains(target)) onClose();
     }
     function onKey(e: KeyboardEvent) {

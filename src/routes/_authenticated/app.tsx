@@ -167,6 +167,7 @@ function AppShell() {
             <div className="relative">
               <button
                 onClick={() => setNotifOpen((o) => !o)}
+                data-notif-toggle
                 className="relative h-9 w-9 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground hover:text-primary transition-colors"
                 aria-label="Notifications"
                 title="Notifications"
