@@ -22,6 +22,8 @@ import WorkOverview from "@/components/ascend/WorkOverview";
 import CommandPalette from "@/components/ascend/CommandPalette";
 import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
 import NotificationPanel from "@/components/ascend/NotificationPanel";
+import PWAInstallBanner from "@/components/ascend/PWAInstallBanner";
+import OfflineBar from "@/components/ascend/OfflineBar";
 import { useTasks, todayISO } from "@/lib/ascend-data";
 import { useExams } from "@/lib/ascend-hooks";
 import { buildDailyNotifications, requestNotificationPermission, type AppNotification } from "@/lib/notifications";
@@ -126,6 +128,7 @@ function AppShell() {
 
   return (
     <div className="min-h-screen bg-background">
+      <OfflineBar />
       <header className="sticky top-0 z-40 border-b border-border/60 backdrop-blur-sm bg-[var(--card)]/95">
         <div className="mx-auto max-w-7xl px-4 md:px-8 py-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 md:flex md:justify-between">
           <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -270,6 +273,7 @@ function AppShell() {
         quickActions={quickActions}
       />
       <FocusMode open={focusOpen} onClose={() => setFocusOpen(false)} />
+      <PWAInstallBanner />
     </div>
   );
 }
