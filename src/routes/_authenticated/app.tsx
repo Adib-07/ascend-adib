@@ -22,6 +22,8 @@ import WorkOverview from "@/components/ascend/WorkOverview";
 import CommandPalette from "@/components/ascend/CommandPalette";
 import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
 import NotificationPanel from "@/components/ascend/NotificationPanel";
+import PWAInstallBanner from "@/components/ascend/PWAInstallBanner";
+import OfflineBar from "@/components/ascend/OfflineBar";
 import { useTasks, todayISO } from "@/lib/ascend-data";
 import { useExams } from "@/lib/ascend-hooks";
 import { buildDailyNotifications, requestNotificationPermission, type AppNotification } from "@/lib/notifications";
