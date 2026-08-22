@@ -2,17 +2,27 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { KIND_EXTENSIONS, LIFE_SKILLS_SYSTEM, MENTOR_SYSTEM, MODEL } from "./life-skills.server";
 
 export const askProfessor = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
       .object({
-        kind: z.enum(["learn", "book", "business", "resources", "memory", "answerCheck", "flashcards"]),
+        kind: z.enum([
+          "learn",
+          "book",
+          "business",
+          "resources",
+          "memory",
+          "answerCheck",
+          "flashcards",
+        ]),
         prompt: z.string().min(1).max(6000),
       })
       .parse(d),
   )
+  .middleware([requireSupabaseAuth])
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -42,6 +52,7 @@ export const chatMentor = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
+  .middleware([requireSupabaseAuth])
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");

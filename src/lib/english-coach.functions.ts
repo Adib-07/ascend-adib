@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { COACH_SYSTEM, MODEL } from "./english-coach.server";
 
 export const coachChat = createServerFn({ method: "POST" })
@@ -22,6 +23,7 @@ export const coachChat = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
+  .middleware([requireSupabaseAuth])
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -48,6 +50,7 @@ export const coachReply = createServerFn({ method: "POST" })
       })
       .parse(d),
   )
+  .middleware([requireSupabaseAuth])
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   CHAT_SYSTEM,
   KIND_SYSTEMS,
@@ -15,7 +16,8 @@ import {
 } from "./tutor.server";
 
 export const teachTopic = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(4000) }).parse(d))
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ topic: z.string().min(1).max(4000) }))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -32,7 +34,8 @@ export const teachTopic = createServerFn({ method: "POST" })
   });
 
 export const practiceQuestions = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(4000) }).parse(d))
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ topic: z.string().min(1).max(4000) }))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -54,7 +57,8 @@ export const practiceQuestions = createServerFn({ method: "POST" })
   });
 
 export const generateQuiz = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ topic: z.string().min(1).max(4000) }).parse(d))
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ topic: z.string().min(1).max(4000) }))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -84,24 +88,30 @@ export const generateQuiz = createServerFn({ method: "POST" })
     } catch {
       /* fall through to empty */
     }
-    return { questions: [] as { question: string; options: string[]; correct: number; explanation: string }[] };
+    return {
+      questions: [] as {
+        question: string;
+        options: string[];
+        correct: number;
+        explanation: string;
+      }[],
+    };
   });
 
 export const chatTutor = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        messages: z
-          .array(
-            z.object({
-              role: z.enum(["user", "assistant", "system"]),
-              content: z.string().min(1).max(8000),
-            }),
-          )
-          .min(1)
-          .max(30),
-      })
-      .parse(d),
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      messages: z
+        .array(
+          z.object({
+            role: z.enum(["user", "assistant", "system"]),
+            content: z.string().min(1).max(8000),
+          }),
+        )
+        .min(1)
+        .max(30),
+    }),
   )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
@@ -119,13 +129,12 @@ export const chatTutor = createServerFn({ method: "POST" })
   });
 
 export const askTutor = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        kind: z.enum(["coding", "debug", "exam", "project", "flashcards"]),
-        prompt: z.string().min(1).max(4000),
-      })
-      .parse(d),
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      kind: z.enum(["coding", "debug", "exam", "project", "flashcards"]),
+      prompt: z.string().min(1).max(4000),
+    }),
   )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;

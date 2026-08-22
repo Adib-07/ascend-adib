@@ -501,6 +501,54 @@ export type Database = {
         }
         Relationships: []
       }
+      user_documents: {
+        Row: {
+          id: string
+          user_id: string
+          filename: string
+          storage_path: string
+          mime_type: string | null
+          size_bytes: number | null
+          document_type: string
+          subject: string | null
+          page_count: number | null
+          status: string
+          error_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          filename: string
+          storage_path: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          document_type?: string
+          subject?: string | null
+          page_count?: number | null
+          status?: string
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          filename?: string
+          storage_path?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          document_type?: string
+          subject?: string | null
+          page_count?: number | null
+          status?: string
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quiz_items: {
         Row: {
           answer: string
@@ -569,6 +617,7 @@ export type Database = {
           created_at: string
           done: boolean
           due_date: string | null
+          due_time: string | null
           id: string
           mit_slot: number | null
           priority: string
@@ -582,6 +631,7 @@ export type Database = {
           created_at?: string
           done?: boolean
           due_date?: string | null
+          due_time?: string | null
           id?: string
           mit_slot?: number | null
           priority?: string
@@ -595,6 +645,7 @@ export type Database = {
           created_at?: string
           done?: boolean
           due_date?: string | null
+          due_time?: string | null
           id?: string
           mit_slot?: number | null
           priority?: string

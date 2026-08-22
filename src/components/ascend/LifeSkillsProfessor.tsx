@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useServerFn } from "@tanstack/react-start";
 import { askProfessor, chatMentor } from "@/lib/life-skills.functions";
+import { mapAuthError } from "@/lib/auth-errors";
 import { ExternalLink, Send, Sparkles, BookOpen, RotateCcw } from "lucide-react";
 
 const SUBS = ["Home", "Learn", "Book Professor", "Business Professor", "Mentor", "Resources", "Memory", "Progress"] as const;
@@ -483,7 +484,7 @@ function LearnTab({ seed, onConsumed }: { seed: { topic: string; category?: stri
       const entry: HistoryEntry = { topic, category: cat || undefined, timestamp: Date.now() };
       saveLS("ascend_lifeskills_history", [entry, ...hist.filter((h) => h.topic !== topic)].slice(0, 50));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong");
+      setError(mapAuthError(e));
       toast.error("AI is unavailable right now. Please try again.");
     }
     finally { setLoading(false); }

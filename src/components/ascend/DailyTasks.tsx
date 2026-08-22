@@ -33,6 +33,23 @@ function fmtTime(ts: string | null | undefined) {
   return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
 
+// Overdue = past due date, or due today but the due time has already passed.
+// Deterministic (no AI) so it is cheap to compute on every render.
+function isOverdue(t: Task): boolean {
+  if (!t.due_date) return false;
+  const today = todayISO();
+  if (t.due_date < today) return true;
+  if (t.due_date > today) return false;
+  if (t.due_time) return new Date(t.due_time).getTime() < Date.now();
+  return false;
+}
+
+function fmtDue(t: Task): string | null {
+  if (!t.due_date) return null;
+  const dateLabel = isToday(t.due_date) ? "Today" : fmtShortDate(t.due_date);
+  return t.due_time ? `${dateLabel} · ${fmtTime(t.due_time)}` : dateLabel;
+}
+
 function priorityPill(p: string) {
   if (p === "High") return "bg-red-50 text-red-700 border-red-200";
   if (p === "Medium") return "bg-[var(--gold)]/10 text-[var(--gold)] border-[var(--gold)]/30";
@@ -88,7 +105,7 @@ export default function DailyTasks() {
     return active.filter((t) => {
       if (filter === "All") return true;
       if (filter === "Today") return !t.due_date || t.due_date === day;
-      if (filter === "Overdue") return t.due_date && t.due_date < day;
+      if (filter === "Overdue") return isOverdue(t);
       if (filter === "High") return t.priority === "High";
       return true;
     });
@@ -320,9 +337,9 @@ export default function DailyTasks() {
               {t.due_date && (
                 <span className={cn(
                   "text-[11px] font-medium whitespace-nowrap",
-                  isPast(t.due_date) && !t.done ? "text-red-600" : "text-muted-foreground",
+                  isOverdue(t) && !t.done ? "text-red-600" : "text-muted-foreground",
                 )}>
-                  {isToday(t.due_date) ? "Today" : fmtShortDate(t.due_date)}
+                  {fmtDue(t)}
                 </span>
               )}
               {t.reminder_time && !t.done && <span className="text-[11px] text-[var(--gold)]">⏰</span>}
@@ -430,6 +447,7 @@ function TaskDialog({
         priority: initial?.priority ?? "Medium",
         type: initial?.type ?? "Study",
         due_date: initial?.due_date ?? null,
+        due_time: initial?.due_time ?? null,
         mit_slot: initial?.mit_slot ?? null,
         reminder_time: initial?.reminder_time ?? null,
       });
@@ -509,6 +527,29 @@ function TaskDialog({
                 className="mt-1"
               />
             </div>
+            <div>
+              <Label className="text-xs">Due time (optional)</Label>
+              <Input
+                type="time"
+                value={form.due_time ? new Date(form.due_time).toISOString().slice(11, 16) : ""}
+                onChange={(e) => {
+                  const time = e.target.value; // "HH:mm"
+                  if (!time) {
+                    setForm({ ...form, due_time: null });
+                    return;
+                  }
+                  // Combine with the chosen due date (defaults to today) and
+                  // store as a timezone-safe timestamptz.
+                  const base = form.due_date ?? todayISO();
+                  const dt = new Date(`${base}T${time}:00`);
+                  setForm({ ...form, due_time: dt.toISOString() });
+                }}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">Notify me at</Label>
               <Input

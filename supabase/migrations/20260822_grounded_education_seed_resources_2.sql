@@ -1,0 +1,16 @@
+-- ASCEND — GROUNDED EDUCATION ENGINE V1 SEED (part 2/3): educational_resources (13-24)
+insert into public.educational_resources
+  (title, source, url, license, description, subject_domain, difficulty, learning_purpose, provenance)
+values
+  ('MDN Web Docs — HTML/CSS/JavaScript', 'Mozilla', 'https://developer.mozilla.org/', 'CC BY-SA 4.0', 'Reference and guides for web development.', 'HTML/CSS/JavaScript', 'beginner', 'Reference / official documentation', 'Mozilla'),
+  ('NumPy Documentation', 'NumPy', 'https://numpy.org/doc/stable/', 'BSD-3-Clause', 'Numerical computing in Python.', 'Data Science', 'intermediate', 'Reference / worked examples', 'NumPy contributors'),
+  ('Pandas Documentation', 'Pandas', 'https://pandas.pydata.org/docs/', 'BSD-3-Clause', 'Data analysis and DataFrames in Python.', 'Data Science', 'intermediate', 'Reference / worked examples', 'Pandas contributors'),
+  ('scikit-learn Documentation', 'scikit-learn', 'https://scikit-learn.org/stable/documentation.html', 'BSD-3-Clause', 'Machine learning algorithms and examples.', 'AI/ML', 'intermediate', 'Reference / worked examples', 'scikit-learn developers'),
+  ('PyTorch Documentation & Tutorials', 'PyTorch', 'https://pytorch.org/docs/stable/', 'BSD-3-Clause', 'Deep learning framework docs and tutorials.', 'AI/ML', 'advanced', 'Reference / hands-on', 'PyTorch (Meta)'),
+  ('TensorFlow Documentation', 'TensorFlow', 'https://www.tensorflow.org/api_docs', 'Apache-2.0', 'Machine learning / deep learning framework.', 'AI/ML', 'advanced', 'Reference / hands-on', 'Google'),
+  ('Wikipedia — Science & Mathematics', 'Wikimedia Foundation', 'https://en.wikipedia.org/wiki/Portal:Mathematics', 'CC BY-SA 4.0', 'Encyclopedic reference for concepts and history.', 'Mathematics', 'beginner', 'Reference / definitions', 'Wikimedia Foundation'),
+  ('Khan Academy — Algorithms', 'Khan Academy', 'https://www.khanacademy.org/computing/computer-science/algorithms', 'CC BY-NC-SA 3.0', 'Algorithms and data structures intuition.', 'Computer Science', 'intermediate', 'Simple explanation + intuition', 'Khan Academy'),
+  ('MIT OCW — Artificial Intelligence', 'MIT OpenCourseWare', 'https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-034-artificial-intelligence-fall-2010/', 'CC BY-NC-SA 4.0', 'Search, knowledge representation, learning.', 'AI/ML', 'advanced', 'Academic explanation', 'Massachusetts Institute of Technology'),
+  ('NPTEL — Machine Learning', 'NPTEL', 'https://nptel.ac.in/courses', 'Free for educational use (© IIT/NPTEL)', 'Foundations of machine learning.', 'AI/ML', 'advanced', 'Academic explanation', 'NPTEL, Indian Institutes of Technology'),
+  ('freeCodeCamp — Responsive Web Design', 'freeCodeCamp', 'https://www.freecodecamp.org/learn/2022/responsive-web-design/', 'CC BY-SA 4.0', 'HTML/CSS through projects.', 'HTML/CSS/JavaScript', 'beginner', 'Hands-on practice', 'freeCodeCamp'),
+  ('GeeksforGeeks — Data Structures', 'GeeksforGeeks', 'https://www.geeksforgeeks.org/data-structures/', 'Proprietary — free for personal/educational reading (© GeeksforGeeks)', 'Articles and examples on data structures and algorithms.', 'Computer Science', 'intermediate', 'Reference / worked examples', 'GeeksforGeeks');

@@ -89,20 +89,26 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       }
     );
 
-    const { data, error } = await supabase.auth.getClaims(token);
-    if (error || !data?.claims) {
+    // Verify the session token against the Supabase auth server. `getUser`
+    // validates the JWT remotely (no JWT secret required on the server) and is
+    // the recommended server-side verification. This avoids the fragile
+    // `getClaims` path that could surface "Invalid token" for otherwise valid
+    // sessions. Every authenticated call is re-validated here.
+    const { data, error } = await supabase.auth.getUser(token);
+    if (error || !data?.user) {
       throw new Error('Unauthorized: Invalid token');
     }
 
-    if (!data.claims.sub) {
+    const userId = data.user.id;
+    if (!userId) {
       throw new Error('Unauthorized: No user ID found in token');
     }
 
     return next({
       context: {
         supabase,
-        userId: data.claims.sub,
-        claims: data.claims,
+        userId,
+        claims: data.user,
       },
     });
   },
