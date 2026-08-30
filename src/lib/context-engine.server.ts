@@ -20,6 +20,8 @@ import {
   type QueryCategory,
 } from "./context-engine-core";
 
+export type { ContextItem, QueryCategory };
+
 // Sources whose educational resources are considered "official documentation"
 // (vendor-authored reference material) rather than curated third-party OER.
 const OFFICIAL_SOURCES = new Set([
@@ -448,4 +450,176 @@ export async function askWithContextImpl({
   if (!text?.trim()) throw new Error("Empty response from AI");
 
   return { text, sources: items, category };
+}
+
+// ============================================================================
+// NEW: Student Profile & Revision Retrieval (for Unified Tutor)
+// ============================================================================
+
+export interface StudentProfile {
+  topics: any[];
+  exams: any[];
+  goals: any[];
+  recentErrors: any[];
+  dsaProgress: any[];
+  dueRevisions?: RevisionItem[];
+  weakAreas?: WeakArea[];
+}
+
+export interface RevisionItem {
+  id: string;
+  source_type: string;
+  source_id: string;
+  source_title: string;
+  next_review_date: string;
+  priority_boost: number;
+}
+
+export interface WeakArea {
+  type: string;
+  concept: string;
+  frequency: number;
+  source: string;
+}
+
+export async function getStudentProfile(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<StudentProfile> {
+  const [topics, exams, goals, recentErrors, dsaProgress] = await Promise.all([
+    supabase
+      .from("learn_topics")
+      .select("*")
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false })
+      .limit(50),
+    supabase
+      .from("exams")
+      .select("*")
+      .eq("user_id", userId)
+      .order("exam_date", { ascending: true })
+      .limit(10),
+    supabase
+      .from("goals")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("done", false)
+      .limit(10),
+    supabase
+      .from("error_log")
+      .select("*")
+      .eq("user_id", userId)
+      .order("frequency", { ascending: false })
+      .limit(20),
+    supabase
+      .from("dsa_attempts")
+      .select("*")
+      .eq("user_id", userId)
+      .order("attempted_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  return {
+    topics: (topics.data ?? []) as any[],
+    exams: (exams.data ?? []) as any[],
+    goals: (goals.data ?? []) as any[],
+    recentErrors: (recentErrors.data ?? []) as any[],
+    dsaProgress: (dsaProgress.data ?? []) as any[],
+  };
+}
+
+export async function getDueRevisions(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<RevisionItem[]> {
+  const today = new Date().toISOString().split("T")[0];
+  const { data, error } = await supabase
+    .from("revision_schedule")
+    .select("*")
+    .eq("user_id", userId)
+    .lte("next_review_date", today)
+    .order("priority_boost", { ascending: false })
+    .order("next_review_date", { ascending: true })
+    .limit(20);
+
+  if (error || !data) return [];
+  return data as unknown as RevisionItem[];
+}
+
+export async function getWeakAreas(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<WeakArea[]> {
+  const weakAreas: WeakArea[] = [];
+
+  // From error_log (frequency > 1)
+  const { data: errors } = await supabase
+    .from("error_log")
+    .select("error_type, concept, frequency, context")
+    .eq("user_id", userId)
+    .gt("frequency", 1)
+    .order("frequency", { ascending: false })
+    .limit(10);
+
+  for (const e of (errors ?? []) as any[]) {
+    weakAreas.push({
+      type: e.error_type,
+      concept: e.concept,
+      frequency: e.frequency,
+      source: `error_log (${e.context ?? 'unknown'})`,
+    });
+  }
+
+  // From learn_topics (mastery < 3)
+  const { data: weakTopics } = await supabase
+    .from("learn_topics")
+    .select("topic, language, mastery_level")
+    .eq("user_id", userId)
+    .lt("mastery_level", 3)
+    .gt("progress", 0)
+    .order("mastery_level", { ascending: true })
+    .limit(10);
+
+  for (const t of (weakTopics ?? []) as any[]) {
+    weakAreas.push({
+      type: "concept",
+      concept: t.topic,
+      frequency: 5 - (t.mastery_level ?? 0),
+      source: `learn_topic (${t.language ?? 'N/A'}, mastery ${t.mastery_level ?? 0}/5)`,
+    });
+  }
+
+  // From dsa_attempts (mastery < 3)
+  const { data: weakDsa } = await supabase
+    .from("dsa_attempts")
+    .select("pattern, mastery_level")
+    .eq("user_id", userId)
+    .lt("mastery_level", 3)
+    .gt("mastery_level", 0)
+    .order("mastery_level", { ascending: true })
+    .limit(10);
+
+  for (const d of (weakDsa ?? []) as any[]) {
+    if (d.pattern) {
+      weakAreas.push({
+        type: "pattern",
+        concept: d.pattern,
+        frequency: 5 - (d.mastery_level ?? 0),
+        source: `dsa_attempt (mastery ${d.mastery_level ?? 0}/5)`,
+      });
+    }
+  }
+
+  // Deduplicate by concept, keep highest frequency
+  const deduped = new Map<string, WeakArea>();
+  for (const w of weakAreas) {
+    const existing = deduped.get(w.concept);
+    if (!existing || w.frequency > existing.frequency) {
+      deduped.set(w.concept, w);
+    }
+  }
+
+  return Array.from(deduped.values())
+    .sort((a, b) => b.frequency - a.frequency)
+    .slice(0, 15);
 }

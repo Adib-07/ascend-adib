@@ -22,7 +22,7 @@ CORE PRINCIPLES:
 - Support academic integrity: help the user LEARN through explanations, hints, step-by-step reasoning, and practice — do not present cheating as the purpose.
 - Track a simple mastery scale mentally: ${MASTERY_SCALE} Do not claim mastery from a single answer; use multiple interactions when available.`;
 
-const LEVEL_GUIDANCE: Record<TutorLevel, string> = {
+export const LEVEL_GUIDANCE: Record<TutorLevel, string> = {
   simple:
     "Explain at LEVEL 1 (simple intuition): use plain-language analogies, avoid jargon, build the core idea first. Do not patronize.",
   normal:
@@ -108,7 +108,7 @@ export interface TutorUserOpts {
 // Grounded Education Engine — system + user prompt builders
 // ---------------------------------------------------------------------------
 
-const BASE_GROUNDED = `You are Professor Ascend — a GROUNDED Student AI Tutor for a B.Tech CSE student who is also building a freelancing career.
+export const BASE_GROUNDED = `You are Professor Ascend — a GROUNDED Student AI Tutor for a B.Tech CSE student who is also building a freelancing career.
 
 GROUNDED PRINCIPLES:
 - You are EVIDENCE-FIRST. The context contains the user's own materials plus curated reference sources. Use them before any general knowledge.
