@@ -6,24 +6,22 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { COACH_SYSTEM, MODEL } from "./english-coach.server";
 
 export const coachChat = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        messages: z
-          .array(
-            z.object({
-              role: z.enum(["user", "assistant"]),
-              content: z.string().min(1).max(8000),
-            }),
-          )
-          .min(1)
-          .max(80),
-        sessionDay: z.number().optional(),
-        mode: z.string().max(4000).optional(),
-      })
-      .parse(d),
-  )
   .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      messages: z
+        .array(
+          z.object({
+            role: z.enum(["user", "assistant"]),
+            content: z.string().min(1).max(8000),
+          }),
+        )
+        .min(1)
+        .max(80),
+      sessionDay: z.number().optional(),
+      mode: z.string().max(4000).optional(),
+    }),
+  )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -42,15 +40,13 @@ export const coachChat = createServerFn({ method: "POST" })
   });
 
 export const coachReply = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z
-      .object({
-        kind: z.enum(["speaking", "interview", "general"]),
-        prompt: z.string().min(1).max(6000),
-      })
-      .parse(d),
-  )
   .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      kind: z.enum(["speaking", "interview", "general"]),
+      prompt: z.string().min(1).max(6000),
+    }),
+  )
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
