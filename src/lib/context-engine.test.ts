@@ -211,7 +211,7 @@ describe("retrieveDocumentChunks authorization", () => {
   it("scopes the query to the authenticated userId (no client user_id trust)", () => {
     const capture: Record<string, unknown> = {};
     const supabase = mockSupabase(
-      sampleChunks as unknown[],
+      authSampleChunks as unknown[],
       capture,
     ) as unknown as Parameters<typeof retrieveDocumentChunks>[0];
 

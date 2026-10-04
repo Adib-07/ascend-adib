@@ -29,11 +29,11 @@ RULES:
 
 type SupabaseClient = import("@supabase/supabase-js").SupabaseClient;
 
-function decodeText(buffer: ArrayBuffer): string {
+export function decodeText(buffer: ArrayBuffer): string {
   return new TextDecoder("utf-8").decode(buffer);
 }
 
-async function extractFromBuffer(
+export async function extractFromBuffer(
   buffer: ArrayBuffer,
   mimeType: string | null,
 ): Promise<{ pages: { page: number; text: string }[]; pageCount: number | null }> {
@@ -56,7 +56,7 @@ async function extractFromBuffer(
 
 const HEADING_RE = /^(chapter|section|unit|module|part|lesson|topic)\b/i;
 
-function isHeading(paragraph: string): boolean {
+export function isHeading(paragraph: string): boolean {
   const t = paragraph.trim();
   if (t.length === 0 || t.length > 90) return false;
   if (t.endsWith(".") || t.endsWith("?") || t.endsWith("!")) return false;
@@ -66,7 +66,7 @@ function isHeading(paragraph: string): boolean {
   return false;
 }
 
-function splitParagraphs(text: string): string[] {
+export function splitParagraphs(text: string): string[] {
   return text
     .split(/\n\s*\n+/)
     .map((p) => p.replace(/\s+/g, " ").trim())

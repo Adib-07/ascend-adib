@@ -183,10 +183,7 @@ export default function TodayView() {
   // Greeting based on time
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-const userName = "User";
-}
-
-  const todayStr = format(new Date(), "EEEE, MMMM d");
+  const userName = "User";
 
   return (
     <div className="h-full overflow-auto p-4 md:p-6 space-y-6">
@@ -512,8 +509,8 @@ function MetricCard({ title, value, subtitle, icon, trend, trendColor }: {
             {icon}
           </div>
         </div>
-      </Card>
-    );
+      </CardContent>
+    </Card>
   );
 }
 

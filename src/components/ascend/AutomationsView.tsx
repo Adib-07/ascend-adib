@@ -3,7 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { listAutomationRules, executeManualAutomation, evaluateAutomationRule } from "@/lib/automation.functions";
+import { listAutomationRules } from "@/lib/automation.functions";
+import { executeManualAutomation, evaluateAutomationRule } from "@/lib/automation.execution.functions";
 import { Plus, Play, Eye, Zap, Trash2 } from "lucide-react";
 
 export default function AutomationsView() {

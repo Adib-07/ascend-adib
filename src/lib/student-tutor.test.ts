@@ -40,8 +40,15 @@ function mockSupabase(rowsByTable: Record<string, unknown[]>, capture: Record<st
     },
     or: () => builder,
     in: () => builder,
+    order: () => builder,
+    gt: () => builder,
+    gte: () => builder,
+    lt: () => builder,
+    lte: () => builder,
     limit: () =>
       Promise.resolve({ data: rowsByTable[capture.table as string] ?? [], error: null }),
+    maybeSingle: () =>
+      Promise.resolve({ data: rowsByTable[capture.table as string]?.[0] ?? null, error: null }),
   };
   return {
     from: (table: string) => {

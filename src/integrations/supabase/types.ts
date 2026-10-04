@@ -835,62 +835,6 @@ export type Database = {
           },
         ]
       },
-      user_documents: {
-        Row: {
-          id: string
-          user_id: string
-          filename: string
-          storage_path: string
-          mime_type: string | null
-          size_bytes: number | null
-          document_type: string
-          subject: string | null
-          page_count: number | null
-          status: string
-          error_message: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          filename: string
-          storage_path: string
-          mime_type?: string | null
-          size_bytes?: number | null
-          document_type?: string
-          subject?: string | null
-          page_count?: number | null
-          status?: string
-          error_message?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          filename?: string
-          storage_path?: string
-          mime_type?: string | null
-          size_bytes?: number | null
-          document_type?: string
-          subject?: string | null
-          page_count?: number | null
-          status?: string
-          error_message?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_documents_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "auth.users"
-            referencedColumns: ["id"]
-          },
-        ]
-      },
       document_chunks: {
         Row: {
           id: string

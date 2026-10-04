@@ -274,7 +274,7 @@ ${category ? `- Focus area for this query: ${category}.` : ""}
 
 export function buildUserPrompt(query: string, items: ContextItem[]): string {
   if (items.length === 0) {
-    return `The user has no relevant data for this question. Answer using your general knowledge, but clearly state that the answer is NOT based on the user's own materials.
+    return `The user has no relevant uploaded documents or stored data for this question. Answer using your general knowledge, but clearly state that the answer is NOT based on the user's own materials.
 
 QUESTION: ${query}`;
   }
