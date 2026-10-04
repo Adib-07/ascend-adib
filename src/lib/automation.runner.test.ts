@@ -18,7 +18,7 @@ import {
 
 function mockSupabase(
   responses: Record<string, { data: unknown; error: unknown }>,
-  capture: Record<string, unknown>
+  capture: Record<string, unknown>,
 ) {
   const builder: Record<string, (...args: unknown[]) => unknown> = {
     select: () => builder,
@@ -34,8 +34,7 @@ function mockSupabase(
     in: () => builder,
     gte: () => builder,
     lte: () => builder,
-    limit: () =>
-      Promise.resolve({ data: responses[builder.table as string] ?? [], error: null }),
+    limit: () => Promise.resolve({ data: responses[builder.table as string] ?? [], error: null }),
     maybeSingle: () =>
       Promise.resolve({ data: responses[builder.table as string]?.[0] ?? null, error: null }),
     single: () =>
@@ -171,8 +170,8 @@ describe("automation runner core", () => {
       const mock = mockSupabase({ automation_logs: [{ id: "log-1" }] }, {});
       const result = await checkIdempotency(mock as any, "rule-1", "exec-1");
       expect(result).toBe(true);
-});
-});
+    });
+  });
 });
 
 describe("automation runner integration", () => {
@@ -200,18 +199,24 @@ describe("automation runner integration", () => {
 
   describe("runAutomation", () => {
     it("returns not found for missing rule", async () => {
-      const mock = mockSupabase({
-        automation_rules: [],
-      }, {});
+      const mock = mockSupabase(
+        {
+          automation_rules: [],
+        },
+        {},
+      );
       const result = await runAutomation(mock as any, "user-1", "nonexistent-rule", {});
       expect(result.success).toBe(false);
       expect(result.error).toBe("Rule not found");
     });
 
     it("returns disabled for disabled rule", async () => {
-      const mock = mockSupabase({
-        automation_rules: [{ id: "rule-1", enabled: false, user_id: "user-1" }],
-      }, {});
+      const mock = mockSupabase(
+        {
+          automation_rules: [{ id: "rule-1", enabled: false, user_id: "user-1" }],
+        },
+        {},
+      );
       const result = await runAutomation(mock as any, "user-1", "rule-1", {});
       expect(result.success).toBe(false);
       expect(result.error).toBe("Rule disabled");

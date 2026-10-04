@@ -65,15 +65,54 @@ async function fetchTodayData(): Promise<TodayData> {
     intentionRes,
     examsRes,
   ] = await Promise.all([
-    supabase.from("tasks").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("habits").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("habit_logs").select("*").eq("user_id", userId).gte("day", weekStart).lte("day", weekEnd),
-    supabase.from("goals").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("notes").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(10),
-    supabase.from("academic_projects").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("work_projects").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("daily_intentions").select("*").eq("user_id", userId).eq("day", today).maybeSingle(),
-    supabase.from("exams").select("*").eq("user_id", userId).order("exam_date", { ascending: true }),
+    supabase
+      .from("tasks")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("habits")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("habit_logs")
+      .select("*")
+      .eq("user_id", userId)
+      .gte("day", weekStart)
+      .lte("day", weekEnd),
+    supabase
+      .from("goals")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("notes")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(10),
+    supabase
+      .from("academic_projects")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("work_projects")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("daily_intentions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("day", today)
+      .maybeSingle(),
+    supabase
+      .from("exams")
+      .select("*")
+      .eq("user_id", userId)
+      .order("exam_date", { ascending: true }),
   ]);
 
   const tasks = (tasksRes.data ?? []) as Task[];
@@ -86,48 +125,62 @@ async function fetchTodayData(): Promise<TodayData> {
   const intention = intentionRes.data as Intention | null;
   const exams = (examsRes.data ?? []) as Exam[];
 
-  const overdueTasks = tasks.filter(t => !t.done && t.due_date && new Date(t.due_date) < new Date(today));
-  const dueTodayTasks = tasks.filter(t => !t.done && t.due_date === today);
+  const overdueTasks = tasks.filter(
+    (t) => !t.done && t.due_date && new Date(t.due_date) < new Date(today),
+  );
+  const dueTodayTasks = tasks.filter((t) => !t.done && t.due_date === today);
 
   const activeProjects = [
-    ...academicProjects.filter(p => p.status !== "Done" && p.status !== "Completed"),
-    ...workProjects.filter(p => p.status !== "Done" && p.status !== "Completed"),
+    ...academicProjects.filter((p) => p.status !== "Done" && p.status !== "Completed"),
+    ...workProjects.filter((p) => p.status !== "Done" && p.status !== "Completed"),
   ];
 
   const upcomingDeadlines = [
-    ...tasks.filter(t => t.due_date && new Date(t.due_date) >= new Date(today)).map(t => ({
-      type: "task",
-      name: t.title,
-      date: t.due_date!,
-      id: t.id,
-    })),
-    ...goals.filter(g => g.deadline && new Date(g.deadline) >= new Date(today)).map(g => ({
-      type: "goal",
-      name: g.text,
-      date: g.deadline!,
-      id: g.id,
-    })),
-    ...academicProjects.filter(p => p.deadline && new Date(p.deadline) >= new Date(today)).map(p => ({
-      type: "academic_project",
-      name: p.name,
-      date: p.deadline!,
-      id: p.id,
-    })),
-    ...workProjects.filter(p => p.deadline && new Date(p.deadline) >= new Date(today)).map(p => ({
-      type: "work_project",
-      name: p.name,
-      date: p.deadline!,
-      id: p.id,
-    })),
-    ...exams.filter(e => e.exam_date && new Date(e.exam_date) >= new Date(today)).map(e => ({
-      type: "exam",
-      name: e.name,
-      date: e.exam_date!,
-      id: e.id,
-    })),
-  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).slice(0, 10);
+    ...tasks
+      .filter((t) => t.due_date && new Date(t.due_date) >= new Date(today))
+      .map((t) => ({
+        type: "task",
+        name: t.title,
+        date: t.due_date!,
+        id: t.id,
+      })),
+    ...goals
+      .filter((g) => g.deadline && new Date(g.deadline) >= new Date(today))
+      .map((g) => ({
+        type: "goal",
+        name: g.text,
+        date: g.deadline!,
+        id: g.id,
+      })),
+    ...academicProjects
+      .filter((p) => p.deadline && new Date(p.deadline) >= new Date(today))
+      .map((p) => ({
+        type: "academic_project",
+        name: p.name,
+        date: p.deadline!,
+        id: p.id,
+      })),
+    ...workProjects
+      .filter((p) => p.deadline && new Date(p.deadline) >= new Date(today))
+      .map((p) => ({
+        type: "work_project",
+        name: p.name,
+        date: p.deadline!,
+        id: p.id,
+      })),
+    ...exams
+      .filter((e) => e.exam_date && new Date(e.exam_date) >= new Date(today))
+      .map((e) => ({
+        type: "exam",
+        name: e.name,
+        date: e.exam_date!,
+        id: e.id,
+      })),
+  ]
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 10);
 
-  const totalCompletions = habitLogs.filter(l => l.done).length;
+  const totalCompletions = habitLogs.filter((l) => l.done).length;
   const currentStreak = habits.reduce((max, h) => Math.max(max, h.streak ?? 0), 0);
   const longestStreak = habits.reduce((max, h) => Math.max(max, h.streak ?? 0), 0);
 

@@ -79,7 +79,11 @@ describe("Work AI prompt builders", () => {
   });
 });
 
-function mockSupabase(counts: Record<string, number>, finance: { amount: number }[], capture: Record<string, unknown>) {
+function mockSupabase(
+  counts: Record<string, number>,
+  finance: { amount: number }[],
+  capture: Record<string, unknown>,
+) {
   const from = (table: string) => {
     capture.table = table;
     const b: Record<string, unknown> = {

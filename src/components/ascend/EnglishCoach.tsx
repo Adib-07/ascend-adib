@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Card, SectionHeader, EmptyState, Badge, ProgressBar, Stat, formatDate, AIThinking } from "./ui-bits";
+import {
+  Card,
+  SectionHeader,
+  EmptyState,
+  Badge,
+  ProgressBar,
+  Stat,
+  formatDate,
+  AIThinking,
+} from "./ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +18,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { coachChat, coachReply } from "@/lib/english-coach.functions";
 import { Send, RotateCcw, X, ChevronDown, Play, Mic, Square, AlertTriangle } from "lucide-react";
 
-const SUBS = ["🏠 Home", "📚 Lesson", "🎭 Roleplay", "🎤 Speaking", "💼 Interview", "📊 Progress"] as const;
+const SUBS = [
+  "🏠 Home",
+  "📚 Lesson",
+  "🎭 Roleplay",
+  "🎤 Speaking",
+  "💼 Interview",
+  "📊 Progress",
+] as const;
 type Sub = (typeof SUBS)[number];
 
 type ChatMsg = { role: "user" | "assistant"; content: string };
@@ -41,26 +57,129 @@ const DAILY_TIPS = [
 ];
 
 const SCENARIOS = [
-  { emoji: "💼", title: "Job Interview", desc: "Answer HR and technical questions confidently", level: "Intermediate", prompt: "Let's do a job interview roleplay. You're interviewing for a Software Engineer / AI Engineer role at a top tech company. I'll be the interviewer. Ready? Let's begin. Tell me about yourself." },
-  { emoji: "🤝", title: "Networking Event", desc: "Meet professionals and start conversations", level: "Elementary", prompt: "We're at a tech networking event. I'll be someone you just met. Start the conversation and introduce yourself naturally." },
-  { emoji: "📊", title: "Project Presentation", desc: "Present your work clearly and confidently", level: "Intermediate", prompt: "Present your latest project to me. I'm a potential employer or investor. You have 60 seconds. Begin." },
-  { emoji: "☕", title: "Coffee Chat", desc: "Casual professional conversation", level: "Elementary", prompt: "We're having a coffee chat. I'm a senior engineer at a company you'd love to work at. Have a natural conversation — ask me questions, share about yourself." },
-  { emoji: "📞", title: "Client Call", desc: "Handle a professional phone conversation", level: "Upper Intermediate", prompt: "I'm a client calling about a project. Handle this professional call — greet me, understand my needs, and respond professionally." },
-  { emoji: "🏢", title: "Team Meeting", desc: "Contribute confidently in a meeting", level: "Intermediate", prompt: "We're in a team meeting. I'll ask for your opinion on a project decision. Share your thoughts clearly and professionally." },
-  { emoji: "🎓", title: "College Viva", desc: "Answer professor questions confidently", level: "Elementary", prompt: "I'm your professor. This is a viva exam. I'll ask you questions about your project. Answer confidently and clearly. First question: Tell me about your final year project." },
-  { emoji: "🚀", title: "Startup Pitch", desc: "Pitch your idea to an investor", level: "Advanced", prompt: "Pitch me your startup idea in 90 seconds. I'm an investor. Make me want to invest. Begin." },
-  { emoji: "🤝", title: "Salary Negotiation", desc: "Negotiate your package confidently", level: "Upper Intermediate", prompt: "You've received a job offer. I'm the HR manager. Negotiate your salary professionally. The offered package is ₹8 LPA. Begin." },
+  {
+    emoji: "💼",
+    title: "Job Interview",
+    desc: "Answer HR and technical questions confidently",
+    level: "Intermediate",
+    prompt:
+      "Let's do a job interview roleplay. You're interviewing for a Software Engineer / AI Engineer role at a top tech company. I'll be the interviewer. Ready? Let's begin. Tell me about yourself.",
+  },
+  {
+    emoji: "🤝",
+    title: "Networking Event",
+    desc: "Meet professionals and start conversations",
+    level: "Elementary",
+    prompt:
+      "We're at a tech networking event. I'll be someone you just met. Start the conversation and introduce yourself naturally.",
+  },
+  {
+    emoji: "📊",
+    title: "Project Presentation",
+    desc: "Present your work clearly and confidently",
+    level: "Intermediate",
+    prompt:
+      "Present your latest project to me. I'm a potential employer or investor. You have 60 seconds. Begin.",
+  },
+  {
+    emoji: "☕",
+    title: "Coffee Chat",
+    desc: "Casual professional conversation",
+    level: "Elementary",
+    prompt:
+      "We're having a coffee chat. I'm a senior engineer at a company you'd love to work at. Have a natural conversation — ask me questions, share about yourself.",
+  },
+  {
+    emoji: "📞",
+    title: "Client Call",
+    desc: "Handle a professional phone conversation",
+    level: "Upper Intermediate",
+    prompt:
+      "I'm a client calling about a project. Handle this professional call — greet me, understand my needs, and respond professionally.",
+  },
+  {
+    emoji: "🏢",
+    title: "Team Meeting",
+    desc: "Contribute confidently in a meeting",
+    level: "Intermediate",
+    prompt:
+      "We're in a team meeting. I'll ask for your opinion on a project decision. Share your thoughts clearly and professionally.",
+  },
+  {
+    emoji: "🎓",
+    title: "College Viva",
+    desc: "Answer professor questions confidently",
+    level: "Elementary",
+    prompt:
+      "I'm your professor. This is a viva exam. I'll ask you questions about your project. Answer confidently and clearly. First question: Tell me about your final year project.",
+  },
+  {
+    emoji: "🚀",
+    title: "Startup Pitch",
+    desc: "Pitch your idea to an investor",
+    level: "Advanced",
+    prompt:
+      "Pitch me your startup idea in 90 seconds. I'm an investor. Make me want to invest. Begin.",
+  },
+  {
+    emoji: "🤝",
+    title: "Salary Negotiation",
+    desc: "Negotiate your package confidently",
+    level: "Upper Intermediate",
+    prompt:
+      "You've received a job offer. I'm the HR manager. Negotiate your salary professionally. The offered package is ₹8 LPA. Begin.",
+  },
 ];
 
 const SPEAKING_CHALLENGES = [
-  { emoji: "🏙", topic: "Describe your hometown", time: "60 sec", tip: "Include: location, size, what it's known for, your favourite thing about it" },
-  { emoji: "🤖", topic: "Talk about AI and its future", time: "90 sec", tip: "Include: what AI is, how it's changing things, your opinion" },
-  { emoji: "🎯", topic: "What are your career goals?", time: "60 sec", tip: "Include: short-term, long-term, why this field, what you're doing about it" },
-  { emoji: "📱", topic: "Your favourite app and why", time: "60 sec", tip: "Include: what it does, why you use it, how it helps you" },
-  { emoji: "💡", topic: "A problem you solved recently", time: "90 sec", tip: "Include: the problem, your approach, the result, what you learned" },
-  { emoji: "🌍", topic: "Talk about a person who inspires you", time: "60 sec", tip: "Include: who, why they inspire you, what you've learned from them" },
-  { emoji: "🚀", topic: "Describe your dream job", time: "60 sec", tip: "Include: role, company type, what you'd do, why it excites you" },
-  { emoji: "📚", topic: "How do you learn new things?", time: "60 sec", tip: "Include: your method, tools you use, example of something you recently learned" },
+  {
+    emoji: "🏙",
+    topic: "Describe your hometown",
+    time: "60 sec",
+    tip: "Include: location, size, what it's known for, your favourite thing about it",
+  },
+  {
+    emoji: "🤖",
+    topic: "Talk about AI and its future",
+    time: "90 sec",
+    tip: "Include: what AI is, how it's changing things, your opinion",
+  },
+  {
+    emoji: "🎯",
+    topic: "What are your career goals?",
+    time: "60 sec",
+    tip: "Include: short-term, long-term, why this field, what you're doing about it",
+  },
+  {
+    emoji: "📱",
+    topic: "Your favourite app and why",
+    time: "60 sec",
+    tip: "Include: what it does, why you use it, how it helps you",
+  },
+  {
+    emoji: "💡",
+    topic: "A problem you solved recently",
+    time: "90 sec",
+    tip: "Include: the problem, your approach, the result, what you learned",
+  },
+  {
+    emoji: "🌍",
+    topic: "Talk about a person who inspires you",
+    time: "60 sec",
+    tip: "Include: who, why they inspire you, what you've learned from them",
+  },
+  {
+    emoji: "🚀",
+    topic: "Describe your dream job",
+    time: "60 sec",
+    tip: "Include: role, company type, what you'd do, why it excites you",
+  },
+  {
+    emoji: "📚",
+    topic: "How do you learn new things?",
+    time: "60 sec",
+    tip: "Include: your method, tools you use, example of something you recently learned",
+  },
 ];
 
 const INTERVIEW_QUESTIONS: Record<string, string[]> = {
@@ -96,14 +215,28 @@ const INTERVIEW_QUESTIONS: Record<string, string[]> = {
 };
 
 const SKILLS = [
-  "Grammar", "Vocabulary", "Fluency", "Confidence",
-  "Communication", "Professional English",
-  "Interview Skills", "Presentation Skills",
-  "Public Speaking", "Thinking in English",
-  "Pronunciation", "Naturalness",
+  "Grammar",
+  "Vocabulary",
+  "Fluency",
+  "Confidence",
+  "Communication",
+  "Professional English",
+  "Interview Skills",
+  "Presentation Skills",
+  "Public Speaking",
+  "Thinking in English",
+  "Pronunciation",
+  "Naturalness",
 ];
 
-const LEVEL_NAMES = ["Beginner", "Elementary", "Intermediate", "Upper Intermediate", "Advanced", "Professional"];
+const LEVEL_NAMES = [
+  "Beginner",
+  "Elementary",
+  "Intermediate",
+  "Upper Intermediate",
+  "Advanced",
+  "Professional",
+];
 
 type Stats = {
   level: number;
@@ -130,21 +263,80 @@ const DEFAULT_STATS: Stats = {
 };
 
 const ACHIEVEMENTS = [
-  { id: "first", icon: "🎯", title: "First Step", desc: "Complete your first lesson", unlock: (s: Stats) => s.totalSessions >= 1 },
-  { id: "week", icon: "🔥", title: "Week Warrior", desc: "7 sessions completed", unlock: (s: Stats) => s.totalSessions >= 7 },
-  { id: "roleplay5", icon: "🎭", title: "Actor", desc: "Complete 5 roleplays", unlock: (s: Stats) => s.roleplays >= 5 },
-  { id: "speaking10", icon: "🎤", title: "Speaker", desc: "10 speaking challenges done", unlock: (s: Stats) => s.speakingChallenges >= 10 },
-  { id: "interview", icon: "💼", title: "Interview Ready", desc: "Practice 20 interview questions", unlock: (s: Stats) => s.interviewQuestions >= 20 },
-  { id: "streak14", icon: "⚡", title: "Consistent", desc: "14 day learning streak", unlock: (s: Stats) => s.streak >= 14 },
-  { id: "level3", icon: "📈", title: "Intermediate", desc: "Reach Intermediate level", unlock: (s: Stats) => s.level >= 3 },
-  { id: "level5", icon: "🏆", title: "Advanced Speaker", desc: "Reach Advanced level", unlock: (s: Stats) => s.level >= 5 },
+  {
+    id: "first",
+    icon: "🎯",
+    title: "First Step",
+    desc: "Complete your first lesson",
+    unlock: (s: Stats) => s.totalSessions >= 1,
+  },
+  {
+    id: "week",
+    icon: "🔥",
+    title: "Week Warrior",
+    desc: "7 sessions completed",
+    unlock: (s: Stats) => s.totalSessions >= 7,
+  },
+  {
+    id: "roleplay5",
+    icon: "🎭",
+    title: "Actor",
+    desc: "Complete 5 roleplays",
+    unlock: (s: Stats) => s.roleplays >= 5,
+  },
+  {
+    id: "speaking10",
+    icon: "🎤",
+    title: "Speaker",
+    desc: "10 speaking challenges done",
+    unlock: (s: Stats) => s.speakingChallenges >= 10,
+  },
+  {
+    id: "interview",
+    icon: "💼",
+    title: "Interview Ready",
+    desc: "Practice 20 interview questions",
+    unlock: (s: Stats) => s.interviewQuestions >= 20,
+  },
+  {
+    id: "streak14",
+    icon: "⚡",
+    title: "Consistent",
+    desc: "14 day learning streak",
+    unlock: (s: Stats) => s.streak >= 14,
+  },
+  {
+    id: "level3",
+    icon: "📈",
+    title: "Intermediate",
+    desc: "Reach Intermediate level",
+    unlock: (s: Stats) => s.level >= 3,
+  },
+  {
+    id: "level5",
+    icon: "🏆",
+    title: "Advanced Speaker",
+    desc: "Reach Advanced level",
+    unlock: (s: Stats) => s.level >= 5,
+  },
 ];
 
 /* ---------- storage helpers ---------- */
 function loadLS<T>(key: string, fallback: T): T {
-  try { const v = localStorage.getItem(key); return v ? (JSON.parse(v) as T) : fallback; } catch { return fallback; }
+  try {
+    const v = localStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : fallback;
+  } catch {
+    return fallback;
+  }
 }
-function saveLS<T>(key: string, val: T) { try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* noop */ } }
+function saveLS<T>(key: string, val: T) {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch {
+    /* noop */
+  }
+}
 
 /* ---------- reset (English Coach data only) ---------- */
 function resetEnglishCoach() {
@@ -163,11 +355,24 @@ function resetEnglishCoach() {
     });
     ENGLISH_KEYS.forEach((key) => localStorage.removeItem(key));
     localStorage.setItem("ascend_english_stats", JSON.stringify(DEFAULT_STATS));
-    localStorage.setItem("ascend_english_day", JSON.stringify({ day: 1, lastDate: new Date().toDateString() }));
-  } catch { /* noop */ }
+    localStorage.setItem(
+      "ascend_english_day",
+      JSON.stringify({ day: 1, lastDate: new Date().toDateString() }),
+    );
+  } catch {
+    /* noop */
+  }
 }
 
-function ResetDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: () => void; onConfirm: () => void }) {
+function ResetDialog({
+  open,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
   if (!open) return null;
   return (
     <div
@@ -176,16 +381,25 @@ function ResetDialog({ open, onCancel, onConfirm }: { open: boolean; onCancel: (
       role="dialog"
       aria-modal="true"
     >
-      <div className="bg-[#F5F2EB] rounded-2xl shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="bg-[#F5F2EB] rounded-2xl shadow-xl max-w-md w-full p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
           <AlertTriangle className="w-6 h-6 text-red-500" />
         </div>
-        <h2 className="font-serif text-xl text-center text-[#2B2B2B] mb-2">Start Again from Day 1?</h2>
+        <h2 className="font-serif text-xl text-center text-[#2B2B2B] mb-2">
+          Start Again from Day 1?
+        </h2>
         <p className="text-sm text-[#6B6A67] text-center leading-relaxed mb-6">
-          Are you sure you want to restart your English Speaking journey from Day 1? Your current progress, chat
-          history, speaking records, vocabulary bank, and session data will all be permanently reset.
-          <br /><br />
-          <span className="text-[#2F4F3E] font-medium">This will not affect any other part of Ascend.</span>
+          Are you sure you want to restart your English Speaking journey from Day 1? Your current
+          progress, chat history, speaking records, vocabulary bank, and session data will all be
+          permanently reset.
+          <br />
+          <br />
+          <span className="text-[#2F4F3E] font-medium">
+            This will not affect any other part of Ascend.
+          </span>
         </p>
         <div className="flex gap-3">
           <button
@@ -232,13 +446,18 @@ function bumpStats(patch: (s: Stats) => Stats) {
 
 function getOrInitDay(): number {
   try {
-    const stored = JSON.parse(localStorage.getItem("ascend_english_day") ?? "{}") as { day?: number; lastDate?: string };
+    const stored = JSON.parse(localStorage.getItem("ascend_english_day") ?? "{}") as {
+      day?: number;
+      lastDate?: string;
+    };
     const today = new Date().toDateString();
     if (stored.lastDate === today && stored.day) return stored.day;
     const newDay = (stored.day ?? 0) + 1;
     localStorage.setItem("ascend_english_day", JSON.stringify({ day: newDay, lastDate: today }));
     return newDay;
-  } catch { return 1; }
+  } catch {
+    return 1;
+  }
 }
 
 function levelBadgeVariant(level: string) {
@@ -255,13 +474,50 @@ function CoachText({ text }: { text: string }) {
       {text.split("\n").map((line, i) => {
         const t = line.trim();
         if (!t) return <div key={i} className="h-1" />;
-        if (t.startsWith("❌")) return <p key={i} className="text-[var(--destructive)] font-medium">{t}</p>;
-        if (t.startsWith("✅")) return <p key={i} className="text-[var(--forest)] font-medium">{t}</p>;
-        if (t.startsWith("⭐")) return <p key={i} className="text-[var(--gold)] font-medium">{t}</p>;
-        if (t.startsWith("💡")) return <p key={i} className="text-muted-foreground italic">{t}</p>;
-        if (t.startsWith("🎤")) return <p key={i} className="text-[var(--forest)] font-semibold">{t}</p>;
-        if (t.startsWith("Now say:")) return <p key={i} className="text-[var(--forest)] font-medium bg-[var(--forest)]/10 px-3 py-1.5 rounded-lg mt-1">{t}</p>;
-        return <p key={i} className="text-foreground">{t}</p>;
+        if (t.startsWith("❌"))
+          return (
+            <p key={i} className="text-[var(--destructive)] font-medium">
+              {t}
+            </p>
+          );
+        if (t.startsWith("✅"))
+          return (
+            <p key={i} className="text-[var(--forest)] font-medium">
+              {t}
+            </p>
+          );
+        if (t.startsWith("⭐"))
+          return (
+            <p key={i} className="text-[var(--gold)] font-medium">
+              {t}
+            </p>
+          );
+        if (t.startsWith("💡"))
+          return (
+            <p key={i} className="text-muted-foreground italic">
+              {t}
+            </p>
+          );
+        if (t.startsWith("🎤"))
+          return (
+            <p key={i} className="text-[var(--forest)] font-semibold">
+              {t}
+            </p>
+          );
+        if (t.startsWith("Now say:"))
+          return (
+            <p
+              key={i}
+              className="text-[var(--forest)] font-medium bg-[var(--forest)]/10 px-3 py-1.5 rounded-lg mt-1"
+            >
+              {t}
+            </p>
+          );
+        return (
+          <p key={i} className="text-foreground">
+            {t}
+          </p>
+        );
       })}
     </div>
   );
@@ -288,8 +544,12 @@ function useSpeechRecognition(onResult: (text: string) => void) {
     recognition["interimResults"] = true;
     recognition["lang"] = "en-US";
     recognition["onstart"] = () => setListening(true);
-    recognition["onresult"] = (event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => {
-      const transcript = Array.from(event.results).map((r) => r[0].transcript).join("");
+    recognition["onresult"] = (event: {
+      results: ArrayLike<ArrayLike<{ transcript: string }>>;
+    }) => {
+      const transcript = Array.from(event.results)
+        .map((r) => r[0].transcript)
+        .join("");
       resultRef.current(transcript);
     };
     recognition["onend"] = () => setListening(false);
@@ -307,7 +567,12 @@ function useSpeechRecognition(onResult: (text: string) => void) {
     setListening(false);
   };
 
-  useEffect(() => () => { recognitionRef.current?.stop(); }, []);
+  useEffect(
+    () => () => {
+      recognitionRef.current?.stop();
+    },
+    [],
+  );
 
   return { listening, startListening, stopListening };
 }
@@ -323,7 +588,10 @@ function MicButton({ value, onChange }: { value: string; onChange: (v: string) =
       <button
         type="button"
         onClick={() => {
-          if (listening) { stopListening(); return; }
+          if (listening) {
+            stopListening();
+            return;
+          }
           baseRef.current = value;
           startListening();
         }}
@@ -338,11 +606,12 @@ function MicButton({ value, onChange }: { value: string; onChange: (v: string) =
       >
         {listening ? <Square className="h-4 w-4" /> : <Mic className="h-5 w-5" />}
       </button>
-      {listening && <span className="text-[10px] text-[var(--destructive)] font-medium mt-1">Listening…</span>}
+      {listening && (
+        <span className="text-[10px] text-[var(--destructive)] font-medium mt-1">Listening…</span>
+      )}
     </div>
   );
 }
-
 
 /* ---------- reusable chat panel ---------- */
 function ChatPanel({
@@ -373,11 +642,15 @@ function ChatPanel({
     onSend(val);
   }
 
-  const showChips = !loading && messages.length > 0 && messages[messages.length - 1].role === "assistant";
+  const showChips =
+    !loading && messages.length > 0 && messages[messages.length - 1].role === "assistant";
 
   return (
     <div className="space-y-3">
-      <div ref={scrollRef} className="rounded-xl bg-[var(--card)] ring-1 ring-border/60 p-4 min-h-[320px] md:min-h-[420px] max-h-[50vh] md:max-h-[60vh] overflow-y-auto space-y-3">
+      <div
+        ref={scrollRef}
+        className="rounded-xl bg-[var(--card)] ring-1 ring-border/60 p-4 min-h-[320px] md:min-h-[420px] max-h-[50vh] md:max-h-[60vh] overflow-y-auto space-y-3"
+      >
         {messages.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground italic">Your coach will begin shortly…</p>
         )}
@@ -391,13 +664,23 @@ function ChatPanel({
                   : "bg-[var(--gold)]/20 text-foreground rounded-2xl rounded-br-none",
               )}
             >
-              {m.role === "assistant" ? <CoachText text={m.content} /> : <p className="text-sm whitespace-pre-wrap">{m.content}</p>}
+              {m.role === "assistant" ? (
+                <CoachText text={m.content} />
+              ) : (
+                <p className="text-sm whitespace-pre-wrap">{m.content}</p>
+              )}
             </div>
           </div>
         ))}
         {loading && (
           <div className="flex justify-start">
-            <AIThinking messages={["Coach is thinking…", "Listening closely…", "Finding the natural phrasing…"]} />
+            <AIThinking
+              messages={[
+                "Coach is thinking…",
+                "Listening closely…",
+                "Finding the natural phrasing…",
+              ]}
+            />
           </div>
         )}
       </div>
@@ -422,13 +705,20 @@ function ChatPanel({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
           }}
           placeholder={placeholder}
           className="flex-1 resize-none"
         />
         <MicButton value={input} onChange={setInput} />
-        <Button onClick={() => submit()} disabled={loading} className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90">
+        <Button
+          onClick={() => submit()}
+          disabled={loading}
+          className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90"
+        >
           <Send className="h-4 w-4 mr-1" /> Send
         </Button>
       </div>
@@ -471,9 +761,13 @@ export default function EnglishCoach() {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">Communication · Fluency · Confidence</p>
+        <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">
+          Communication · Fluency · Confidence
+        </p>
         <h1 className="font-serif text-3xl md:text-4xl text-primary mt-2">English Coach</h1>
-        <p className="text-sm text-muted-foreground mt-2">Your personal tutor — speak more, hesitate less, sound natural.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Your personal tutor — speak more, hesitate less, sound natural.
+        </p>
       </div>
 
       <div className="border-b border-border">
@@ -484,7 +778,9 @@ export default function EnglishCoach() {
               onClick={() => setSub(s)}
               className={cn(
                 "px-3 py-2 text-sm whitespace-nowrap flex-shrink-0 transition-colors border-b-2 -mb-px",
-                sub === s ? "border-[var(--gold)] text-primary font-medium" : "border-transparent text-muted-foreground hover:text-primary",
+                sub === s
+                  ? "border-[var(--gold)] text-primary font-medium"
+                  : "border-transparent text-muted-foreground hover:text-primary",
               )}
             >
               {s}
@@ -500,27 +796,64 @@ export default function EnglishCoach() {
           goal={goal}
           tip={tip}
           stats={stats}
-          onStart={() => { setAutoStart(true); setSub("📚 Lesson"); }}
+          onStart={() => {
+            setAutoStart(true);
+            setSub("📚 Lesson");
+          }}
           onGo={setSub}
           onReset={openReset}
         />
       )}
       {sub === "📚 Lesson" && (
-        <LessonTab key={`lesson-${resetKey}`} day={day} goal={goal} autoStart={autoStart} onAutoStarted={() => setAutoStart(false)} onStats={refreshStats} setDay={setDay} onReset={openReset} />
+        <LessonTab
+          key={`lesson-${resetKey}`}
+          day={day}
+          goal={goal}
+          autoStart={autoStart}
+          onAutoStarted={() => setAutoStart(false)}
+          onStats={refreshStats}
+          setDay={setDay}
+          onReset={openReset}
+        />
       )}
       {sub === "🎭 Roleplay" && <RoleplayTab key={`rp-${resetKey}`} onStats={refreshStats} />}
       {sub === "🎤 Speaking" && <SpeakingTab key={`sp-${resetKey}`} onStats={refreshStats} />}
       {sub === "💼 Interview" && <InterviewTab key={`iv-${resetKey}`} onStats={refreshStats} />}
-      {sub === "📊 Progress" && <ProgressTab key={`pg-${resetKey}`} stats={stats} onStats={refreshStats} onReset={openReset} />}
+      {sub === "📊 Progress" && (
+        <ProgressTab
+          key={`pg-${resetKey}`}
+          stats={stats}
+          onStats={refreshStats}
+          onReset={openReset}
+        />
+      )}
 
-      <ResetDialog open={showResetDialog} onCancel={() => setShowResetDialog(false)} onConfirm={confirmReset} />
+      <ResetDialog
+        open={showResetDialog}
+        onCancel={() => setShowResetDialog(false)}
+        onConfirm={confirmReset}
+      />
     </div>
   );
 }
 
 /* ---------- HOME ---------- */
-function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
-  day: number; goal: string; tip: string; stats: Stats; onStart: () => void; onGo: (s: Sub) => void; onReset: () => void;
+function HomeTab({
+  day,
+  goal,
+  tip,
+  stats,
+  onStart,
+  onGo,
+  onReset,
+}: {
+  day: number;
+  goal: string;
+  tip: string;
+  stats: Stats;
+  onStart: () => void;
+  onGo: (s: Sub) => void;
+  onReset: () => void;
 }) {
   const quick: { emoji: string; title: string; desc: string; target: Sub }[] = [
     { emoji: "🎭", title: "Roleplay", desc: "Practice real scenarios", target: "🎭 Roleplay" },
@@ -532,24 +865,40 @@ function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
   return (
     <div className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-br from-[var(--forest)] to-[var(--forest)]/80 p-6">
-        <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--gold)] font-medium mb-1">Featured</p>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-[var(--gold)] font-medium mb-1">
+          Featured
+        </p>
         <h2 className="font-serif text-2xl text-[#F5F2EB] mb-2">Start Speaking Today</h2>
-        <p className="text-sm text-[#F5F2EB]/80 mb-4">Your AI coach listens, corrects, and helps you sound natural. Use your microphone for real speaking practice.</p>
+        <p className="text-sm text-[#F5F2EB]/80 mb-4">
+          Your AI coach listens, corrects, and helps you sound natural. Use your microphone for real
+          speaking practice.
+        </p>
         <div className="flex flex-wrap gap-3">
-          <button onClick={onStart} className="px-4 py-2 bg-[var(--gold)] text-[#2B2B2B] rounded-lg text-sm font-medium hover:opacity-90 active:scale-95 transition-all">
+          <button
+            onClick={onStart}
+            className="px-4 py-2 bg-[var(--gold)] text-[#2B2B2B] rounded-lg text-sm font-medium hover:opacity-90 active:scale-95 transition-all"
+          >
             Start Lesson →
           </button>
-          <button onClick={() => onGo("🎭 Roleplay")} className="px-4 py-2 bg-white/15 text-[#F5F2EB] rounded-lg text-sm font-medium hover:bg-white/25 active:scale-95 transition-all">
+          <button
+            onClick={() => onGo("🎭 Roleplay")}
+            className="px-4 py-2 bg-white/15 text-[#F5F2EB] rounded-lg text-sm font-medium hover:bg-white/25 active:scale-95 transition-all"
+          >
             Try Roleplay
           </button>
         </div>
       </div>
 
       <div className="rounded-xl bg-[var(--forest)] p-6 md:p-8 shadow-[var(--shadow-md)]">
-        <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">Start Today's Session</p>
+        <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">
+          Start Today's Session
+        </p>
         <p className="font-serif text-3xl md:text-4xl text-[#F5F2EB] mt-2">Day {day}</p>
         <p className="text-sm text-[#F5F2EB]/80 mt-2">🎯 Today's goal: {goal}</p>
-        <Button onClick={onStart} className="mt-5 bg-[var(--gold)] text-[#2B2B2B] hover:bg-[var(--gold)]/90">
+        <Button
+          onClick={onStart}
+          className="mt-5 bg-[var(--gold)] text-[#2B2B2B] hover:bg-[var(--gold)]/90"
+        >
           <Play className="h-4 w-4 mr-1" /> Start Session →
         </Button>
       </div>
@@ -566,8 +915,16 @@ function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Stat kicker="Sessions" value={stats.totalSessions} />
-        <Stat kicker="Level" value={LEVEL_NAMES[Math.min(5, Math.max(0, stats.level - 1))]} tone="gold" />
-        <Stat kicker="Last session" value={stats.lastDate ? formatDate(stats.lastDate) : "—"} tone="forest" />
+        <Stat
+          kicker="Level"
+          value={LEVEL_NAMES[Math.min(5, Math.max(0, stats.level - 1))]}
+          tone="gold"
+        />
+        <Stat
+          kicker="Last session"
+          value={stats.lastDate ? formatDate(stats.lastDate) : "—"}
+          tone="forest"
+        />
       </div>
 
       <Card className="border-l-4 border-l-[var(--gold)]">
@@ -581,8 +938,22 @@ function HomeTab({ day, goal, tip, stats, onStart, onGo, onReset }: {
 }
 
 /* ---------- LESSON ---------- */
-function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay, onReset }: {
-  day: number; goal: string; autoStart: boolean; onAutoStarted: () => void; onStats: () => void; setDay: (d: number) => void; onReset: () => void;
+function LessonTab({
+  day,
+  goal,
+  autoStart,
+  onAutoStarted,
+  onStats,
+  setDay,
+  onReset,
+}: {
+  day: number;
+  goal: string;
+  autoStart: boolean;
+  onAutoStarted: () => void;
+  onStats: () => void;
+  setDay: (d: number) => void;
+  onReset: () => void;
 }) {
   const chat = useServerFn(coachChat);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -609,8 +980,16 @@ function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay, onRes
       setMessages(next);
       saveLS("ascend_english_chat", next);
       const today = new Date().toISOString();
-      bumpStats((s) => ({ ...s, totalSessions: s.totalSessions + 1, streak: s.streak + 1, lastDate: today }));
-      const sessions = loadLS<{ date: string; day: number; goal: string }[]>("ascend_english_sessions", []);
+      bumpStats((s) => ({
+        ...s,
+        totalSessions: s.totalSessions + 1,
+        streak: s.streak + 1,
+        lastDate: today,
+      }));
+      const sessions = loadLS<{ date: string; day: number; goal: string }[]>(
+        "ascend_english_sessions",
+        [],
+      );
       saveLS("ascend_english_sessions", [{ date: today, day, goal }, ...sessions].slice(0, 50));
       onStats();
     } catch {
@@ -681,7 +1060,6 @@ function LessonTab({ day, goal, autoStart, onAutoStarted, onStats, setDay, onRes
         </div>
       </div>
 
-
       <ChatPanel
         messages={messages}
         loading={loading}
@@ -704,7 +1082,10 @@ function RoleplayTab({ onStats }: { onStats: () => void }) {
   function start(sc: (typeof SCENARIOS)[number]) {
     setActive(sc);
     const existing = loadLS<ChatMsg[]>(`ascend_english_roleplay_${sc.title}`, []);
-    if (existing.length > 0) { setMessages(existing); return; }
+    if (existing.length > 0) {
+      setMessages(existing);
+      return;
+    }
     const first: ChatMsg[] = [{ role: "assistant", content: sc.prompt }];
     setMessages(first);
     saveLS(`ascend_english_roleplay_${sc.title}`, first);
@@ -737,7 +1118,11 @@ function RoleplayTab({ onStats }: { onStats: () => void }) {
 
   return (
     <div className="space-y-6">
-      <SectionHeader kicker="Practice" title="Roleplay Scenarios" subtitle="Practice real conversations before they happen in real life." />
+      <SectionHeader
+        kicker="Practice"
+        title="Roleplay Scenarios"
+        subtitle="Practice real conversations before they happen in real life."
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {SCENARIOS.map((sc) => (
@@ -745,8 +1130,13 @@ function RoleplayTab({ onStats }: { onStats: () => void }) {
             <p className="text-2xl">{sc.emoji}</p>
             <p className="font-serif text-lg text-primary mt-2">{sc.title}</p>
             <p className="text-sm text-muted-foreground mt-1 flex-1">{sc.desc}</p>
-            <div className="mt-3"><Badge variant={levelBadgeVariant(sc.level)}>{sc.level}</Badge></div>
-            <Button className="mt-4 w-full bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90" onClick={() => start(sc)}>
+            <div className="mt-3">
+              <Badge variant={levelBadgeVariant(sc.level)}>{sc.level}</Badge>
+            </div>
+            <Button
+              className="mt-4 w-full bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90"
+              onClick={() => start(sc)}
+            >
               Start Roleplay →
             </Button>
           </Card>
@@ -757,14 +1147,29 @@ function RoleplayTab({ onStats }: { onStats: () => void }) {
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
-              <h3 className="font-serif text-xl text-primary truncate">{active.emoji} {active.title}</h3>
+              <h3 className="font-serif text-xl text-primary truncate">
+                {active.emoji} {active.title}
+              </h3>
               <Badge variant={levelBadgeVariant(active.level)}>{active.level}</Badge>
             </div>
-            <Button variant="ghost" size="sm" onClick={() => { setActive(null); setMessages([]); }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setActive(null);
+                setMessages([]);
+              }}
+            >
               <X className="h-4 w-4 mr-1" /> End Roleplay
             </Button>
           </div>
-          <ChatPanel messages={messages} loading={loading} onSend={send} chips={["Can you repeat that?", "end"]} placeholder="Your reply..." />
+          <ChatPanel
+            messages={messages}
+            loading={loading}
+            onSend={send}
+            chips={["Can you repeat that?", "end"]}
+            placeholder="Your reply..."
+          />
         </div>
       )}
     </div>
@@ -783,7 +1188,9 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
   const [custom, setCustom] = useState("");
   const [history, setHistory] = useState<SpeakingEntry[]>([]);
 
-  useEffect(() => { setHistory(loadLS<SpeakingEntry[]>("ascend_english_speaking", [])); }, []);
+  useEffect(() => {
+    setHistory(loadLS<SpeakingEntry[]>("ascend_english_speaking", []));
+  }, []);
 
   async function submit() {
     if (!active || !answer.trim()) return;
@@ -791,10 +1198,18 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
     setFeedback("");
     try {
       const res = await reply({
-        data: { kind: "speaking", prompt: `Speaking challenge topic: "${active.topic}" (${active.time}).\n\nWhat the student said:\n${answer.trim()}` },
+        data: {
+          kind: "speaking",
+          prompt: `Speaking challenge topic: "${active.topic}" (${active.time}).\n\nWhat the student said:\n${answer.trim()}`,
+        },
       });
       setFeedback(res.text);
-      const entry: SpeakingEntry = { topic: active.topic, response: answer.trim(), feedback: res.text, date: new Date().toISOString() };
+      const entry: SpeakingEntry = {
+        topic: active.topic,
+        response: answer.trim(),
+        feedback: res.text,
+        date: new Date().toISOString(),
+      };
       const next = [entry, ...loadLS<SpeakingEntry[]>("ascend_english_speaking", [])].slice(0, 50);
       saveLS("ascend_english_speaking", next);
       setHistory(next);
@@ -809,7 +1224,11 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
 
   return (
     <div className="space-y-6">
-      <SectionHeader kicker="Fluency" title="Speaking Challenges" subtitle="Speak for 60–90 seconds. Build fluency, reduce hesitation." />
+      <SectionHeader
+        kicker="Fluency"
+        title="Speaking Challenges"
+        subtitle="Speak for 60–90 seconds. Build fluency, reduce hesitation."
+      />
 
       {active ? (
         <Card className="space-y-4">
@@ -820,16 +1239,37 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
             </div>
             <Badge variant="gold">{active.time}</Badge>
           </div>
-          <p className="text-sm font-semibold text-[var(--forest)]">🎤 SPEAK FIRST. Speak aloud for {active.time}. Then type exactly what you said.</p>
+          <p className="text-sm font-semibold text-[var(--forest)]">
+            🎤 SPEAK FIRST. Speak aloud for {active.time}. Then type exactly what you said.
+          </p>
           <div className="flex gap-2 items-end">
-            <Textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type what you said, or speak using the mic..." className="flex-1" />
+            <Textarea
+              rows={5}
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="Type what you said, or speak using the mic..."
+              className="flex-1"
+            />
             <MicButton value={answer} onChange={setAnswer} />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={submit} disabled={loading || !answer.trim()} className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90">
+            <Button
+              onClick={submit}
+              disabled={loading || !answer.trim()}
+              className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90"
+            >
               {loading ? "Coach is thinking…" : "Submit for Feedback →"}
             </Button>
-            <Button variant="outline" onClick={() => { setActive(null); setAnswer(""); setFeedback(""); }}>Back to challenges</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setActive(null);
+                setAnswer("");
+                setFeedback("");
+              }}
+            >
+              Back to challenges
+            </Button>
           </div>
           {feedback && (
             <div className="rounded-xl bg-[var(--secondary)] p-4">
@@ -848,7 +1288,14 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
                 </div>
                 <p className="font-serif text-lg text-primary mt-2">{c.topic}</p>
                 <p className="text-sm text-muted-foreground italic mt-1 flex-1">{c.tip}</p>
-                <Button className="mt-4 w-full bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90" onClick={() => { setActive(c); setAnswer(""); setFeedback(""); }}>
+                <Button
+                  className="mt-4 w-full bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90"
+                  onClick={() => {
+                    setActive(c);
+                    setAnswer("");
+                    setFeedback("");
+                  }}
+                >
                   🎤 Start Challenge →
                 </Button>
               </Card>
@@ -856,12 +1303,27 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
           </div>
 
           <Card>
-            <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">Custom Challenge</p>
+            <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">
+              Custom Challenge
+            </p>
             <div className="flex flex-col sm:flex-row gap-2 mt-3">
-              <Input value={custom} onChange={(e) => setCustom(e.target.value)} placeholder="Type your own topic..." />
+              <Input
+                value={custom}
+                onChange={(e) => setCustom(e.target.value)}
+                placeholder="Type your own topic..."
+              />
               <Button
                 disabled={!custom.trim()}
-                onClick={() => { setActive({ topic: custom.trim(), time: "60 sec", tip: "Structure it: opening, two points, closing." }); setCustom(""); setAnswer(""); setFeedback(""); }}
+                onClick={() => {
+                  setActive({
+                    topic: custom.trim(),
+                    time: "60 sec",
+                    tip: "Structure it: opening, two points, closing.",
+                  });
+                  setCustom("");
+                  setAnswer("");
+                  setFeedback("");
+                }}
               >
                 Create Challenge →
               </Button>
@@ -869,7 +1331,10 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
           </Card>
 
           {history.length === 0 ? (
-            <EmptyState title="No challenges completed yet" hint="Pick a topic above, speak aloud, then type what you said for instant feedback." />
+            <EmptyState
+              title="No challenges completed yet"
+              hint="Pick a topic above, speak aloud, then type what you said for instant feedback."
+            />
           ) : (
             <div className="space-y-2">
               <h3 className="font-serif text-xl text-primary">Recent attempts</h3>
@@ -879,7 +1344,9 @@ function SpeakingTab({ onStats }: { onStats: () => void }) {
                     <p className="font-medium text-primary">{h.topic}</p>
                     <span className="text-xs text-muted-foreground">{formatDate(h.date)}</span>
                   </div>
-                  <div className="mt-2"><CoachText text={h.feedback} /></div>
+                  <div className="mt-2">
+                    <CoachText text={h.feedback} />
+                  </div>
                 </Card>
               ))}
             </div>
@@ -912,10 +1379,23 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
     setLoading(true);
     setFeedback("");
     try {
-      const res = await reply({ data: { kind: "interview", prompt: `Interview question: "${question}"\n\nStudent's answer:\n${answer.trim()}` } });
+      const res = await reply({
+        data: {
+          kind: "interview",
+          prompt: `Interview question: "${question}"\n\nStudent's answer:\n${answer.trim()}`,
+        },
+      });
       setFeedback(res.text);
-      const entry: InterviewEntry = { question, answer: answer.trim(), feedback: res.text, date: new Date().toISOString() };
-      saveLS("ascend_english_interview", [entry, ...loadLS<InterviewEntry[]>("ascend_english_interview", [])].slice(0, 50));
+      const entry: InterviewEntry = {
+        question,
+        answer: answer.trim(),
+        feedback: res.text,
+        date: new Date().toISOString(),
+      };
+      saveLS(
+        "ascend_english_interview",
+        [entry, ...loadLS<InterviewEntry[]>("ascend_english_interview", [])].slice(0, 50),
+      );
       bumpStats((s) => ({ ...s, interviewQuestions: s.interviewQuestions + 1 }));
       onStats();
     } catch {
@@ -933,14 +1413,20 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
     setFeedback("");
   }
 
-  const MOCK_MODE = "You are now in MOCK INTERVIEW MODE. Ask exactly 5 interview questions, one at a time, from different categories (HR, technical communication, AI engineering, leadership). Never ask the next question before the student answers. After the 5th answer, give a comprehensive feedback report with scores out of 10 for structure, content, language and overall.";
+  const MOCK_MODE =
+    "You are now in MOCK INTERVIEW MODE. Ask exactly 5 interview questions, one at a time, from different categories (HR, technical communication, AI engineering, leadership). Never ask the next question before the student answers. After the 5th answer, give a comprehensive feedback report with scores out of 10 for structure, content, language and overall.";
 
   async function startMock() {
     setMock(true);
     setMockMsgs([]);
     setMockLoading(true);
     try {
-      const res = await chat({ data: { messages: [{ role: "user", content: "Start the mock interview. Ask question 1 only." }], mode: MOCK_MODE } });
+      const res = await chat({
+        data: {
+          messages: [{ role: "user", content: "Start the mock interview. Ask question 1 only." }],
+          mode: MOCK_MODE,
+        },
+      });
       setMockMsgs([{ role: "assistant", content: res.text }]);
     } catch {
       toast.error("Coach unavailable. Please try again.");
@@ -971,41 +1457,100 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
         kicker="Preparation"
         title="Interview Training"
         subtitle="Get interview-ready with mock questions and AI feedback."
-        right={<Button onClick={startMock} className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90">▶ Start Full Mock Interview →</Button>}
+        right={
+          <Button
+            onClick={startMock}
+            className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90"
+          >
+            ▶ Start Full Mock Interview →
+          </Button>
+        }
       />
 
       {mock && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="font-serif text-xl text-primary">Mock Interview</h3>
-            <Button variant="ghost" size="sm" onClick={() => { setMock(false); setMockMsgs([]); }}><X className="h-4 w-4 mr-1" /> End</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setMock(false);
+                setMockMsgs([]);
+              }}
+            >
+              <X className="h-4 w-4 mr-1" /> End
+            </Button>
           </div>
-          <ChatPanel messages={mockMsgs} loading={mockLoading} onSend={sendMock} placeholder="Your answer..." />
+          <ChatPanel
+            messages={mockMsgs}
+            loading={mockLoading}
+            onSend={sendMock}
+            placeholder="Your answer..."
+          />
         </div>
       )}
 
       {question ? (
         <Card className="space-y-4">
           <h3 className="font-serif text-2xl text-primary">{question}</h3>
-          <p className="text-sm font-semibold text-[var(--forest)]">🎤 Answer aloud first, then type your response:</p>
+          <p className="text-sm font-semibold text-[var(--forest)]">
+            🎤 Answer aloud first, then type your response:
+          </p>
           <div className="flex gap-2 items-end">
-            <Textarea rows={5} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Type your answer or speak using the mic..." className="flex-1" />
+            <Textarea
+              rows={5}
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="Type your answer or speak using the mic..."
+              className="flex-1"
+            />
             <MicButton value={answer} onChange={setAnswer} />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={submit} disabled={loading || !answer.trim()} className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90">
+            <Button
+              onClick={submit}
+              disabled={loading || !answer.trim()}
+              className="bg-[var(--forest)] text-[var(--gold)] hover:bg-[var(--forest)]/90"
+            >
               {loading ? "Coach is thinking…" : "Submit Answer →"}
             </Button>
-            <Button variant="outline" onClick={() => { setAnswer(""); setFeedback(""); }}>Try Again</Button>
-            <Button variant="outline" onClick={nextQuestion}>Next Question</Button>
-            <Button variant="ghost" onClick={() => { setQuestion(null); setAnswer(""); setFeedback(""); }}>Back</Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setAnswer("");
+                setFeedback("");
+              }}
+            >
+              Try Again
+            </Button>
+            <Button variant="outline" onClick={nextQuestion}>
+              Next Question
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setQuestion(null);
+                setAnswer("");
+                setFeedback("");
+              }}
+            >
+              Back
+            </Button>
           </div>
-          {feedback && <div className="rounded-xl bg-[var(--secondary)] p-4"><CoachText text={feedback} /></div>}
+          {feedback && (
+            <div className="rounded-xl bg-[var(--secondary)] p-4">
+              <CoachText text={feedback} />
+            </div>
+          )}
         </Card>
       ) : (
         <div className="space-y-3">
           {Object.entries(INTERVIEW_QUESTIONS).map(([group, qs]) => (
-            <div key={group} className="rounded-xl bg-[var(--card)] ring-1 ring-border/60 overflow-hidden">
+            <div
+              key={group}
+              className="rounded-xl bg-[var(--card)] ring-1 ring-border/60 overflow-hidden"
+            >
               <button
                 onClick={() => setOpen(open === group ? null : group)}
                 className="w-full flex items-center justify-between px-5 py-4 text-left"
@@ -1013,15 +1558,30 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
                 <span className="font-serif text-lg text-primary">{group}</span>
                 <span className="flex items-center gap-2 text-xs text-muted-foreground">
                   {qs.length} questions
-                  <ChevronDown className={cn("h-4 w-4 transition-transform", open === group && "rotate-180")} />
+                  <ChevronDown
+                    className={cn("h-4 w-4 transition-transform", open === group && "rotate-180")}
+                  />
                 </span>
               </button>
               {open === group && (
                 <div className="px-5 pb-5 space-y-2">
                   {qs.map((q) => (
-                    <div key={q} className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3">
+                    <div
+                      key={q}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-4 py-3"
+                    >
                       <p className="text-sm text-foreground">{q}</p>
-                      <Button size="sm" variant="outline" onClick={() => { setQuestion(q); setAnswer(""); setFeedback(""); }}>Practice →</Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setQuestion(q);
+                          setAnswer("");
+                          setFeedback("");
+                        }}
+                      >
+                        Practice →
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -1037,7 +1597,15 @@ function InterviewTab({ onStats }: { onStats: () => void }) {
 /* ---------- PROGRESS ---------- */
 type VocabEntry = { word: string; meaning: string; example: string; dateAdded: string };
 
-function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () => void; onReset: () => void }) {
+function ProgressTab({
+  stats,
+  onStats,
+  onReset,
+}: {
+  stats: Stats;
+  onStats: () => void;
+  onReset: () => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [scores, setScores] = useState<Record<string, number>>(stats.scores);
   const [sessions, setSessions] = useState<{ date: string; day: number; goal: string }[]>([]);
@@ -1048,7 +1616,9 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
     setSessions(loadLS("ascend_english_sessions", []));
     setVocab(loadLS("ascend_english_vocab", []));
   }, []);
-  useEffect(() => { setScores(stats.scores); }, [stats.scores]);
+  useEffect(() => {
+    setScores(stats.scores);
+  }, [stats.scores]);
 
   const levelIdx = Math.min(6, Math.max(1, stats.level));
   const levelName = LEVEL_NAMES[levelIdx - 1];
@@ -1065,7 +1635,11 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
 
   function addWord() {
     if (!form.word.trim()) return;
-    const entry: VocabEntry = { ...form, word: form.word.trim(), dateAdded: new Date().toISOString() };
+    const entry: VocabEntry = {
+      ...form,
+      word: form.word.trim(),
+      dateAdded: new Date().toISOString(),
+    };
     const next = [entry, ...vocab];
     setVocab(next);
     saveLS("ascend_english_vocab", next);
@@ -1076,12 +1650,22 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
 
   return (
     <div className="space-y-6">
-      <SectionHeader kicker="Growth" title="Your Progress" subtitle="Track your fluency, confidence and consistency." />
+      <SectionHeader
+        kicker="Growth"
+        title="Your Progress"
+        subtitle="Track your fluency, confidence and consistency."
+      />
 
       <Card>
-        <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">Current Level</p>
-        <p className="font-serif text-3xl text-primary mt-1">{levelName} <span className="text-lg text-muted-foreground">(Level {levelIdx})</span></p>
-        <div className="mt-4"><ProgressBar value={progressPct} label={`Progress to ${nextName}`} showPercent /></div>
+        <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">
+          Current Level
+        </p>
+        <p className="font-serif text-3xl text-primary mt-1">
+          {levelName} <span className="text-lg text-muted-foreground">(Level {levelIdx})</span>
+        </p>
+        <div className="mt-4">
+          <ProgressBar value={progressPct} label={`Progress to ${nextName}`} showPercent />
+        </div>
       </Card>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1096,11 +1680,24 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
           <h3 className="font-serif text-xl text-primary">Skill Scores</h3>
           {editing ? (
             <div className="flex gap-2">
-              <Button size="sm" onClick={saveScores}>Save</Button>
-              <Button size="sm" variant="ghost" onClick={() => { setScores(stats.scores); setEditing(false); }}>Cancel</Button>
+              <Button size="sm" onClick={saveScores}>
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setScores(stats.scores);
+                  setEditing(false);
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           ) : (
-            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>Edit Scores</Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
+              Edit Scores
+            </Button>
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1110,10 +1707,17 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
                 <p className="text-sm font-medium text-primary">{s}</p>
                 {editing ? (
                   <Input
-                    type="number" min={0} max={10}
+                    type="number"
+                    min={0}
+                    max={10}
                     className="h-8 w-16"
                     value={scores[s] ?? 3}
-                    onChange={(e) => setScores({ ...scores, [s]: Math.max(0, Math.min(10, Number(e.target.value) || 0)) })}
+                    onChange={(e) =>
+                      setScores({
+                        ...scores,
+                        [s]: Math.max(0, Math.min(10, Number(e.target.value) || 0)),
+                      })
+                    }
                   />
                 ) : (
                   <span className="text-xs text-muted-foreground">{scores[s] ?? 3}/10</span>
@@ -1128,11 +1732,17 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
       <div>
         <h3 className="font-serif text-xl text-primary mb-3">Session History</h3>
         {sessions.length === 0 ? (
-          <EmptyState title="No sessions yet" hint="Start your first lesson to begin tracking your journey." />
+          <EmptyState
+            title="No sessions yet"
+            hint="Start your first lesson to begin tracking your journey."
+          />
         ) : (
           <div className="space-y-2">
             {sessions.slice(0, 10).map((s, i) => (
-              <div key={i} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--card)] ring-1 ring-border/60 px-4 py-3">
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 rounded-lg bg-[var(--card)] ring-1 ring-border/60 px-4 py-3"
+              >
                 <div className="min-w-0">
                   <p className="text-sm text-primary font-medium">Day {s.day}</p>
                   <p className="text-xs text-muted-foreground truncate">{s.goal}</p>
@@ -1154,7 +1764,11 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
                 <p className="text-2xl">{a.icon}</p>
                 <p className="font-serif text-base text-primary mt-1">{a.title}</p>
                 <p className="text-xs text-muted-foreground mt-1">{a.desc}</p>
-                {!unlocked && <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-2">🔒 Locked</p>}
+                {!unlocked && (
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-2">
+                    🔒 Locked
+                  </p>
+                )}
               </Card>
             );
           })}
@@ -1162,17 +1776,38 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
       </div>
 
       <div>
-        <h3 className="font-serif text-xl text-primary mb-3">Vocabulary Bank <span className="text-sm text-muted-foreground">({vocab.length})</span></h3>
+        <h3 className="font-serif text-xl text-primary mb-3">
+          Vocabulary Bank <span className="text-sm text-muted-foreground">({vocab.length})</span>
+        </h3>
         <Card className="space-y-3">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            <Input placeholder="Word or phrase" value={form.word} onChange={(e) => setForm({ ...form, word: e.target.value })} />
-            <Input placeholder="Meaning" value={form.meaning} onChange={(e) => setForm({ ...form, meaning: e.target.value })} />
-            <Input placeholder="Example sentence" value={form.example} onChange={(e) => setForm({ ...form, example: e.target.value })} />
+            <Input
+              placeholder="Word or phrase"
+              value={form.word}
+              onChange={(e) => setForm({ ...form, word: e.target.value })}
+            />
+            <Input
+              placeholder="Meaning"
+              value={form.meaning}
+              onChange={(e) => setForm({ ...form, meaning: e.target.value })}
+            />
+            <Input
+              placeholder="Example sentence"
+              value={form.example}
+              onChange={(e) => setForm({ ...form, example: e.target.value })}
+            />
           </div>
-          <Button size="sm" onClick={addWord} disabled={!form.word.trim()}>+ Add Word</Button>
+          <Button size="sm" onClick={addWord} disabled={!form.word.trim()}>
+            + Add Word
+          </Button>
         </Card>
         {vocab.length === 0 ? (
-          <div className="mt-4"><EmptyState title="No words saved yet" hint="Add new words and phrases you learn during coaching sessions." /></div>
+          <div className="mt-4">
+            <EmptyState
+              title="No words saved yet"
+              hint="Add new words and phrases you learn during coaching sessions."
+            />
+          </div>
         ) : (
           <div className="mt-4 space-y-2">
             {vocab.slice(0, 10).map((v, i) => (
@@ -1182,7 +1817,9 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
                   <span className="text-xs text-muted-foreground">{formatDate(v.dateAdded)}</span>
                 </div>
                 {v.meaning && <p className="text-sm text-muted-foreground mt-1">{v.meaning}</p>}
-                {v.example && <p className="text-sm italic text-muted-foreground mt-1">“{v.example}”</p>}
+                {v.example && (
+                  <p className="text-sm italic text-muted-foreground mt-1">“{v.example}”</p>
+                )}
               </Card>
             ))}
           </div>
@@ -1194,8 +1831,8 @@ function ProgressTab({ stats, onStats, onReset }: { stats: Stats; onStats: () =>
           <div>
             <p className="text-sm font-medium text-[#2B2B2B]">Reset English Coach Progress</p>
             <p className="text-xs text-[#6B6A67] mt-0.5">
-              Clear all sessions, chat history, speaking records and start fresh from Day 1. This only affects English
-              Coach data.
+              Clear all sessions, chat history, speaking records and start fresh from Day 1. This
+              only affects English Coach data.
             </p>
           </div>
           <button

@@ -6,15 +6,15 @@ import { MAX_TOKENS, MODEL, TEMPERATURE } from "./tutor.server";
 export const MASTERY_SCALE = `0 = Not attempted, 1 = Needs major help, 2 = Developing, 3 = Understands, 4 = Strong, 5 = Exam ready.`;
 
 export interface MasteryAssessment {
-  level: number;           // 0-5
-  feedback: string;        // Explanation
-  correction: string;      // What was wrong
-  idealAnswer: string;     // Model answer
-  nextStep: string;        // What to do next
+  level: number; // 0-5
+  feedback: string; // Explanation
+  correction: string; // What was wrong
+  idealAnswer: string; // Model answer
+  nextStep: string; // What to do next
 }
 
 export interface SM2Result {
-  nextReviewDate: string;      // YYYY-MM-DD
+  nextReviewDate: string; // YYYY-MM-DD
   intervalDays: number;
   easeFactor: number;
   repetitions: number;
@@ -24,7 +24,7 @@ export function calculateSM2(
   currentInterval: number,
   currentEaseFactor: number,
   currentRepetitions: number,
-  grade: number  // 0-5 (0 = complete blackout, 5 = perfect)
+  grade: number, // 0-5 (0 = complete blackout, 5 = perfect)
 ): SM2Result {
   let interval = currentInterval;
   let easeFactor = currentEaseFactor;
@@ -59,18 +59,27 @@ export async function assessMasteryWithAI(
   question: string,
   userAnswer: string,
   contextItems: any[],
-  mode: "EVALUATE" | "PRACTICE"
+  mode: "EVALUATE" | "PRACTICE",
 ): Promise<MasteryAssessment> {
   const key = process.env.LOVABLE_API_KEY;
   if (!key) throw new Error("AI service not configured");
 
-  const evidence = contextItems.length > 0
-    ? contextItems.map((it) => {
-        const loc = [it.title, it.page ? `page ${it.page}` : null, it.heading ? `section: ${it.heading}` : null].filter(Boolean).join(" | ");
-        const link = it.url ? `\nURL: ${it.url}` : "";
-        return `[${it.source.toUpperCase()}: ${loc}]${link}\n${it.text}`;
-      }).join("\n\n")
-    : "NO GROUNDED EVIDENCE available.";
+  const evidence =
+    contextItems.length > 0
+      ? contextItems
+          .map((it) => {
+            const loc = [
+              it.title,
+              it.page ? `page ${it.page}` : null,
+              it.heading ? `section: ${it.heading}` : null,
+            ]
+              .filter(Boolean)
+              .join(" | ");
+            const link = it.url ? `\nURL: ${it.url}` : "";
+            return `[${it.source.toUpperCase()}: ${loc}]${link}\n${it.text}`;
+          })
+          .join("\n\n")
+      : "NO GROUNDED EVIDENCE available.";
 
   const system = `You are Professor Ascend evaluating a student's answer.
   
@@ -148,7 +157,7 @@ export async function updateMasteryAndSchedule(
   newMasteryLevel: number,
   currentEaseFactor: number = 2.5,
   currentInterval: number = 1,
-  currentRepetitions: number = 0
+  currentRepetitions: number = 0,
 ): Promise<{ nextReviewDate: string; intervalDays: number; easeFactor: number }> {
   const sm2 = calculateSM2(currentInterval, currentEaseFactor, currentRepetitions, newMasteryLevel);
 
@@ -186,57 +195,117 @@ export async function updateMasteryAndSchedule(
   }
 
   // Update or create revision_schedule entry
-  await supabase
-    .from("revision_schedule")
-    .upsert(
-      {
-        user_id: userId,
-        source_type: entityType === "learn_topic" ? "learn_topic" : entityType === "dsa_attempt" ? "dsa_pattern" : "programming_concept",
-        source_id: entityId,
-        source_title: "", // Would need to fetch title
-        next_review_date: sm2.nextReviewDate,
-        interval_days: sm2.intervalDays,
-        ease_factor: sm2.easeFactor,
-        repetitions: sm2.repetitions,
-        last_reviewed: new Date().toISOString(),
-        last_grade: newMasteryLevel,
-      },
-      { onConflict: "user_id,source_type,source_id" }
-    );
+  await supabase.from("revision_schedule").upsert(
+    {
+      user_id: userId,
+      source_type:
+        entityType === "learn_topic"
+          ? "learn_topic"
+          : entityType === "dsa_attempt"
+            ? "dsa_pattern"
+            : "programming_concept",
+      source_id: entityId,
+      source_title: "", // Would need to fetch title
+      next_review_date: sm2.nextReviewDate,
+      interval_days: sm2.intervalDays,
+      ease_factor: sm2.easeFactor,
+      repetitions: sm2.repetitions,
+      last_reviewed: new Date().toISOString(),
+      last_grade: newMasteryLevel,
+    },
+    { onConflict: "user_id,source_type,source_id" },
+  );
 
   return sm2;
 }
 
 export function classifyErrorType(errorDescription: string): string {
   const desc = errorDescription.toLowerCase();
-  
-  if (desc.includes("syntax") || desc.includes("parse") || desc.includes("compile") || desc.includes("missing semicolon") || desc.includes("bracket") || desc.includes("parenthesis")) {
+
+  if (
+    desc.includes("syntax") ||
+    desc.includes("parse") ||
+    desc.includes("compile") ||
+    desc.includes("missing semicolon") ||
+    desc.includes("bracket") ||
+    desc.includes("parenthesis")
+  ) {
     return "syntax";
   }
-  if (desc.includes("logic") || desc.includes("condition") || desc.includes("branch") || desc.includes("wrong output") || desc.includes("incorrect result")) {
+  if (
+    desc.includes("logic") ||
+    desc.includes("condition") ||
+    desc.includes("branch") ||
+    desc.includes("wrong output") ||
+    desc.includes("incorrect result")
+  ) {
     return "logic";
   }
-  if (desc.includes("concept") || desc.includes("misunderstand") || desc.includes("don't understand") || desc.includes("confused") || desc.includes("wrong mental model")) {
+  if (
+    desc.includes("concept") ||
+    desc.includes("misunderstand") ||
+    desc.includes("don't understand") ||
+    desc.includes("confused") ||
+    desc.includes("wrong mental model")
+  ) {
     return "concept";
   }
-  if (desc.includes("edge") || desc.includes("boundary") || desc.includes("empty") || desc.includes("null") || desc.includes("zero") || desc.includes("overflow")) {
+  if (
+    desc.includes("edge") ||
+    desc.includes("boundary") ||
+    desc.includes("empty") ||
+    desc.includes("null") ||
+    desc.includes("zero") ||
+    desc.includes("overflow")
+  ) {
     return "edge_case";
   }
-  if (desc.includes("complexity") || desc.includes("time limit") || desc.includes("too slow") || desc.includes("O(") || desc.includes("optimization")) {
+  if (
+    desc.includes("complexity") ||
+    desc.includes("time limit") ||
+    desc.includes("too slow") ||
+    desc.includes("O(") ||
+    desc.includes("optimization")
+  ) {
     return "complexity";
   }
-  if (desc.includes("memory") || desc.includes("leak") || desc.includes("allocation") || desc.includes("free") || desc.includes("pointer") || desc.includes("segfault")) {
+  if (
+    desc.includes("memory") ||
+    desc.includes("leak") ||
+    desc.includes("allocation") ||
+    desc.includes("free") ||
+    desc.includes("pointer") ||
+    desc.includes("segfault")
+  ) {
     return "memory";
   }
-  if (desc.includes("debug") || desc.includes("breakpoint") || desc.includes("trace") || desc.includes("watch") || desc.includes("step through")) {
+  if (
+    desc.includes("debug") ||
+    desc.includes("breakpoint") ||
+    desc.includes("trace") ||
+    desc.includes("watch") ||
+    desc.includes("step through")
+  ) {
     return "debugging";
   }
-  if (desc.includes("interpret") || desc.includes("read") || desc.includes("understand problem") || desc.includes("requirement") || desc.includes("what is asked")) {
+  if (
+    desc.includes("interpret") ||
+    desc.includes("read") ||
+    desc.includes("understand problem") ||
+    desc.includes("requirement") ||
+    desc.includes("what is asked")
+  ) {
     return "interpretation";
   }
-  if (desc.includes("pattern") || desc.includes("technique") || desc.includes("approach") || desc.includes("which algorithm") || desc.includes("data structure")) {
+  if (
+    desc.includes("pattern") ||
+    desc.includes("technique") ||
+    desc.includes("approach") ||
+    desc.includes("which algorithm") ||
+    desc.includes("data structure")
+  ) {
     return "pattern";
   }
-  
+
   return "logic";
 }

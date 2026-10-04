@@ -31,7 +31,7 @@ function serializeExecutionResult(input: ExecutionResultInput): SerializedExecut
     success: input.success,
     actionsExecuted: input.actionsExecuted,
     actionsFailed: input.actionsFailed,
-    results: input.results.map(r => ({
+    results: input.results.map((r) => ({
       success: r.success,
       result: r.result ? JSON.parse(JSON.stringify(r.result)) : undefined,
       error: r.error,
@@ -48,7 +48,7 @@ export const executeAutomation = createServerFn({ method: "POST" })
     z.object({
       ruleId: z.string().uuid(),
       triggerData: z.record(z.unknown()).optional(),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -73,7 +73,7 @@ export const evaluateAutomationRule = createServerFn({ method: "POST" })
     z.object({
       ruleId: z.string().uuid(),
       triggerData: z.record(z.unknown()).optional(),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

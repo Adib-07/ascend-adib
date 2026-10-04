@@ -3,6 +3,7 @@
 Create a full-stack productivity web app called "Ascend" for a B.Tech CSE student who is also a freelancer building toward becoming an AI Engineer.
 
 DESIGN SYSTEM (use these exact colors as CSS variables):
+
 - Warm Ivory: #F5F2EB (main background)
 - Linen Beige: #EAE4D8 (card/section background)
 - Deep Forest Green: #2F4F3E (primary accent, headers, active states)
@@ -67,6 +68,7 @@ A top header with the "Ascend" logo/wordmark on the left, and a mode toggle in t
    - Outreach log: date, platform, lead name, status
 
 GENERAL REQUIREMENTS:
+
 - Fully responsive — must work great on both desktop and mobile (this is critical, the user switches between laptop and phone)
 - All data must persist in Supabase tied to the logged-in user
 - Use clean card-based layouts, soft borders, the serif/sans-serif font pairing throughout

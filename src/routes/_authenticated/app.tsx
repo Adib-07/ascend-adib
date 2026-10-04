@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -7,34 +7,39 @@ import { LogOut, Search, Focus, ChevronDown, Command as CmdIcon, Bell } from "lu
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import DailyTasks from "@/components/ascend/DailyTasks";
-import LearningHub from "@/components/ascend/LearningHub";
-import HabitsView from "@/components/ascend/HabitsView";
-import GoalsView from "@/components/ascend/GoalsView";
-import ClientsView from "@/components/ascend/ClientsView";
-import WorkProjectsView from "@/components/ascend/WorkProjectsView";
-import IncomeView from "@/components/ascend/IncomeView";
-import PipelineView from "@/components/ascend/PipelineView";
-import WorkAssistantView from "@/components/ascend/WorkAssistantView";
-import DocumentsView from "@/components/ascend/DocumentsView";
-import StudentTutorView from "@/components/ascend/StudentTutorView";
-import CSETutorView from "@/components/ascend/CSETutorView";
-import LifeSkillsProfessor from "@/components/ascend/LifeSkillsProfessor";
-import EnglishCoach from "@/components/ascend/EnglishCoach";
-import WorkOverview from "@/components/ascend/WorkOverview";
-import CommandPalette from "@/components/ascend/CommandPalette";
-import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
-import NotificationPanel from "@/components/ascend/NotificationPanel";
-import PWAInstallBanner from "@/components/ascend/PWAInstallBanner";
-import OfflineBar from "@/components/ascend/OfflineBar";
-import CalendarView from "@/components/ascend/CalendarView";
-import RemindersView from "@/components/ascend/RemindersView";
-import AutomationsView from "@/components/ascend/AutomationsView";
-import AutomationLogsView from "@/components/ascend/AutomationLogsView";
-import UpcomingScheduleView from "@/components/ascend/UpcomingScheduleView";
+const DailyTasks = lazy(() => import("@/components/ascend/DailyTasks"));
+const LearningHub = lazy(() => import("@/components/ascend/LearningHub"));
+const HabitsView = lazy(() => import("@/components/ascend/HabitsView"));
+const GoalsView = lazy(() => import("@/components/ascend/GoalsView"));
+const ClientsView = lazy(() => import("@/components/ascend/ClientsView"));
+const WorkProjectsView = lazy(() => import("@/components/ascend/WorkProjectsView"));
+const IncomeView = lazy(() => import("@/components/ascend/IncomeView"));
+const PipelineView = lazy(() => import("@/components/ascend/PipelineView"));
+const WorkAssistantView = lazy(() => import("@/components/ascend/WorkAssistantView"));
+const DocumentsView = lazy(() => import("@/components/ascend/DocumentsView"));
+const StudentTutorView = lazy(() => import("@/components/ascend/StudentTutorView"));
+const CSETutorView = lazy(() => import("@/components/ascend/CSETutorView"));
+const LifeSkillsProfessor = lazy(() => import("@/components/ascend/LifeSkillsProfessor"));
+const EnglishCoach = lazy(() => import("@/components/ascend/EnglishCoach"));
+const WorkOverview = lazy(() => import("@/components/ascend/WorkOverview"));
+const CommandPalette = lazy(() => import("@/components/ascend/CommandPalette"));
+const FocusMode = lazy(() => import("@/components/ascend/FocusMode"));
+const NotificationPanel = lazy(() => import("@/components/ascend/NotificationPanel"));
+const PWAInstallBanner = lazy(() => import("@/components/ascend/PWAInstallBanner"));
+const OfflineBar = lazy(() => import("@/components/ascend/OfflineBar"));
+const CalendarView = lazy(() => import("@/components/ascend/CalendarView"));
+const RemindersView = lazy(() => import("@/components/ascend/RemindersView"));
+const AutomationsView = lazy(() => import("@/components/ascend/AutomationsView"));
+const AutomationLogsView = lazy(() => import("@/components/ascend/AutomationLogsView"));
+const UpcomingScheduleView = lazy(() => import("@/components/ascend/UpcomingScheduleView"));
+const PersonalAssistantView = lazy(() => import("@/components/ascend/PersonalAssistantView"));
 import { useTasks, todayISO } from "@/lib/ascend-data";
 import { useExams } from "@/lib/ascend-hooks";
-import { buildDailyNotifications, requestNotificationPermission, type AppNotification } from "@/lib/notifications";
+import {
+  buildDailyNotifications,
+  requestNotificationPermission,
+  type AppNotification,
+} from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({ meta: [{ title: "Ascend" }] }),
@@ -42,9 +47,33 @@ export const Route = createFileRoute("/_authenticated/app")({
 });
 
 type Mode = "student" | "work" | "schedule";
-const STUDENT_TABS = ["Daily Tasks", "Learning Hub", "Habits", "Goals", "Documents", "AI Tutor", "CSE Tutor", "🧠 Life Skills", "🗣 English"] as const;
-const WORK_TABS = ["Overview", "Clients", "Projects", "Income", "Pipeline", "AI Assistant"] as const;
-const SCHEDULE_TABS = ["Calendar", "Reminders", "Automations", "Automation Logs", "Upcoming"] as const;
+const STUDENT_TABS = [
+  "Daily Tasks",
+  "Learning Hub",
+  "Habits",
+  "Goals",
+  "Documents",
+  "AI Tutor",
+  "CSE Tutor",
+  "🧠 Life Skills",
+  "🗣 English",
+  "🤖 Assistant",
+] as const;
+const WORK_TABS = [
+  "Overview",
+  "Clients",
+  "Projects",
+  "Income",
+  "Pipeline",
+  "AI Assistant",
+] as const;
+const SCHEDULE_TABS = [
+  "Calendar",
+  "Reminders",
+  "Automations",
+  "Automation Logs",
+  "Upcoming",
+] as const;
 
 function AppShell() {
   const [mode, setMode] = useState<Mode>("student");
@@ -93,9 +122,7 @@ function AppShell() {
 
   const notifications: AppNotification[] = useMemo(() => {
     const raw = buildDailyNotifications(tasksQ.data ?? [], examsQ.data ?? []);
-    return raw
-      .filter((n) => !dismissed.has(n.id))
-      .map((n) => ({ ...n, read: readIds.has(n.id) }));
+    return raw.filter((n) => !dismissed.has(n.id)).map((n) => ({ ...n, read: readIds.has(n.id) }));
   }, [tasksQ.data, examsQ.data, dismissed, readIds]);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -106,7 +133,6 @@ function AppShell() {
     };
     document.title = `${titles[tab] ?? tab} — Ascend`;
   }, [tab]);
-
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -145,13 +171,24 @@ function AppShell() {
 
   const initial = (email?.[0] ?? "A").toUpperCase();
 
-  const quickActions = useMemo(() => [
-    { label: "New Task", hint: "Add a task to today", run: () => switchTo("student", "Daily Tasks") },
-    { label: "New Learning Topic", hint: "Track a topic in Learn", run: () => switchTo("student", "Learning Hub") },
-    { label: "New Habit", hint: "Add a daily habit", run: () => switchTo("student", "Habits") },
-    { label: "New Client", hint: "Add to your roster", run: () => switchTo("work", "Clients") },
-    { label: "Start Focus Session", hint: "Open Pomodoro timer", run: () => setFocusOpen(true) },
-  ], []);
+  const quickActions = useMemo(
+    () => [
+      {
+        label: "New Task",
+        hint: "Add a task to today",
+        run: () => switchTo("student", "Daily Tasks"),
+      },
+      {
+        label: "New Learning Topic",
+        hint: "Track a topic in Learn",
+        run: () => switchTo("student", "Learning Hub"),
+      },
+      { label: "New Habit", hint: "Add a daily habit", run: () => switchTo("student", "Habits") },
+      { label: "New Client", hint: "Add to your roster", run: () => switchTo("work", "Clients") },
+      { label: "Start Focus Session", hint: "Open Pomodoro timer", run: () => setFocusOpen(true) },
+    ],
+    [],
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -165,7 +202,9 @@ function AppShell() {
             </span>
           </div>
 
-          <div className="hidden md:block"><ModeToggle mode={mode} onChange={switchMode} /></div>
+          <div className="hidden md:block">
+            <ModeToggle mode={mode} onChange={switchMode} />
+          </div>
 
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -175,9 +214,17 @@ function AppShell() {
             >
               <Search className="h-3.5 w-3.5" />
               <span>Search</span>
-              <kbd className="text-[10px] font-mono inline-flex items-center gap-0.5"><CmdIcon className="h-3 w-3" />K</kbd>
+              <kbd className="text-[10px] font-mono inline-flex items-center gap-0.5">
+                <CmdIcon className="h-3 w-3" />K
+              </kbd>
             </button>
-            <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setPaletteOpen(true)} aria-label="Search">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sm:hidden"
+              onClick={() => setPaletteOpen(true)}
+              aria-label="Search"
+            >
               <Search className="h-4 w-4" />
             </Button>
             <button
@@ -214,7 +261,13 @@ function AppShell() {
                 onClose={() => setNotifOpen(false)}
                 notifications={notifications}
                 onMarkAllRead={() => setReadIds(new Set(notifications.map((n) => n.id)))}
-                onDismiss={(id) => setDismissed((prev) => { const next = new Set(prev); next.add(id); return next; })}
+                onDismiss={(id) =>
+                  setDismissed((prev) => {
+                    const next = new Set(prev);
+                    next.add(id);
+                    return next;
+                  })
+                }
               />
             </div>
 
@@ -225,17 +278,29 @@ function AppShell() {
                 className="flex items-center gap-1 h-9 pl-1.5 pr-2 rounded-full hover:bg-secondary transition-colors"
                 aria-label="Account menu"
               >
-                <span className="h-7 w-7 rounded-full bg-[var(--forest)] text-[var(--gold)] font-serif text-sm inline-flex items-center justify-center">{initial}</span>
-                <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform", avatarOpen && "rotate-180")} />
+                <span className="h-7 w-7 rounded-full bg-[var(--forest)] text-[var(--gold)] font-serif text-sm inline-flex items-center justify-center">
+                  {initial}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "h-3 w-3 text-muted-foreground transition-transform",
+                    avatarOpen && "rotate-180",
+                  )}
+                />
               </button>
               {avatarOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-lg bg-[var(--card)] ring-1 ring-border shadow-[var(--shadow-lg)] py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="px-3 py-2 border-b border-border">
-                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">Signed in as</p>
+                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">
+                      Signed in as
+                    </p>
                     <p className="text-sm text-primary truncate">{email || "—"}</p>
                   </div>
                   <button
-                    onMouseDown={(e) => { e.preventDefault(); signOut().catch(() => toast.error("Sign out failed")); }}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      signOut().catch(() => toast.error("Sign out failed"));
+                    }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary text-left"
                   >
                     <LogOut className="h-4 w-4 text-muted-foreground" />
@@ -265,10 +330,12 @@ function AppShell() {
                   )}
                 >
                   {t}
-                  <span className={cn(
-                    "absolute left-2 right-2 -bottom-px h-0.5 rounded-full transition-all",
-                    active ? "bg-[var(--gold)] opacity-100" : "opacity-0"
-                  )} />
+                  <span
+                    className={cn(
+                      "absolute left-2 right-2 -bottom-px h-0.5 rounded-full transition-all",
+                      active ? "bg-[var(--gold)] opacity-100" : "opacity-0",
+                    )}
+                  />
                 </button>
               );
             })}
@@ -277,27 +344,44 @@ function AppShell() {
       </header>
 
       <main role="main" className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
-        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300" key={`${mode}-${tab}`}>
-          {mode === "student" && tab === "Daily Tasks" && <DailyTasks />}
-          {mode === "student" && tab === "Learning Hub" && <LearningHub />}
-          {mode === "student" && tab === "Habits" && <HabitsView />}
-          {mode === "student" && tab === "Goals" && <GoalsView />}
-          {mode === "student" && tab === "Documents" && <DocumentsView />}
-          {mode === "student" && tab === "AI Tutor" && <StudentTutorView />}
-          {mode === "student" && tab === "CSE Tutor" && <CSETutorView />}
-          {mode === "student" && tab === "🧠 Life Skills" && <LifeSkillsProfessor />}
-          {mode === "student" && tab === "🗣 English" && <EnglishCoach />}
-          {mode === "work" && tab === "Overview" && <WorkOverview onStartFocus={() => setFocusOpen(true)} onNavigate={(t) => switchTo("work", t)} />}
-          {mode === "work" && tab === "Clients" && <ClientsView />}
-          {mode === "work" && tab === "Projects" && <WorkProjectsView />}
-          {mode === "work" && tab === "Income" && <IncomeView />}
-          {mode === "work" && tab === "Pipeline" && <PipelineView />}
-          {mode === "work" && tab === "AI Assistant" && <WorkAssistantView />}
-          {mode === "schedule" && tab === "Calendar" && <CalendarView />}
-          {mode === "schedule" && tab === "Reminders" && <RemindersView />}
-          {mode === "schedule" && tab === "Automations" && <AutomationsView />}
-          {mode === "schedule" && tab === "Automation Logs" && <AutomationLogsView />}
-          {mode === "schedule" && tab === "Upcoming" && <UpcomingScheduleView />}
+        <div
+          className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+          key={`${mode}-${tab}`}
+        >
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            }
+          >
+            {mode === "student" && tab === "Daily Tasks" && <DailyTasks />}
+            {mode === "student" && tab === "Learning Hub" && <LearningHub />}
+            {mode === "student" && tab === "Habits" && <HabitsView />}
+            {mode === "student" && tab === "Goals" && <GoalsView />}
+            {mode === "student" && tab === "Documents" && <DocumentsView />}
+            {mode === "student" && tab === "AI Tutor" && <StudentTutorView />}
+            {mode === "student" && tab === "CSE Tutor" && <CSETutorView />}
+            {mode === "student" && tab === "🧠 Life Skills" && <LifeSkillsProfessor />}
+            {mode === "student" && tab === "🗣 English" && <EnglishCoach />}
+            {mode === "student" && tab === "🤖 Assistant" && <PersonalAssistantView />}
+            {mode === "work" && tab === "Overview" && (
+              <WorkOverview
+                onStartFocus={() => setFocusOpen(true)}
+                onNavigate={(t) => switchTo("work", t)}
+              />
+            )}
+            {mode === "work" && tab === "Clients" && <ClientsView />}
+            {mode === "work" && tab === "Projects" && <WorkProjectsView />}
+            {mode === "work" && tab === "Income" && <IncomeView />}
+            {mode === "work" && tab === "Pipeline" && <PipelineView />}
+            {mode === "work" && tab === "AI Assistant" && <WorkAssistantView />}
+            {mode === "schedule" && tab === "Calendar" && <CalendarView />}
+            {mode === "schedule" && tab === "Reminders" && <RemindersView />}
+            {mode === "schedule" && tab === "Automations" && <AutomationsView />}
+            {mode === "schedule" && tab === "Automation Logs" && <AutomationLogsView />}
+            {mode === "schedule" && tab === "Upcoming" && <UpcomingScheduleView />}
+          </Suspense>
         </div>
       </main>
 
@@ -324,7 +408,7 @@ function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => voi
             "px-4 py-1.5 text-xs md:text-sm rounded-full transition-all font-medium min-w-[76px]",
             mode === m
               ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-primary"
+              : "text-muted-foreground hover:text-primary",
           )}
         >
           {m === "student" ? "Student" : m === "work" ? "Work" : "Schedule"}
@@ -333,4 +417,3 @@ function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => voi
     </div>
   );
 }
-

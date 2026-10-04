@@ -21,7 +21,7 @@ export interface ExamIntelligence {
 function calculatePriority(
   daysRemaining: number | null,
   completedRatio: number,
-  weakAreaCount: number
+  weakAreaCount: number,
 ): ExamPriority {
   if (daysRemaining === null) return "LOW";
   if (daysRemaining <= 2) return "CRITICAL";
@@ -39,10 +39,7 @@ export const getExamIntelligence = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
-    let query = supabase
-      .from("exams")
-      .select("*")
-      .eq("user_id", userId);
+    let query = supabase.from("exams").select("*").eq("user_id", userId);
     if (data.examId) {
       query = query.eq("id", data.examId);
     }
@@ -84,19 +81,13 @@ export const getExamIntelligence = createServerFn({ method: "POST" })
       const weakAreaCount = (weakAreas ?? []).length;
 
       const completedRatio = syllabus.length ? completedTopics / syllabus.length : 0;
-      const priority = calculatePriority(
-        daysRemaining,
-        completedRatio,
-        weakAreaCount
-      );
+      const priority = calculatePriority(daysRemaining, completedRatio, weakAreaCount);
 
       let revisionStatus: "NOT_STARTED" | "IN_PROGRESS" | "READY" = "NOT_STARTED";
       if (completedRatio === 1) revisionStatus = "READY";
       else if (completedRatio > 0) revisionStatus = "IN_PROGRESS";
 
-      const studyWorkloadMinutes = Math.ceil(
-        (syllabus.length - completedTopics) * 45
-      );
+      const studyWorkloadMinutes = Math.ceil((syllabus.length - completedTopics) * 45);
 
       results.push({
         examId: exam.id,

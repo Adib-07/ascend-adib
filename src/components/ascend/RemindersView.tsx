@@ -25,8 +25,14 @@ const FILTER_TABS = ["today", "upcoming", "overdue", "completed"] as const;
 export default function RemindersView() {
   const listReminders = useServerFn(listReminders);
   const dismissReminderFn = useServerFn(dismissReminder);
-  const [filter, setFilter] = useState<"today" | "upcoming" | "overdue" | "completed" | "all">("all");
-  const { data: reminders, isLoading, refetch } = listReminders({ status: filter === "all" ? undefined : filter });
+  const [filter, setFilter] = useState<"today" | "upcoming" | "overdue" | "completed" | "all">(
+    "all",
+  );
+  const {
+    data: reminders,
+    isLoading,
+    refetch,
+  } = listReminders({ status: filter === "all" ? undefined : filter });
 
   const handleDismiss = async (id: string) => {
     await dismissReminderFn({ id });
@@ -52,7 +58,9 @@ export default function RemindersView() {
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading reminders...</p> : (
+        {isLoading ? (
+          <p>Loading reminders...</p>
+        ) : (
           <div className="space-y-2">
             {reminders?.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No reminders.</p>
@@ -67,7 +75,9 @@ export default function RemindersView() {
                           {STATUS_ICON[rem.status]} {rem.status}
                         </Badge>
                       </div>
-                      {rem.message && <p className="text-sm text-muted-foreground">{rem.message}</p>}
+                      {rem.message && (
+                        <p className="text-sm text-muted-foreground">{rem.message}</p>
+                      )}
                       <p className="text-xs text-muted-foreground">
                         Due: {new Date(rem.trigger_at).toLocaleString()}
                       </p>

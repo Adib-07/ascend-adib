@@ -6,7 +6,12 @@ import { generateText } from "ai";
 import { MAX_TOKENS, MODEL, TEMPERATURE } from "./tutor.server";
 
 export interface ParsedAutomationCommand {
-  intent: "CREATE_AUTOMATION" | "EXECUTE_AUTOMATION" | "LIST_AUTOMATIONS" | "DELETE_AUTOMATION" | "UNKNOWN";
+  intent:
+    | "CREATE_AUTOMATION"
+    | "EXECUTE_AUTOMATION"
+    | "LIST_AUTOMATIONS"
+    | "DELETE_AUTOMATION"
+    | "UNKNOWN";
   confidence: number;
   requiresConfirmation: boolean;
   parameters: {
@@ -108,7 +113,7 @@ export const parseAutomationCommand = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       text: z.string().min(1).max(2000),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const key = process.env.LOVABLE_API_KEY;
@@ -136,65 +141,108 @@ export const parseAutomationCommand = createServerFn({ method: "POST" })
     if (parsed.intent === "CREATE_AUTOMATION") {
       if (!parsed.parameters.name) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Automation name is required. What should this automation be called?";
+        parsed.clarification =
+          "Automation name is required. What should this automation be called?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.triggerType === "scheduled_time" && !parsed.parameters.triggerConfig?.schedule) {
+      if (
+        parsed.parameters.triggerType === "scheduled_time" &&
+        !parsed.parameters.triggerConfig?.schedule
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Cron schedule is required for scheduled_time triggers. What schedule should I use (e.g., '0 8 * * *' for 8 AM daily)?";
+        parsed.clarification =
+          "Cron schedule is required for scheduled_time triggers. What schedule should I use (e.g., '0 8 * * *' for 8 AM daily)?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.triggerType === "task_completed" && !parsed.parameters.triggerConfig?.task_id) {
+      if (
+        parsed.parameters.triggerType === "task_completed" &&
+        !parsed.parameters.triggerConfig?.task_id
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Task ID is required for task_completed trigger. Which task should trigger this?";
+        parsed.clarification =
+          "Task ID is required for task_completed trigger. Which task should trigger this?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.triggerType === "habit_completed" && !parsed.parameters.triggerConfig?.habit_id) {
+      if (
+        parsed.parameters.triggerType === "habit_completed" &&
+        !parsed.parameters.triggerConfig?.habit_id
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Habit ID is required for habit_completed trigger. Which habit should trigger this?";
+        parsed.clarification =
+          "Habit ID is required for habit_completed trigger. Which habit should trigger this?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.actionType === "create_task" && !parsed.parameters.actionConfig?.task_title) {
+      if (
+        parsed.parameters.actionType === "create_task" &&
+        !parsed.parameters.actionConfig?.task_title
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Task title is required for create_task action. What should the task be called?";
+        parsed.clarification =
+          "Task title is required for create_task action. What should the task be called?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.actionType === "create_reminder" && (!parsed.parameters.actionConfig?.reminder_title || !parsed.parameters.actionConfig?.reminder_trigger_at)) {
+      if (
+        parsed.parameters.actionType === "create_reminder" &&
+        (!parsed.parameters.actionConfig?.reminder_title ||
+          !parsed.parameters.actionConfig?.reminder_trigger_at)
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Reminder title and trigger time are required. What should the reminder say and when should it fire?";
+        parsed.clarification =
+          "Reminder title and trigger time are required. What should the reminder say and when should it fire?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.actionType === "create_event" && (!parsed.parameters.actionConfig?.event_title || !parsed.parameters.actionConfig?.event_start_at || !parsed.parameters.actionConfig?.event_end_at)) {
+      if (
+        parsed.parameters.actionType === "create_event" &&
+        (!parsed.parameters.actionConfig?.event_title ||
+          !parsed.parameters.actionConfig?.event_start_at ||
+          !parsed.parameters.actionConfig?.event_end_at)
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Event title, start time, and end time are required. What should the event be called and when is it?";
+        parsed.clarification =
+          "Event title, start time, and end time are required. What should the event be called and when is it?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.actionType === "create_habit_log" && !parsed.parameters.actionConfig?.habit_id) {
+      if (
+        parsed.parameters.actionType === "create_habit_log" &&
+        !parsed.parameters.actionConfig?.habit_id
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Habit ID is required for create_habit_log action. Which habit should be logged?";
+        parsed.clarification =
+          "Habit ID is required for create_habit_log action. Which habit should be logged?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.actionType === "create_note" && !parsed.parameters.actionConfig?.note_title) {
+      if (
+        parsed.parameters.actionType === "create_note" &&
+        !parsed.parameters.actionConfig?.note_title
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Note title is required for create_note action. What should the note be called?";
+        parsed.clarification =
+          "Note title is required for create_note action. What should the note be called?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
-      if (parsed.parameters.actionType === "update_progress" && (!parsed.parameters.actionConfig?.project_id || parsed.parameters.actionConfig?.progress === undefined)) {
+      if (
+        parsed.parameters.actionType === "update_progress" &&
+        (!parsed.parameters.actionConfig?.project_id ||
+          parsed.parameters.actionConfig?.progress === undefined)
+      ) {
         parsed.requiresConfirmation = true;
-        parsed.clarification = "Project ID and progress percentage are required for update_progress action. Which project and what progress?";
+        parsed.clarification =
+          "Project ID and progress percentage are required for update_progress action. Which project and what progress?";
         parsed.confidence = Math.min(parsed.confidence, 0.6);
       }
     }
 
     if (parsed.intent === "DELETE_AUTOMATION" && !parsed.parameters.ruleId) {
       parsed.requiresConfirmation = true;
-      parsed.clarification = "Rule ID is required to delete an automation. Which automation should be deleted?";
+      parsed.clarification =
+        "Rule ID is required to delete an automation. Which automation should be deleted?";
       parsed.confidence = Math.min(parsed.confidence, 0.5);
     }
 
     if (parsed.intent === "EXECUTE_AUTOMATION" && !parsed.parameters.ruleId) {
       parsed.requiresConfirmation = true;
-      parsed.clarification = "Rule ID is required to execute an automation. Which automation should be executed?";
+      parsed.clarification =
+        "Rule ID is required to execute an automation. Which automation should be executed?";
       parsed.confidence = Math.min(parsed.confidence, 0.6);
     }
 

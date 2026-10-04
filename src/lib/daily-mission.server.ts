@@ -1,5 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { getStudentProfile, getDueRevisions, getWeakAreas, type StudentProfile, type RevisionItem, type WeakArea } from "./context-engine.server";
+import {
+  getStudentProfile,
+  getDueRevisions,
+  getWeakAreas,
+  type StudentProfile,
+  type RevisionItem,
+  type WeakArea,
+} from "./context-engine.server";
 import { getResourceRecommendations } from "./unified-tutor-prompts";
 
 export interface DailyMission {
@@ -17,7 +24,14 @@ export interface MissionBlock {
   resources?: { title: string; url: string; type: string }[];
 }
 
-function getTimeAllocation(totalMinutes: number): { revision: number; concept: number; coding: number; dsa: number; project: number; review: number } {
+function getTimeAllocation(totalMinutes: number): {
+  revision: number;
+  concept: number;
+  coding: number;
+  dsa: number;
+  project: number;
+  review: number;
+} {
   if (totalMinutes <= 60) {
     return { revision: 5, concept: 20, coding: 25, dsa: 0, project: 0, review: 10 };
   }
@@ -31,8 +45,8 @@ function getTimeAllocation(totalMinutes: number): { revision: number; concept: n
 function isExamMode(profile: StudentProfile): { active: boolean; subjects: string[] } {
   const now = new Date();
   const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
-  const upcomingExams = profile.exams.filter((e) =>
-    e.exam_date && new Date(e.exam_date).getTime() - now.getTime() < twoWeeksMs
+  const upcomingExams = profile.exams.filter(
+    (e) => e.exam_date && new Date(e.exam_date).getTime() - now.getTime() < twoWeeksMs,
   );
   return {
     active: upcomingExams.length > 0,
@@ -43,7 +57,7 @@ function isExamMode(profile: StudentProfile): { active: boolean; subjects: strin
 export async function generateDailyMission(
   supabase: SupabaseClient,
   userId: string,
-  availableMinutes: number = 90
+  availableMinutes: number = 90,
 ): Promise<DailyMission> {
   const profile = await getStudentProfile(supabase, userId);
   const dueRevisions = await getDueRevisions(supabase, userId);
@@ -56,7 +70,10 @@ export async function generateDailyMission(
 
   // 1. Revision block (always first)
   if (dueRevisions.length > 0 && allocation.revision > 0) {
-    const revisionTopics = dueRevisions.slice(0, 3).map((r) => r.source_title).join(", ");
+    const revisionTopics = dueRevisions
+      .slice(0, 3)
+      .map((r) => r.source_title)
+      .join(", ");
     blocks.push({
       type: "revision",
       durationMin: allocation.revision,
@@ -69,7 +86,13 @@ export async function generateDailyMission(
   // 2. Weak areas from errors (high priority)
   const topWeakAreas = weakAreas.slice(0, 2);
   for (const weak of topWeakAreas) {
-    const lang = weak.source.includes("C++") ? "C++" : weak.source.includes("Python") ? "Python" : weak.source.includes("C") ? "C" : "C";
+    const lang = weak.source.includes("C++")
+      ? "C++"
+      : weak.source.includes("Python")
+        ? "Python"
+        : weak.source.includes("C")
+          ? "C"
+          : "C";
     const resources = getResourceRecommendations(lang);
     if (allocation.concept > 0) {
       blocks.push({
@@ -78,7 +101,15 @@ export async function generateDailyMission(
         topic: weak.concept,
         details: `Weak area: ${weak.type} - ${weak.concept} (frequency: ${weak.frequency}). Focus on understanding the root cause, then practice 2-3 exercises.`,
         priority: priority++,
-        resources: resources.primary ? [{ title: resources.primary.title, url: resources.primary.url, type: resources.primary.format }] : undefined,
+        resources: resources.primary
+          ? [
+              {
+                title: resources.primary.title,
+                url: resources.primary.url,
+                type: resources.primary.format,
+              },
+            ]
+          : undefined,
       });
       allocation.concept = Math.max(0, allocation.concept - 25);
     }
@@ -87,7 +118,11 @@ export async function generateDailyMission(
   // 3. Exam preparation (overrides normal priority)
   if (examMode.active && allocation.concept > 0) {
     for (const subject of examMode.subjects) {
-      const lang = subject.toLowerCase().includes("c++") ? "C++" : subject.toLowerCase().includes("python") ? "Python" : "C";
+      const lang = subject.toLowerCase().includes("c++")
+        ? "C++"
+        : subject.toLowerCase().includes("python")
+          ? "Python"
+          : "C";
       const resources = getResourceRecommendations(lang);
       blocks.push({
         type: "concept",
@@ -95,23 +130,41 @@ export async function generateDailyMission(
         topic: `${subject} Exam Prep`,
         details: `Exam-focused: Output prediction, dry runs, debugging, syntax, timed practice. Priority over new topics.`,
         priority: priority++,
-        resources: resources.primary ? [{ title: resources.primary.title, url: resources.primary.url, type: resources.primary.format }] : undefined,
+        resources: resources.primary
+          ? [
+              {
+                title: resources.primary.title,
+                url: resources.primary.url,
+                type: resources.primary.format,
+              },
+            ]
+          : undefined,
       });
       allocation.concept = Math.max(0, allocation.concept - 30);
     }
   }
 
   // 4. Current learning topic (from learn_topics in progress)
-  const inProgressTopic = profile.topics.find((t) => t.status === "In Progress" || (t.progress ?? 0) > 0 && (t.progress ?? 0) < 100);
+  const inProgressTopic = profile.topics.find(
+    (t) => t.status === "In Progress" || ((t.progress ?? 0) > 0 && (t.progress ?? 0) < 100),
+  );
   if (inProgressTopic && allocation.concept > 0) {
     const resources = getResourceRecommendations(inProgressTopic.language ?? "C");
     blocks.push({
       type: "concept",
       durationMin: Math.min(allocation.concept, 25),
       topic: inProgressTopic.topic,
-      details: `Continue: ${inProgressTopic.topic} (${inProgressTopic.language ?? 'N/A'}, ${inProgressTopic.progress ?? 0}% complete). Next: ${getNextSubtopic(inProgressTopic)}.`,
+      details: `Continue: ${inProgressTopic.topic} (${inProgressTopic.language ?? "N/A"}, ${inProgressTopic.progress ?? 0}% complete). Next: ${getNextSubtopic(inProgressTopic)}.`,
       priority: priority++,
-      resources: resources.primary ? [{ title: resources.primary.title, url: resources.primary.url, type: resources.primary.format }] : undefined,
+      resources: resources.primary
+        ? [
+            {
+              title: resources.primary.title,
+              url: resources.primary.url,
+              type: resources.primary.format,
+            },
+          ]
+        : undefined,
     });
     allocation.concept = Math.max(0, allocation.concept - 25);
   }
@@ -125,9 +178,17 @@ export async function generateDailyMission(
         type: "coding",
         durationMin: Math.min(allocation.coding, 30),
         topic: `${lang} Practice`,
-        details: `Solve 2-3 exercises from ${resources.primary?.title ?? 'practice resource'}. Focus: write, run, debug independently.`,
+        details: `Solve 2-3 exercises from ${resources.primary?.title ?? "practice resource"}. Focus: write, run, debug independently.`,
         priority: priority++,
-        resources: resources.primary ? [{ title: resources.primary.title, url: resources.primary.url, type: resources.primary.format }] : undefined,
+        resources: resources.primary
+          ? [
+              {
+                title: resources.primary.title,
+                url: resources.primary.url,
+                type: resources.primary.format,
+              },
+            ]
+          : undefined,
       });
       allocation.coding = Math.max(0, allocation.coding - 30);
       if (lang === "C++" && allocation.coding <= 0) break; // Only C++ if time permits
@@ -135,8 +196,8 @@ export async function generateDailyMission(
   }
 
   // 6. DSA (if time permits and foundation ready)
-  const hasProgrammingFoundation = profile.topics.some((t) =>
-    ["C", "Python", "C++"].includes(t.language) && (t.mastery_level ?? 0) >= 3
+  const hasProgrammingFoundation = profile.topics.some(
+    (t) => ["C", "Python", "C++"].includes(t.language) && (t.mastery_level ?? 0) >= 3,
   );
   if (hasProgrammingFoundation && allocation.dsa > 0) {
     const resources = getResourceRecommendations("DSA");
@@ -146,7 +207,15 @@ export async function generateDailyMission(
       topic: "DSA Problem",
       details: `Next pattern: ${getNextDSAPattern(profile.dsaProgress)}. Follow 11-step workflow. Don't look at solution immediately.`,
       priority: priority++,
-      resources: resources.primary ? [{ title: resources.primary.title, url: resources.primary.url, type: resources.primary.format }] : undefined,
+      resources: resources.primary
+        ? [
+            {
+              title: resources.primary.title,
+              url: resources.primary.url,
+              type: resources.primary.format,
+            },
+          ]
+        : undefined,
     });
   }
 
@@ -185,8 +254,32 @@ export async function generateDailyMission(
 
 function getNextSubtopic(topic: any): string {
   const subtopics: Record<string, string[]> = {
-    C: ["Variables & Types", "Operators", "Conditions", "Loops", "Functions", "Arrays", "Strings", "Pointers", "Memory", "Structures", "File I/O"],
-    Python: ["Syntax & Variables", "Data Types", "Operators", "Conditions", "Loops", "Functions", "Strings", "Lists/Tuples/Dicts/Sets", "File I/O", "Exceptions", "OOP"],
+    C: [
+      "Variables & Types",
+      "Operators",
+      "Conditions",
+      "Loops",
+      "Functions",
+      "Arrays",
+      "Strings",
+      "Pointers",
+      "Memory",
+      "Structures",
+      "File I/O",
+    ],
+    Python: [
+      "Syntax & Variables",
+      "Data Types",
+      "Operators",
+      "Conditions",
+      "Loops",
+      "Functions",
+      "Strings",
+      "Lists/Tuples/Dicts/Sets",
+      "File I/O",
+      "Exceptions",
+      "OOP",
+    ],
     "C++": ["Basics", "References", "OOP", "STL Containers", "STL Algorithms"],
   };
   const list = subtopics[topic.language] || [];

@@ -18,19 +18,25 @@ const SESSIONS_KEY = "ascend_focus_sessions";
 export function getFocusSessions(): Session[] {
   try {
     return JSON.parse(localStorage.getItem(SESSIONS_KEY) ?? "[]") as Session[];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 function pushSession(s: Session) {
   try {
     const all = getFocusSessions();
     all.push(s);
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(all));
-  } catch { /* noop */ }
+  } catch {
+    /* noop */
+  }
 }
 
 function playBell() {
   try {
-    const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     const ctx = new Ctx();
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
@@ -41,10 +47,13 @@ function playBell() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
     osc.start();
     osc.stop(ctx.currentTime + 0.8);
-    setTimeout(() => { void ctx.close(); }, 1000);
-  } catch { /* AudioContext unavailable */ }
+    setTimeout(() => {
+      void ctx.close();
+    }, 1000);
+  } catch {
+    /* AudioContext unavailable */
+  }
 }
-
 
 export default function FocusMode({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [type, setType] = useState<SessionType>("Deep Work");
@@ -60,7 +69,11 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
   const activeTaskLabel = customTask || firstMit?.title || "Deep work session";
 
   // Reset timer when session type changes
-  useEffect(() => { endsAtRef.current = null; setRemaining(DURATIONS[type]); setRunning(false); }, [type]);
+  useEffect(() => {
+    endsAtRef.current = null;
+    setRemaining(DURATIONS[type]);
+    setRunning(false);
+  }, [type]);
 
   useEffect(() => {
     if (!running) return;
@@ -77,9 +90,14 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
       });
     };
     const id = window.setInterval(tick, 500);
-    const onVis = () => { if (!document.hidden) tick(); };
+    const onVis = () => {
+      if (!document.hidden) tick();
+    };
     document.addEventListener("visibilitychange", onVis);
-    return () => { window.clearInterval(id); document.removeEventListener("visibilitychange", onVis); };
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running]);
 
@@ -87,7 +105,10 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
     if (!open) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
-      if (e.key === " ") { e.preventDefault(); setRunning((r) => !r); }
+      if (e.key === " ") {
+        e.preventDefault();
+        setRunning((r) => !r);
+      }
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -98,7 +119,11 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
     endsAtRef.current = null;
     playBell();
     pushSession({ type, date: todayISO(), duration: DURATIONS[type] });
-    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+    if (
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "granted"
+    ) {
       new Notification("Ascend — Session complete", { body: `${type} finished. Take a breath.` });
     }
     // Rotate: after Deep Work, do a break
@@ -112,16 +137,30 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
   }
 
   function toggle() {
-    if (!running && typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+    if (
+      !running &&
+      typeof window !== "undefined" &&
+      "Notification" in window &&
+      Notification.permission === "default"
+    ) {
       Notification.requestPermission().catch(() => {});
     }
-    if (!running) { startedAtRef.current = Date.now(); endsAtRef.current = Date.now() + remaining * 1000; }
-    else endsAtRef.current = null;
+    if (!running) {
+      startedAtRef.current = Date.now();
+      endsAtRef.current = Date.now() + remaining * 1000;
+    } else endsAtRef.current = null;
     setRunning((r) => !r);
   }
 
-  function reset() { endsAtRef.current = null; setRemaining(DURATIONS[type]); setRunning(false); }
-  function skip() { setRemaining(0); onSessionEnd(); }
+  function reset() {
+    endsAtRef.current = null;
+    setRemaining(DURATIONS[type]);
+    setRunning(false);
+  }
+  function skip() {
+    setRemaining(0);
+    onSessionEnd();
+  }
 
   const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
   const ss = String(remaining % 60).padStart(2, "0");
@@ -140,7 +179,11 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
   return (
     <div className="fixed inset-0 z-[110] bg-[var(--forest)] text-white animate-in fade-in duration-200 overflow-y-auto">
       <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 relative">
-        <button onClick={onClose} className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors active:scale-95" aria-label="Exit focus mode">
+        <button
+          onClick={onClose}
+          className="absolute top-6 right-6 text-white/60 hover:text-white transition-colors active:scale-95"
+          aria-label="Exit focus mode"
+        >
           <X className="h-6 w-6" />
         </button>
 
@@ -151,7 +194,9 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
               onClick={() => setType(t)}
               className={cn(
                 "px-4 py-1.5 text-xs rounded-full transition-all active:scale-95",
-                type === t ? "bg-[var(--gold)] text-[var(--forest)] font-medium" : "text-white/70 hover:text-white",
+                type === t
+                  ? "bg-[var(--gold)] text-[var(--forest)] font-medium"
+                  : "text-white/70 hover:text-white",
               )}
             >
               {t} · {DURATIONS[t] / 60}m
@@ -163,10 +208,21 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
 
         <div className="relative mt-6">
           <svg width="300" height="300" viewBox="0 0 300 300" className="-rotate-90">
-            <circle cx="150" cy="150" r="130" stroke="rgba(255,255,255,0.12)" strokeWidth="8" fill="none" />
             <circle
-              cx="150" cy="150" r="130"
-              stroke="var(--gold)" strokeWidth="8" fill="none"
+              cx="150"
+              cy="150"
+              r="130"
+              stroke="rgba(255,255,255,0.12)"
+              strokeWidth="8"
+              fill="none"
+            />
+            <circle
+              cx="150"
+              cy="150"
+              r="130"
+              stroke="var(--gold)"
+              strokeWidth="8"
+              fill="none"
               strokeDasharray={circ}
               strokeDashoffset={dashOffset}
               strokeLinecap="round"
@@ -174,7 +230,9 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <p className="font-serif text-6xl md:text-7xl text-white tabular-nums">{mm}:{ss}</p>
+            <p className="font-serif text-6xl md:text-7xl text-white tabular-nums">
+              {mm}:{ss}
+            </p>
             <p className="text-[10px] uppercase tracking-widest text-white/50 mt-2">remaining</p>
           </div>
         </div>
@@ -190,21 +248,66 @@ export default function FocusMode({ open, onClose }: { open: boolean; onClose: (
         </div>
 
         <div className="mt-8 flex items-center gap-3">
-          <Button onClick={toggle} aria-label={running ? "Pause timer" : "Start focus timer"} size="lg" variant="outline" className="min-w-[120px] bg-[var(--gold)] text-[var(--forest)] border-[var(--gold)] hover:bg-[var(--gold)]/90 hover:text-[var(--forest)] active:scale-95">
-            {running ? <><Pause className="h-4 w-4 mr-1" />Pause</> : <><Play className="h-4 w-4 mr-1" />Start</>}
+          <Button
+            onClick={toggle}
+            aria-label={running ? "Pause timer" : "Start focus timer"}
+            size="lg"
+            variant="outline"
+            className="min-w-[120px] bg-[var(--gold)] text-[var(--forest)] border-[var(--gold)] hover:bg-[var(--gold)]/90 hover:text-[var(--forest)] active:scale-95"
+          >
+            {running ? (
+              <>
+                <Pause className="h-4 w-4 mr-1" />
+                Pause
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 mr-1" />
+                Start
+              </>
+            )}
           </Button>
-          <Button variant="ghost" onClick={reset} aria-label="Reset timer" size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><RotateCcw className="h-4 w-4 mr-1" />Reset</Button>
-          <Button variant="ghost" onClick={skip} aria-label="Skip to next session" size="lg" className="text-white hover:bg-white/10 hover:text-white active:scale-95"><SkipForward className="h-4 w-4 mr-1" />Skip</Button>
+          <Button
+            variant="ghost"
+            onClick={reset}
+            aria-label="Reset timer"
+            size="lg"
+            className="text-white hover:bg-white/10 hover:text-white active:scale-95"
+          >
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Reset
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={skip}
+            aria-label="Skip to next session"
+            size="lg"
+            className="text-white hover:bg-white/10 hover:text-white active:scale-95"
+          >
+            <SkipForward className="h-4 w-4 mr-1" />
+            Skip
+          </Button>
         </div>
 
         <div className="mt-8 flex items-center gap-2">
           {[1, 2, 3, 4].map((n) => (
-            <span key={n} className={cn("h-2 w-2 rounded-full transition-colors", n <= sessionCountToday ? "bg-[var(--gold)]" : "bg-white/20")} />
+            <span
+              key={n}
+              className={cn(
+                "h-2 w-2 rounded-full transition-colors",
+                n <= sessionCountToday ? "bg-[var(--gold)]" : "bg-white/20",
+              )}
+            />
           ))}
-          <span className="ml-3 text-xs text-white/60">{sessionCountToday} deep sessions today</span>
+          <span className="ml-3 text-xs text-white/60">
+            {sessionCountToday} deep sessions today
+          </span>
         </div>
 
-        <button onClick={onClose} className="mt-12 text-xs text-white/50 hover:text-white underline underline-offset-4">
+        <button
+          onClick={onClose}
+          className="mt-12 text-xs text-white/50 hover:text-white underline underline-offset-4"
+        >
           Exit focus mode
         </button>
       </div>

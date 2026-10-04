@@ -1,9 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { todayISO, useIntention, useSaveIntention, useTasks, useTaskMutations, type Task } from "@/lib/ascend-data";
+import {
+  todayISO,
+  useIntention,
+  useSaveIntention,
+  useTasks,
+  useTaskMutations,
+  type Task,
+} from "@/lib/ascend-data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Pencil, Trash2, Timer, ListChecks, CheckCircle2 } from "lucide-react";
@@ -21,10 +34,19 @@ function greeting() {
   return "Good evening";
 }
 function longDate() {
-  return new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  return new Date().toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 }
-function isPast(iso: string) { return iso < todayISO(); }
-function isToday(iso: string) { return iso === todayISO(); }
+function isPast(iso: string) {
+  return iso < todayISO();
+}
+function isToday(iso: string) {
+  return iso === todayISO();
+}
 function fmtShortDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
@@ -84,9 +106,10 @@ export default function DailyTasks() {
 
   const [focusToday, setFocusToday] = useState(0);
   useEffect(() => {
-    const recalc = () => setFocusToday(
-      getFocusSessions().filter((s) => s.date === day && s.type === "Deep Work").length
-    );
+    const recalc = () =>
+      setFocusToday(
+        getFocusSessions().filter((s) => s.date === day && s.type === "Deep Work").length,
+      );
     recalc();
     const id = window.setInterval(recalc, 30_000);
     return () => window.clearInterval(id);
@@ -94,7 +117,10 @@ export default function DailyTasks() {
 
   const all = tasksQ.data ?? [];
   const active = useMemo(() => all.filter((t) => !t.done), [all]);
-  const completed = useMemo(() => all.filter((t) => t.done && (!t.due_date || t.due_date === day)), [all, day]);
+  const completed = useMemo(
+    () => all.filter((t) => t.done && (!t.due_date || t.due_date === day)),
+    [all, day],
+  );
 
   const tasksToday = useMemo(
     () => all.filter((t) => !t.done && (!t.due_date || t.due_date === day)).length,
@@ -120,10 +146,13 @@ export default function DailyTasks() {
   }
 
   function toggleDone(t: Task) {
-    update.mutate({ id: t.id, done: !t.done }, {
-      onSuccess: () => toast.success(t.done ? "Task reopened" : "Task completed"),
-      onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update task"),
-    });
+    update.mutate(
+      { id: t.id, done: !t.done },
+      {
+        onSuccess: () => toast.success(t.done ? "Task reopened" : "Task completed"),
+        onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to update task"),
+      },
+    );
   }
 
   function deleteTask(id: string) {
@@ -133,10 +162,13 @@ export default function DailyTasks() {
     });
   }
 
-
   function scheduleReminder(t: Partial<Task>) {
     if (t.reminder_time) {
-      scheduleNotification(`⏰ ${t.title ?? "Task"}`, "Reminder from Ascend", new Date(t.reminder_time));
+      scheduleNotification(
+        `⏰ ${t.title ?? "Task"}`,
+        "Reminder from Ascend",
+        new Date(t.reminder_time),
+      );
     }
   }
 
@@ -169,22 +201,34 @@ export default function DailyTasks() {
     <div className="space-y-8 page-enter">
       {/* Greeting */}
       <header>
-        <h1 className="font-serif text-3xl md:text-4xl text-foreground">
-          {greeting()}, Adib.
-        </h1>
+        <h1 className="font-serif text-3xl md:text-4xl text-foreground">{greeting()}, Adib.</h1>
         <p className="text-sm text-muted-foreground mt-1">{longDate()}</p>
 
         {/* Stat cards */}
         <div className="mt-5 grid grid-cols-3 gap-3">
-          <StatCard icon={<ListChecks className="h-4 w-4" />} label="Tasks today" value={tasksToday} />
-          <StatCard icon={<CheckCircle2 className="h-4 w-4" />} label="Completed" value={completed.length} />
-          <StatCard icon={<Timer className="h-4 w-4" />} label="Focus sessions" value={focusToday} />
+          <StatCard
+            icon={<ListChecks className="h-4 w-4" />}
+            label="Tasks today"
+            value={tasksToday}
+          />
+          <StatCard
+            icon={<CheckCircle2 className="h-4 w-4" />}
+            label="Completed"
+            value={completed.length}
+          />
+          <StatCard
+            icon={<Timer className="h-4 w-4" />}
+            label="Focus sessions"
+            value={focusToday}
+          />
         </div>
       </header>
 
       {/* Intention */}
       <section>
-        <Label className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] font-medium">Today's intention</Label>
+        <Label className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] font-medium">
+          Today's intention
+        </Label>
         <Textarea
           rows={1}
           value={intentionValue}
@@ -198,23 +242,40 @@ export default function DailyTasks() {
       {/* MITs */}
       <section>
         <h2 className="font-serif text-xl text-primary">Most Important</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">Three things. That's all today needs.</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Three things. That's all today needs.
+        </p>
 
         <div className="mt-4 space-y-3">
           {mits.map((task, idx) => {
             const slot = idx + 1;
             const numeral = ["I", "II", "III"][idx];
             return (
-              <div key={slot} className="card-hover bg-[var(--card)] border border-border rounded-2xl p-5 min-h-[110px] flex gap-4 shadow-[var(--shadow-sm)]">
-                <div className="font-serif text-3xl text-[var(--gold)] font-bold w-8 flex-shrink-0 mt-1">{numeral}</div>
+              <div
+                key={slot}
+                className="card-hover bg-[var(--card)] border border-border rounded-2xl p-5 min-h-[110px] flex gap-4 shadow-[var(--shadow-sm)]"
+              >
+                <div className="font-serif text-3xl text-[var(--gold)] font-bold w-8 flex-shrink-0 mt-1">
+                  {numeral}
+                </div>
                 <div className="flex-1 min-w-0">
                   {task ? (
                     <>
-                      <p className={cn("font-serif text-lg text-foreground leading-snug break-words", task.done && "line-through opacity-50")}>
+                      <p
+                        className={cn(
+                          "font-serif text-lg text-foreground leading-snug break-words",
+                          task.done && "line-through opacity-50",
+                        )}
+                      >
                         {task.title}
                       </p>
                       <div className="flex flex-wrap items-center gap-2 mt-2">
-                        <span className={cn("text-[11px] px-2 py-0.5 rounded-full font-medium border", priorityPill(task.priority))}>
+                        <span
+                          className={cn(
+                            "text-[11px] px-2 py-0.5 rounded-full font-medium border",
+                            priorityPill(task.priority),
+                          )}
+                        >
                           {task.priority}
                         </span>
                         {task.reminder_time && (
@@ -243,7 +304,9 @@ export default function DailyTasks() {
                     </>
                   ) : (
                     <div className="flex flex-col justify-center h-full">
-                      <p className="font-serif text-muted-foreground italic">Set priority {numeral}</p>
+                      <p className="font-serif text-muted-foreground italic">
+                        Set priority {numeral}
+                      </p>
                       <button
                         onClick={() => openAdd({ mit_slot: slot, due_date: day })}
                         className="mt-2 text-xs text-[var(--gold)] hover:text-primary font-medium self-start"
@@ -265,17 +328,26 @@ export default function DailyTasks() {
           <input
             value={quickTitle}
             onChange={(e) => setQuickTitle(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") createQuick(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") createQuick();
+            }}
             placeholder="+ Add a task… (press Enter)"
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/70 outline-none px-2"
           />
           <button
-            onClick={() => setQuickPriority((p) => p === "High" ? "Medium" : p === "Medium" ? "Low" : "High")}
-            className={cn("px-2 py-1 rounded-lg text-xs font-medium border", priorityPill(quickPriority))}
+            onClick={() =>
+              setQuickPriority((p) => (p === "High" ? "Medium" : p === "Medium" ? "Low" : "High"))
+            }
+            className={cn(
+              "px-2 py-1 rounded-lg text-xs font-medium border",
+              priorityPill(quickPriority),
+            )}
           >
             {quickPriority}
           </button>
-          <Button size="sm" onClick={createQuick} className="text-xs px-3">Add</Button>
+          <Button size="sm" onClick={createQuick} className="text-xs px-3">
+            Add
+          </Button>
         </div>
 
         {/* Filters */}
@@ -294,7 +366,12 @@ export default function DailyTasks() {
               {f}
             </button>
           ))}
-          <Button variant="outline" size="sm" className="ml-auto text-xs" onClick={() => openAdd({ due_date: day })}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="ml-auto text-xs"
+            onClick={() => openAdd({ due_date: day })}
+          >
             + New task
           </Button>
         </div>
@@ -323,7 +400,12 @@ export default function DailyTasks() {
                 className="w-5 h-5 rounded-full border-2 border-border accent-[var(--forest)] flex-shrink-0 cursor-pointer"
                 aria-label={`Mark ${t.title} done`}
               />
-              <span className={cn("flex-1 text-sm text-foreground font-medium min-w-0 truncate", t.done && "line-through text-muted-foreground")}>
+              <span
+                className={cn(
+                  "flex-1 text-sm text-foreground font-medium min-w-0 truncate",
+                  t.done && "line-through text-muted-foreground",
+                )}
+              >
                 {t.title}
               </span>
               <span className="text-[10px] px-2 py-0.5 bg-secondary text-muted-foreground rounded-full hidden md:group-hover:inline-block">
@@ -335,14 +417,18 @@ export default function DailyTasks() {
                 </span>
               )}
               {t.due_date && (
-                <span className={cn(
-                  "text-[11px] font-medium whitespace-nowrap",
-                  isOverdue(t) && !t.done ? "text-red-600" : "text-muted-foreground",
-                )}>
+                <span
+                  className={cn(
+                    "text-[11px] font-medium whitespace-nowrap",
+                    isOverdue(t) && !t.done ? "text-red-600" : "text-muted-foreground",
+                  )}
+                >
                   {fmtDue(t)}
                 </span>
               )}
-              {t.reminder_time && !t.done && <span className="text-[11px] text-[var(--gold)]">⏰</span>}
+              {t.reminder_time && !t.done && (
+                <span className="text-[11px] text-[var(--gold)]">⏰</span>
+              )}
               <div className="md:opacity-0 md:group-hover:opacity-100 transition-opacity flex gap-1">
                 <button
                   onClick={() => openEdit(t)}
@@ -376,7 +462,10 @@ export default function DailyTasks() {
             {showCompleted && (
               <div className="mt-2 space-y-2">
                 {completed.map((t) => (
-                  <div key={t.id} className="flex items-center gap-3 px-4 py-2 rounded-xl border border-border/60 opacity-60 bg-[var(--card)]">
+                  <div
+                    key={t.id}
+                    className="flex items-center gap-3 px-4 py-2 rounded-xl border border-border/60 opacity-60 bg-[var(--card)]"
+                  >
                     <input
                       type="checkbox"
                       checked
@@ -384,7 +473,9 @@ export default function DailyTasks() {
                       className="w-5 h-5 rounded-full accent-[var(--forest)]"
                       aria-label={`Reopen ${t.title}`}
                     />
-                    <span className="flex-1 text-sm line-through text-muted-foreground truncate">{t.title}</span>
+                    <span className="flex-1 text-sm line-through text-muted-foreground truncate">
+                      {t.title}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -414,7 +505,15 @@ export default function DailyTasks() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number | string }) {
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+}) {
   return (
     <div className="bg-secondary rounded-xl p-4 flex items-center gap-3 card-hover">
       <div className="h-9 w-9 rounded-lg bg-[var(--card)] flex items-center justify-center text-[var(--gold)]">
@@ -422,7 +521,9 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string
       </div>
       <div className="min-w-0">
         <p className="font-serif text-2xl text-foreground leading-none">{value}</p>
-        <p className="text-[11px] tracking-widest uppercase text-muted-foreground mt-1 truncate">{label}</p>
+        <p className="text-[11px] tracking-widest uppercase text-muted-foreground mt-1 truncate">
+          {label}
+        </p>
       </div>
     </div>
   );
@@ -451,14 +552,16 @@ function TaskDialog({
         mit_slot: initial?.mit_slot ?? null,
         reminder_time: initial?.reminder_time ?? null,
       });
-
     }
   }, [open, initial]);
 
   const isMit = form.mit_slot != null;
 
   function save() {
-    if (!form.title?.trim()) { toast.error("Title required"); return; }
+    if (!form.title?.trim()) {
+      toast.error("Title required");
+      return;
+    }
     onSubmit(form);
   }
 
@@ -466,7 +569,9 @@ function TaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-serif">{initial && "id" in (initial as Task) ? "Edit task" : "New task"}</DialogTitle>
+          <DialogTitle className="font-serif">
+            {initial && "id" in (initial as Task) ? "Edit task" : "New task"}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
           <div>
@@ -488,7 +593,9 @@ function TaskDialog({
                   onClick={() => setForm({ ...form, priority: p })}
                   className={cn(
                     "flex-1 text-xs px-3 py-2 rounded-lg border font-medium transition-colors",
-                    form.priority === p ? priorityPill(p) : "border-border text-muted-foreground hover:text-foreground",
+                    form.priority === p
+                      ? priorityPill(p)
+                      : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
                   {p}
@@ -554,8 +661,15 @@ function TaskDialog({
               <Label className="text-xs">Notify me at</Label>
               <Input
                 type="datetime-local"
-                value={form.reminder_time ? new Date(form.reminder_time).toISOString().slice(0, 16) : ""}
-                onChange={(e) => setForm({ ...form, reminder_time: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                value={
+                  form.reminder_time ? new Date(form.reminder_time).toISOString().slice(0, 16) : ""
+                }
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    reminder_time: e.target.value ? new Date(e.target.value).toISOString() : null,
+                  })
+                }
                 className="mt-1"
               />
             </div>
@@ -565,7 +679,9 @@ function TaskDialog({
             <input
               type="checkbox"
               checked={isMit}
-              onChange={(e) => setForm({ ...form, mit_slot: e.target.checked ? (form.mit_slot ?? 1) : null })}
+              onChange={(e) =>
+                setForm({ ...form, mit_slot: e.target.checked ? (form.mit_slot ?? 1) : null })
+              }
               className="accent-[var(--forest)]"
             />
             Add to top 3 priorities (MIT)
@@ -578,7 +694,9 @@ function TaskDialog({
                   onClick={() => setForm({ ...form, mit_slot: slot })}
                   className={cn(
                     "flex-1 text-xs px-3 py-2 rounded-lg border font-medium",
-                    form.mit_slot === slot ? "bg-[var(--gold)]/10 text-[var(--gold)] border-[var(--gold)]/30" : "border-border text-muted-foreground",
+                    form.mit_slot === slot
+                      ? "bg-[var(--gold)]/10 text-[var(--gold)] border-[var(--gold)]/30"
+                      : "border-border text-muted-foreground",
                   )}
                 >
                   Slot {["I", "II", "III"][slot - 1]}
@@ -586,10 +704,11 @@ function TaskDialog({
               ))}
             </div>
           )}
-
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
           <Button onClick={save}>Save</Button>
         </DialogFooter>
       </DialogContent>

@@ -1,7 +1,17 @@
 import { cn } from "@/lib/utils";
 import { ReactNode, useEffect, useState } from "react";
 
-export function SectionHeader({ kicker, title, subtitle, right }: { kicker: string; title: string; subtitle?: string; right?: ReactNode }) {
+export function SectionHeader({
+  kicker,
+  title,
+  subtitle,
+  right,
+}: {
+  kicker: string;
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+}) {
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 sm:flex sm:flex-wrap sm:justify-between">
       <div className="min-w-0">
@@ -14,7 +24,15 @@ export function SectionHeader({ kicker, title, subtitle, right }: { kicker: stri
   );
 }
 
-export function EmptyState({ title, hint, action }: { title: string; hint?: string; action?: ReactNode }) {
+export function EmptyState({
+  title,
+  hint,
+  action,
+}: {
+  title: string;
+  hint?: string;
+  action?: ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-dashed border-border bg-[var(--card)]/50 p-10 text-center">
       <p className="font-serif text-lg text-primary">{title}</p>
@@ -24,7 +42,17 @@ export function EmptyState({ title, hint, action }: { title: string; hint?: stri
   );
 }
 
-export function Card({ children, className, onClick, interactive }: { children: ReactNode; className?: string; onClick?: () => void; interactive?: boolean }) {
+export function Card({
+  children,
+  className,
+  onClick,
+  interactive,
+}: {
+  children: ReactNode;
+  className?: string;
+  onClick?: () => void;
+  interactive?: boolean;
+}) {
   return (
     <div
       onClick={onClick}
@@ -41,7 +69,17 @@ export function Card({ children, className, onClick, interactive }: { children: 
   );
 }
 
-export function Pill({ children, active, onClick, tone = "default" }: { children: ReactNode; active?: boolean; onClick?: () => void; tone?: "default" | "gold" | "forest" }) {
+export function Pill({
+  children,
+  active,
+  onClick,
+  tone = "default",
+}: {
+  children: ReactNode;
+  active?: boolean;
+  onClick?: () => void;
+  tone?: "default" | "gold" | "forest";
+}) {
   return (
     <button
       onClick={onClick}
@@ -51,7 +89,7 @@ export function Pill({ children, active, onClick, tone = "default" }: { children
           ? "bg-primary text-primary-foreground border-primary"
           : tone === "gold"
             ? "border-[var(--gold)]/40 text-[var(--gold)] hover:bg-[var(--gold)]/10"
-            : "border-border text-muted-foreground hover:text-primary hover:bg-secondary"
+            : "border-border text-muted-foreground hover:text-primary hover:bg-secondary",
       )}
     >
       {children}
@@ -64,7 +102,15 @@ export function Skeleton({ className }: { className?: string }) {
 }
 
 type BadgeVariant = "default" | "success" | "warning" | "danger" | "gold";
-export function Badge({ children, variant = "default", className }: { children: ReactNode; variant?: BadgeVariant; className?: string }) {
+export function Badge({
+  children,
+  variant = "default",
+  className,
+}: {
+  children: ReactNode;
+  variant?: BadgeVariant;
+  className?: string;
+}) {
   const styles: Record<BadgeVariant, string> = {
     default: "bg-secondary text-secondary-foreground border-border",
     success: "bg-[var(--forest)]/10 text-[var(--forest)] border-[var(--forest)]/30",
@@ -73,13 +119,31 @@ export function Badge({ children, variant = "default", className }: { children: 
     gold: "bg-[var(--gold)]/15 text-[var(--gold)] border-[var(--gold)]/40",
   };
   return (
-    <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border", styles[variant], className)}>
+    <span
+      className={cn(
+        "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider border",
+        styles[variant],
+        className,
+      )}
+    >
       {children}
     </span>
   );
 }
 
-export function Stat({ kicker, value, subtitle, tone = "primary", className }: { kicker: string; value: ReactNode; subtitle?: string; tone?: "primary" | "gold" | "forest" | "danger"; className?: string }) {
+export function Stat({
+  kicker,
+  value,
+  subtitle,
+  tone = "primary",
+  className,
+}: {
+  kicker: string;
+  value: ReactNode;
+  subtitle?: string;
+  tone?: "primary" | "gold" | "forest" | "danger";
+  className?: string;
+}) {
   const toneClass = {
     primary: "text-primary",
     gold: "text-[var(--gold)]",
@@ -87,7 +151,12 @@ export function Stat({ kicker, value, subtitle, tone = "primary", className }: {
     danger: "text-[var(--destructive)]",
   }[tone];
   return (
-    <div className={cn("rounded-xl bg-[var(--card)] ring-1 ring-border/60 p-5 shadow-[var(--shadow-sm)]", className)}>
+    <div
+      className={cn(
+        "rounded-xl bg-[var(--card)] ring-1 ring-border/60 p-5 shadow-[var(--shadow-sm)]",
+        className,
+      )}
+    >
       <p className="text-[11px] tracking-[0.2em] uppercase text-muted-foreground">{kicker}</p>
       <p className={cn("font-serif text-3xl md:text-4xl mt-1", toneClass)}>{value}</p>
       {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
@@ -95,7 +164,19 @@ export function Stat({ kicker, value, subtitle, tone = "primary", className }: {
   );
 }
 
-export function ProgressBar({ value, label, showPercent = false, tone = "gold", animated = true }: { value: number; label?: string; showPercent?: boolean; tone?: "gold" | "forest"; animated?: boolean }) {
+export function ProgressBar({
+  value,
+  label,
+  showPercent = false,
+  tone = "gold",
+  animated = true,
+}: {
+  value: number;
+  label?: string;
+  showPercent?: boolean;
+  tone?: "gold" | "forest";
+  animated?: boolean;
+}) {
   const clamped = Math.max(0, Math.min(100, value));
   const barColor = tone === "gold" ? "bg-[var(--gold)]" : "bg-[var(--forest)]";
   return (
@@ -134,7 +215,8 @@ export function formatMoney(n: number | string | null | undefined) {
 export function daysUntil(iso: string | null | undefined): number | null {
   if (!iso) return null;
   const target = new Date(iso).getTime();
-  const now = new Date(); now.setHours(0, 0, 0, 0);
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
   return Math.round((target - now.getTime()) / 86400000);
 }
 
@@ -174,7 +256,9 @@ export function AIError({ message, onRetry }: { message: string; onRetry?: () =>
       <p className="font-medium">Could not get a response</p>
       <p className="mt-1 text-xs opacity-80">{message}</p>
       {onRetry && (
-        <button onClick={onRetry} className="mt-2 text-xs underline">Try again</button>
+        <button onClick={onRetry} className="mt-2 text-xs underline">
+          Try again
+        </button>
       )}
     </div>
   );

@@ -4,11 +4,7 @@
 
 import { describe, expect, it } from "bun:test";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  buildTutorSystem,
-  buildTutorUser,
-  type ContextItem,
-} from "./student-tutor-core";
+import { buildTutorSystem, buildTutorUser, type ContextItem } from "./student-tutor-core";
 import { prepareTutorContext } from "./student-tutor.server";
 
 const docItem: ContextItem = {
@@ -45,8 +41,7 @@ function mockSupabase(rowsByTable: Record<string, unknown[]>, capture: Record<st
     gte: () => builder,
     lt: () => builder,
     lte: () => builder,
-    limit: () =>
-      Promise.resolve({ data: rowsByTable[capture.table as string] ?? [], error: null }),
+    limit: () => Promise.resolve({ data: rowsByTable[capture.table as string] ?? [], error: null }),
     maybeSingle: () =>
       Promise.resolve({ data: rowsByTable[capture.table as string]?.[0] ?? null, error: null }),
   };
@@ -142,9 +137,7 @@ describe("prepareTutorContext authorization", () => {
       subject: "Engineering Physics",
     }).then((ctx) => {
       expect(capture.user).toBe("user-A");
-      expect(ctx.sources.some((s) => s.title === "Engineering Physics Notes")).toBe(
-        true,
-      );
+      expect(ctx.sources.some((s) => s.title === "Engineering Physics Notes")).toBe(true);
       expect(ctx.system).toContain("Source:");
     });
   });

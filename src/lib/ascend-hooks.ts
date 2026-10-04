@@ -43,7 +43,10 @@ function makeCrud<T extends { id: string }>(table: string, key: string) {
     const list = useQuery({
       queryKey: [key],
       queryFn: async () => {
-        const { data, error } = await supabase.from(table as never).select("*").order("created_at", { ascending: false });
+        const { data, error } = await supabase
+          .from(table as never)
+          .select("*")
+          .order("created_at", { ascending: false });
         if (error) throw error;
         return (data ?? []) as T[];
       },
@@ -52,21 +55,29 @@ function makeCrud<T extends { id: string }>(table: string, key: string) {
     const create = useMutation({
       mutationFn: async (input: Partial<T>) => {
         const user_id = await uid();
-        const { error } = await supabase.from(table as never).insert({ ...(input as object), user_id } as never);
+        const { error } = await supabase
+          .from(table as never)
+          .insert({ ...(input as object), user_id } as never);
         if (error) throw error;
       },
       onSuccess: invalidate,
     });
     const update = useMutation({
       mutationFn: async ({ id, ...patch }: Partial<T> & { id: string }) => {
-        const { error } = await supabase.from(table as never).update(patch as never).eq("id", id);
+        const { error } = await supabase
+          .from(table as never)
+          .update(patch as never)
+          .eq("id", id);
         if (error) throw error;
       },
       onSuccess: invalidate,
     });
     const remove = useMutation({
       mutationFn: async (id: string) => {
-        const { error } = await supabase.from(table as never).delete().eq("id", id);
+        const { error } = await supabase
+          .from(table as never)
+          .delete()
+          .eq("id", id);
         if (error) throw error;
       },
       onSuccess: invalidate,
@@ -79,7 +90,10 @@ export const useNotes = makeCrud<Note>("notes", "notes");
 export const useCodingProblems = makeCrud<CodingProblem>("coding_problems", "coding_problems");
 export const useQuizItems = makeCrud<QuizItem>("quiz_items", "quiz_items");
 export const useExams = makeCrud<Exam>("exams", "exams");
-export const useAcademicProjects = makeCrud<AcademicProject>("academic_projects", "academic_projects");
+export const useAcademicProjects = makeCrud<AcademicProject>(
+  "academic_projects",
+  "academic_projects",
+);
 export const useGoals = makeCrud<Goal>("goals", "goals");
 export const useClients = makeCrud<Client>("clients", "clients");
 export const useWorkProjects = makeCrud<WorkProject>("work_projects", "work_projects");
@@ -93,7 +107,10 @@ export function useHabits() {
   const list = useQuery({
     queryKey: ["habits"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("habits").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase
+        .from("habits")
+        .select("*")
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Habit[];
     },
@@ -118,7 +135,10 @@ export function useHabits() {
   });
   const update = useMutation({
     mutationFn: async ({ id, ...patch }: Partial<Habit> & { id: string }) => {
-      const { error } = await supabase.from("habits").update(patch as any).eq("id", id);
+      const { error } = await supabase
+        .from("habits")
+        .update(patch as any)
+        .eq("id", id);
       if (error) throw error;
     },
     onSuccess: inv,
@@ -128,7 +148,10 @@ export function useHabits() {
       const { error } = await supabase.from("habits").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => { inv(); qc.invalidateQueries({ queryKey: ["habit_logs"] }); },
+    onSuccess: () => {
+      inv();
+      qc.invalidateQueries({ queryKey: ["habit_logs"] });
+    },
   });
   return { list, create, update, remove };
 }
@@ -137,7 +160,11 @@ export function useHabitLogs(weekStart: string, weekEnd: string) {
   return useQuery({
     queryKey: ["habit_logs", weekStart, weekEnd],
     queryFn: async () => {
-      const { data, error } = await supabase.from("habit_logs").select("*").gte("day", weekStart).lte("day", weekEnd);
+      const { data, error } = await supabase
+        .from("habit_logs")
+        .select("*")
+        .gte("day", weekStart)
+        .lte("day", weekEnd);
       if (error) throw error;
       return (data ?? []) as HabitLog[];
     },
@@ -161,7 +188,11 @@ export function useLogHabit() {
       notes?: string;
     }) => {
       const user_id = await uid();
-      const { data: habit } = await supabase.from("habits").select("*").eq("id", habit_id).maybeSingle();
+      const { data: habit } = await supabase
+        .from("habits")
+        .select("*")
+        .eq("id", habit_id)
+        .maybeSingle();
       if (!habit) throw new Error("Habit not found");
 
       const metricType = (habit as any).metric_type ?? "boolean";
@@ -169,7 +200,7 @@ export function useLogHabit() {
       const logValue = value ?? (metricType === "boolean" ? 1 : target);
       const logDuration = duration_seconds ?? null;
       const logNotes = notes ?? null;
-      const done = metricType === "boolean" ? true : (logValue >= target);
+      const done = metricType === "boolean" ? true : logValue >= target;
 
       // upsert by (user_id, habit_id, day)
       const { data: existing } = await supabase
@@ -186,9 +217,15 @@ export function useLogHabit() {
           .eq("id", existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("habit_logs")
-          .insert({ user_id, habit_id, day, done, value: logValue, duration_seconds: logDuration, notes: logNotes } as any);
+        const { error } = await supabase.from("habit_logs").insert({
+          user_id,
+          habit_id,
+          day,
+          done,
+          value: logValue,
+          duration_seconds: logDuration,
+          notes: logNotes,
+        } as any);
         if (error) throw error;
       }
 
@@ -216,7 +253,12 @@ export function useLogHabit() {
 
       await supabase
         .from("habits")
-        .update({ streak, last_done: done ? day : null, total_completions: totalCompletions, longest_streak: longestStreak } as any)
+        .update({
+          streak,
+          last_done: done ? day : null,
+          total_completions: totalCompletions,
+          longest_streak: longestStreak,
+        } as any)
         .eq("id", habit_id);
     },
     onSuccess: () => {
@@ -263,16 +305,30 @@ export function useProjects() {
         supabase.from("academic_projects").select("*").order("created_at", { ascending: false }),
         supabase.from("work_projects").select("*").order("created_at", { ascending: false }),
       ]);
-      const academicData = (academic.data ?? []).map(p => ({ ...p, project_type: "academic" as const }));
-      const workData = (work.data ?? []).map(p => ({ ...p, project_type: "work" as const }));
-      return [...academicData, ...workData].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      const academicData = (academic.data ?? []).map((p) => ({
+        ...p,
+        project_type: "academic" as const,
+      }));
+      const workData = (work.data ?? []).map((p) => ({ ...p, project_type: "work" as const }));
+      return [...academicData, ...workData].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
       );
     },
   });
   const inv = () => qc.invalidateQueries({ queryKey: ["projects"] });
   const create = useMutation({
-    mutationFn: async (input: { name: string; project_type: "academic" | "work"; status?: string; deadline?: string; tech_stack?: string; notes?: string; client_id?: string; type?: string; progress?: number; revenue?: number }) => {
+    mutationFn: async (input: {
+      name: string;
+      project_type: "academic" | "work";
+      status?: string;
+      deadline?: string;
+      tech_stack?: string;
+      notes?: string;
+      client_id?: string;
+      type?: string;
+      progress?: number;
+      revenue?: number;
+    }) => {
       const user_id = await uid();
       const table = input.project_type === "academic" ? "academic_projects" : "work_projects";
       const { error } = await supabase.from(table).insert({ user_id, ...input });
@@ -281,7 +337,11 @@ export function useProjects() {
     onSuccess: inv,
   });
   const update = useMutation({
-    mutationFn: async ({ id, project_type, ...patch }: Partial<Project> & { id: string; project_type: "academic" | "work" }) => {
+    mutationFn: async ({
+      id,
+      project_type,
+      ...patch
+    }: Partial<Project> & { id: string; project_type: "academic" | "work" }) => {
       const table = project_type === "academic" ? "academic_projects" : "work_projects";
       const { error } = await supabase.from(table).update(patch).eq("id", id);
       if (error) throw error;
@@ -298,4 +358,3 @@ export function useProjects() {
   });
   return { list, create, update, remove };
 }
-

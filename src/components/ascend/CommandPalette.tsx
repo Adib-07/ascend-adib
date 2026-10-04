@@ -1,6 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
-import { Search, ArrowRight, Command as CmdIcon, Plus, LayoutGrid, GraduationCap, Target, ListChecks, Bot, Users, Briefcase, Wallet, Flame } from "lucide-react";
+import {
+  Search,
+  ArrowRight,
+  Command as CmdIcon,
+  Plus,
+  LayoutGrid,
+  GraduationCap,
+  Target,
+  ListChecks,
+  Bot,
+  Users,
+  Briefcase,
+  Wallet,
+  Flame,
+} from "lucide-react";
 
 export type NavItem = {
   mode: "student" | "work";
@@ -46,7 +60,10 @@ export default function CommandPalette({ open, onClose, onNavigate, quickActions
 
   const q = query.trim().toLowerCase();
   const navFiltered = useMemo(
-    () => NAV_ITEMS.filter((n) => !q || n.label.toLowerCase().includes(q) || n.tab.toLowerCase().includes(q)),
+    () =>
+      NAV_ITEMS.filter(
+        (n) => !q || n.label.toLowerCase().includes(q) || n.tab.toLowerCase().includes(q),
+      ),
     [q],
   );
   const actionsFiltered = useMemo(
@@ -59,20 +76,37 @@ export default function CommandPalette({ open, onClose, onNavigate, quickActions
     ...navFiltered.map((n, i) => ({ type: "nav" as const, i, item: n })),
   ];
 
-  useEffect(() => { setSelected(0); }, [query]);
+  useEffect(() => {
+    setSelected(0);
+  }, [query]);
 
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") { e.preventDefault(); onClose(); return; }
-      if (e.key === "ArrowDown") { e.preventDefault(); setSelected((s) => Math.min(flat.length - 1, s + 1)); }
-      if (e.key === "ArrowUp") { e.preventDefault(); setSelected((s) => Math.max(0, s - 1)); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelected((s) => Math.min(flat.length - 1, s + 1));
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelected((s) => Math.max(0, s - 1));
+      }
       if (e.key === "Enter") {
         e.preventDefault();
         const chosen = flat[selected];
         if (!chosen) return;
-        if (chosen.type === "action") { chosen.item.run(); onClose(); }
-        else { onNavigate(chosen.item.mode, chosen.item.tab); onClose(); }
+        if (chosen.type === "action") {
+          chosen.item.run();
+          onClose();
+        } else {
+          onNavigate(chosen.item.mode, chosen.item.tab);
+          onClose();
+        }
       }
     }
     document.addEventListener("keydown", onKey);
@@ -99,7 +133,9 @@ export default function CommandPalette({ open, onClose, onNavigate, quickActions
             placeholder="What are you looking for?"
             className="flex-1 bg-transparent border-0 outline-none text-lg font-serif text-primary placeholder:text-muted-foreground/70"
           />
-          <kbd className="hidden sm:inline text-[10px] font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">ESC</kbd>
+          <kbd className="hidden sm:inline text-[10px] font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
+            ESC
+          </kbd>
         </div>
 
         <div className="max-h-[50vh] overflow-y-auto py-2">
@@ -115,7 +151,10 @@ export default function CommandPalette({ open, onClose, onNavigate, quickActions
                     label={a.label}
                     hint={a.hint}
                     active={isSel}
-                    onClick={() => { a.run(); onClose(); }}
+                    onClick={() => {
+                      a.run();
+                      onClose();
+                    }}
                     onHover={() => setSelected(idx)}
                   />
                 );
@@ -136,7 +175,10 @@ export default function CommandPalette({ open, onClose, onNavigate, quickActions
                     label={n.label}
                     hint={n.mode === "student" ? "Student Mode" : "Work Mode"}
                     active={isSel}
-                    onClick={() => { onNavigate(n.mode, n.tab); onClose(); }}
+                    onClick={() => {
+                      onNavigate(n.mode, n.tab);
+                      onClose();
+                    }}
                     onHover={() => setSelected(idx)}
                   />
                 );
@@ -152,7 +194,9 @@ export default function CommandPalette({ open, onClose, onNavigate, quickActions
         </div>
 
         <div className="border-t border-border px-4 py-2 flex items-center gap-4 text-[10px] text-muted-foreground">
-          <span className="inline-flex items-center gap-1"><CmdIcon className="h-3 w-3" />K to open</span>
+          <span className="inline-flex items-center gap-1">
+            <CmdIcon className="h-3 w-3" />K to open
+          </span>
           <span>↑↓ navigate</span>
           <span>↵ select</span>
         </div>
@@ -164,13 +208,29 @@ export default function CommandPalette({ open, onClose, onNavigate, quickActions
 function Group({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="px-2">
-      <p className="px-3 pt-2 pb-1 text-[10px] tracking-[0.2em] uppercase text-[var(--gold)]">{label}</p>
+      <p className="px-3 pt-2 pb-1 text-[10px] tracking-[0.2em] uppercase text-[var(--gold)]">
+        {label}
+      </p>
       <div>{children}</div>
     </div>
   );
 }
 
-function Row({ icon, label, hint, active, onClick, onHover }: { icon: React.ReactNode; label: string; hint?: string; active?: boolean; onClick: () => void; onHover: () => void }) {
+function Row({
+  icon,
+  label,
+  hint,
+  active,
+  onClick,
+  onHover,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  hint?: string;
+  active?: boolean;
+  onClick: () => void;
+  onHover: () => void;
+}) {
   return (
     <button
       onClick={onClick}
@@ -180,7 +240,9 @@ function Row({ icon, label, hint, active, onClick, onHover }: { icon: React.Reac
         active ? "bg-secondary text-primary" : "text-foreground hover:bg-secondary/60",
       )}
     >
-      <span className={cn("shrink-0", active ? "text-[var(--gold)]" : "text-muted-foreground")}>{icon}</span>
+      <span className={cn("shrink-0", active ? "text-[var(--gold)]" : "text-muted-foreground")}>
+        {icon}
+      </span>
       <span className="flex-1 min-w-0">
         <span className="block text-sm font-medium truncate">{label}</span>
         {hint && <span className="block text-[11px] text-muted-foreground">{hint}</span>}

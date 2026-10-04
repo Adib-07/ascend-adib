@@ -1,10 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { 
-  Home, Calendar, Clock, Target, BookOpen, 
-  CheckSquare, Zap, FileText, Brain, 
-  Settings, Search, Plus, ChevronLeft, ChevronRight,
-  Sun, Moon, Bell, User, Menu, X
+import {
+  Home,
+  Calendar,
+  Clock,
+  Target,
+  BookOpen,
+  CheckSquare,
+  Zap,
+  FileText,
+  Brain,
+  Settings,
+  Search,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Sun,
+  Moon,
+  Bell,
+  User,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -45,16 +61,14 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate }: SidebarPro
       className={cn(
         "fixed left-0 top-0 z-50 h-screen bg-[var(--card)] border-r border-border transition-all duration-300 ease-out",
         isOpen ? "w-72 translate-x-0" : "-translate-x-full lg:w-72 lg:translate-x-0",
-        isCollapsed && "w-16"
+        isCollapsed && "w-16",
       )}
       style={{ boxShadow: "var(--shadow-lg)" }}
     >
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="flex items-center justify-between h-14 px-4 border-b border-border">
-          {!isCollapsed && (
-            <h1 className="font-serif text-xl text-primary font-medium">Ascend</h1>
-          )}
+          {!isCollapsed && <h1 className="font-serif text-xl text-primary font-medium">Ascend</h1>}
           <Button
             variant="ghost"
             size="icon"
@@ -62,7 +76,11 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate }: SidebarPro
             onClick={() => setIsCollapsed(!isCollapsed)}
             aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {isCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
           </Button>
         </div>
 
@@ -74,13 +92,16 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate }: SidebarPro
               return (
                 <button
                   key={item.id}
-                  onClick={() => { onNavigate(item.id); onClose(); }}
+                  onClick={() => {
+                    onNavigate(item.id);
+                    onClose();
+                  }}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-sm"
                       : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                    isCollapsed && "justify-center px-2"
+                    isCollapsed && "justify-center px-2",
                   )}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
@@ -110,7 +131,10 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate }: SidebarPro
             <Button
               variant="ghost"
               className={cn("w-full justify-start gap-3", isCollapsed && "justify-center px-2")}
-              onClick={() => { onNavigate("settings"); onClose(); }}
+              onClick={() => {
+                onNavigate("settings");
+                onClose();
+              }}
             >
               <Settings className="h-4 w-4" />
               {!isCollapsed && <span>Settings</span>}
@@ -120,7 +144,9 @@ export function Sidebar({ isOpen, onClose, currentView, onNavigate }: SidebarPro
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => { /* theme toggle */ }}
+                onClick={() => {
+                  /* theme toggle */
+                }}
                 aria-label="Toggle theme"
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

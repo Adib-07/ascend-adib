@@ -18,6 +18,7 @@ import {
   type ContextItem,
   type QueryCategory,
 } from "./context-engine-core";
+import { withAIRetry } from "./retry";
 
 export type { ContextItem, QueryCategory };
 
@@ -322,24 +323,24 @@ export async function retrieveStructured(
       });
     }
 
-// Daily intentions
-  const { data: intention } = await supabase
-    .from("daily_intentions")
-    .select("intention")
-    .eq("user_id", userId)
-    .eq("day", today)
-    .maybeSingle();
-  if (intention?.intention) {
-    items.push({
-      source: "note",
-      title: "Today's Intention",
-      page: null,
-      heading: null,
-      score: 5,
-      text: intention.intention,
-      metadata: { day: toMetaValue(today) },
-    });
-  }
+    // Daily intentions
+    const { data: intention } = await supabase
+      .from("daily_intentions")
+      .select("intention")
+      .eq("user_id", userId)
+      .eq("day", today)
+      .maybeSingle();
+    if (intention?.intention) {
+      items.push({
+        source: "note",
+        title: "Today's Intention",
+        page: null,
+        heading: null,
+        score: 5,
+        text: intention.intention,
+        metadata: { day: toMetaValue(today) },
+      });
+    }
   }
 
   // Events (today and upcoming)
@@ -360,7 +361,11 @@ export async function retrieveStructured(
       heading: e.location ? `at ${e.location}` : null,
       score: 4,
       text: `${e.all_day ? "All day" : `at ${new Date(e.start_at as string).toLocaleTimeString()}`} - ${e.description ?? ""}`,
-      metadata: { start_at: toMetaValue(e.start_at), end_at: toMetaValue(e.end_at), all_day: toMetaValue(e.all_day) },
+      metadata: {
+        start_at: toMetaValue(e.start_at),
+        end_at: toMetaValue(e.end_at),
+        all_day: toMetaValue(e.all_day),
+      },
     });
   }
 
@@ -405,7 +410,11 @@ export async function retrieveStructured(
       heading: r.related_type ? `${r.related_type}:${r.related_id}` : null,
       score: 4,
       text: `${r.message ?? ""} (at ${new Date(r.trigger_at as string).toLocaleTimeString()})`,
-      metadata: { trigger_at: toMetaValue(r.trigger_at), related_type: toMetaValue(r.related_type), related_id: toMetaValue(r.related_id) },
+      metadata: {
+        trigger_at: toMetaValue(r.trigger_at),
+        related_type: toMetaValue(r.related_type),
+        related_id: toMetaValue(r.related_id),
+      },
     });
   }
 
@@ -531,15 +540,17 @@ export async function askWithContextImpl({
   const user = buildUserPrompt(question, items);
 
   const gateway = createLovableAiGatewayProvider(key);
-  const { text } = await generateText({
-    model: gateway(MODEL),
-    temperature: TEMPERATURE,
-    maxOutputTokens: Math.min(4000, MAX_TOKENS + 1000),
-    system,
-    prompt: user,
+  const { text } = await withAIRetry(async () => {
+    const result = await generateText({
+      model: gateway(MODEL),
+      temperature: TEMPERATURE,
+      maxOutputTokens: Math.min(4000, MAX_TOKENS + 1000),
+      system,
+      prompt: user,
+    });
+    if (!result.text?.trim()) throw new Error("Empty response from AI");
+    return result.text;
   });
-
-  if (!text?.trim()) throw new Error("Empty response from AI");
 
   return { text, sources: items, category };
 }
@@ -576,7 +587,7 @@ export interface WeakArea {
 
 export async function getStudentProfile(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<StudentProfile> {
   const [topics, exams, goals, recentErrors, dsaProgress] = await Promise.all([
     supabase
@@ -591,12 +602,7 @@ export async function getStudentProfile(
       .eq("user_id", userId)
       .order("exam_date", { ascending: true })
       .limit(10),
-    supabase
-      .from("goals")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("done", false)
-      .limit(10),
+    supabase.from("goals").select("*").eq("user_id", userId).eq("done", false).limit(10),
     supabase
       .from("error_log")
       .select("*")
@@ -622,7 +628,7 @@ export async function getStudentProfile(
 
 export async function getDueRevisions(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<RevisionItem[]> {
   const today = new Date().toISOString().split("T")[0];
   const { data, error } = await supabase
@@ -638,10 +644,7 @@ export async function getDueRevisions(
   return data as unknown as RevisionItem[];
 }
 
-export async function getWeakAreas(
-  supabase: SupabaseClient,
-  userId: string
-): Promise<WeakArea[]> {
+export async function getWeakAreas(supabase: SupabaseClient, userId: string): Promise<WeakArea[]> {
   const weakAreas: WeakArea[] = [];
 
   // From error_log (frequency > 1)
@@ -658,7 +661,7 @@ export async function getWeakAreas(
       type: e.error_type,
       concept: e.concept,
       frequency: e.frequency,
-      source: `error_log (${e.context ?? 'unknown'})`,
+      source: `error_log (${e.context ?? "unknown"})`,
     });
   }
 
@@ -677,7 +680,7 @@ export async function getWeakAreas(
       type: "concept",
       concept: t.topic,
       frequency: 5 - (t.mastery_level ?? 0),
-      source: `learn_topic (${t.language ?? 'N/A'}, mastery ${t.mastery_level ?? 0}/5)`,
+      source: `learn_topic (${t.language ?? "N/A"}, mastery ${t.mastery_level ?? 0}/5)`,
     });
   }
 
@@ -715,4 +718,3 @@ export async function getWeakAreas(
     .sort((a, b) => b.frequency - a.frequency)
     .slice(0, 15);
 }
-

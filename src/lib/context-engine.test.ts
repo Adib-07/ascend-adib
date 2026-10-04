@@ -51,11 +51,7 @@ const authSampleChunks: RawDocChunk[] = [
 ];
 describe("normalizeKeywords", () => {
   it("removes stopwords and punctuation", () => {
-    expect(normalizeKeywords("The Quick brown foxes!")).toEqual([
-      "quick",
-      "brown",
-      "foxes",
-    ]);
+    expect(normalizeKeywords("The Quick brown foxes!")).toEqual(["quick", "brown", "foxes"]);
   });
 
   it("returns empty when only short/stopwords", () => {
@@ -69,15 +65,11 @@ describe("normalizeKeywords", () => {
 
 describe("classifyQuestion", () => {
   it("classifies academic physics questions", () => {
-    expect(
-      classifyQuestion("Explain diffraction in Engineering Physics"),
-    ).toBe("ACADEMIC");
+    expect(classifyQuestion("Explain diffraction in Engineering Physics")).toBe("ACADEMIC");
   });
 
   it("classifies freelancing questions", () => {
-    expect(classifyQuestion("How do I negotiate a freelance contract?")).toBe(
-      "FREELANCING",
-    );
+    expect(classifyQuestion("How do I negotiate a freelance contract?")).toBe("FREELANCING");
   });
 
   it("classifies english questions", () => {
@@ -129,9 +121,7 @@ describe("rankDocumentChunks", () => {
     const ranked = rankDocumentChunks(sampleChunks, terms, {
       category: "ACADEMIC",
     });
-    expect(ranked.every((r) => r.title === "Engineering Physics Notes")).toBe(
-      true,
-    );
+    expect(ranked.every((r) => r.title === "Engineering Physics Notes")).toBe(true);
   });
 
   it("respects the context budget", () => {
@@ -210,17 +200,14 @@ describe("SOURCE_TIER", () => {
 describe("retrieveDocumentChunks authorization", () => {
   it("scopes the query to the authenticated userId (no client user_id trust)", () => {
     const capture: Record<string, unknown> = {};
-    const supabase = mockSupabase(
-      authSampleChunks as unknown[],
-      capture,
-    ) as unknown as Parameters<typeof retrieveDocumentChunks>[0];
+    const supabase = mockSupabase(authSampleChunks as unknown[], capture) as unknown as Parameters<
+      typeof retrieveDocumentChunks
+    >[0];
 
-    return retrieveDocumentChunks(supabase, "user-A", "diffraction").then(
-      (items) => {
-        expect(capture.user).toBe("user-A");
-        expect(items.length).toBeGreaterThan(0);
-      },
-    );
+    return retrieveDocumentChunks(supabase, "user-A", "diffraction").then((items) => {
+      expect(capture.user).toBe("user-A");
+      expect(items.length).toBeGreaterThan(0);
+    });
   });
 
   it("never queries with a different user id", () => {

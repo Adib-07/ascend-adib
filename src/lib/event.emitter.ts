@@ -1,11 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createEvent, type DomainEvent, type TaskCompletedPayload, type TaskOverduePayload, type HabitCompletedPayload, type ReminderDuePayload, type EventUpcomingPayload, type DocumentUploadedPayload, type ProjectCompletedPayload } from "./events.types";
+import {
+  createEvent,
+  type DomainEvent,
+  type TaskCompletedPayload,
+  type TaskOverduePayload,
+  type HabitCompletedPayload,
+  type ReminderDuePayload,
+  type EventUpcomingPayload,
+  type DocumentUploadedPayload,
+  type ProjectCompletedPayload,
+} from "./events.types";
 
 export async function emitTaskCompleted(
   supabase: SupabaseClient,
   userId: string,
   taskId: string,
-  title: string
+  title: string,
 ): Promise<void> {
   const event = createEvent("TASK_COMPLETED", userId, taskId, {
     taskId,
@@ -20,7 +30,7 @@ export async function emitTaskOverdue(
   userId: string,
   taskId: string,
   title: string,
-  dueDate: string
+  dueDate: string,
 ): Promise<void> {
   const event = createEvent("TASK_OVERDUE", userId, taskId, {
     taskId,
@@ -35,7 +45,7 @@ export async function emitHabitCompleted(
   userId: string,
   habitId: string,
   name: string,
-  streak: number
+  streak: number,
 ): Promise<void> {
   const event = createEvent("HABIT_COMPLETED", userId, habitId, {
     habitId,
@@ -52,7 +62,7 @@ export async function emitReminderDue(
   reminderId: string,
   title: string,
   message: string | null,
-  triggerAt: string
+  triggerAt: string,
 ): Promise<void> {
   const event = createEvent("REMINDER_DUE", userId, reminderId, {
     reminderId,
@@ -70,7 +80,7 @@ export async function emitEventUpcoming(
   title: string,
   startAt: string,
   endAt: string,
-  location: string | null
+  location: string | null,
 ): Promise<void> {
   const event = createEvent("EVENT_UPCOMING", userId, eventId, {
     eventId,
@@ -88,7 +98,7 @@ export async function emitDocumentUploaded(
   documentId: string,
   filename: string,
   subject: string | null,
-  pageCount: number | null
+  pageCount: number | null,
 ): Promise<void> {
   const event = createEvent("DOCUMENT_UPLOADED", userId, documentId, {
     documentId,
@@ -103,7 +113,7 @@ export async function emitProjectCompleted(
   supabase: SupabaseClient,
   userId: string,
   projectId: string,
-  name: string
+  name: string,
 ): Promise<void> {
   const event = createEvent("PROJECT_COMPLETED", userId, projectId, {
     projectId,
@@ -113,11 +123,7 @@ export async function emitProjectCompleted(
   await emitEvent(supabase, userId, event);
 }
 
-async function emitEvent(
-  supabase: SupabaseClient,
-  userId: string,
-  event: any
-): Promise<void> {
+async function emitEvent(supabase: SupabaseClient, userId: string, event: any): Promise<void> {
   const { data: existing } = await supabase
     .from("event_emission_logs")
     .select("id")
@@ -145,7 +151,7 @@ async function emitEvent(
 async function dispatchEventInternal(
   supabase: SupabaseClient,
   userId: string,
-  event: any
+  event: any,
 ): Promise<void> {
   const { dispatchEvent } = await import("./event.dispatcher");
   await dispatchEvent(supabase, userId, event);

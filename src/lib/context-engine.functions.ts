@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { aiRateLimit } from "./rate-limit";
 import type { QueryCategory } from "./context-engine-core";
 import { classifyQuestion, normalizeKeywords } from "./context-engine-core";
 
@@ -19,7 +20,7 @@ const CATEGORY_VALUES = [
 ] as const;
 
 export const askWithContext = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, aiRateLimit])
   .inputValidator(
     z.object({
       question: z.string().min(1).max(4000),
@@ -41,7 +42,7 @@ export const askWithContext = createServerFn({ method: "POST" })
   });
 
 export const getGroundedContext = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, aiRateLimit])
   .inputValidator(
     z.object({
       question: z.string().min(1).max(4000),

@@ -18,8 +18,11 @@ export const createEvent = createServerFn({ method: "POST" })
       recurrence: z.enum(["daily", "weekly", "monthly", "custom"]).optional(),
       recurrence_days: z.string().optional(),
       recurrence_end: z.string().datetime().optional(),
-      color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
-    })
+      color: z
+        .string()
+        .regex(/^#[0-9a-fA-F]{6}$/)
+        .optional(),
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -49,8 +52,12 @@ export const updateEvent = createServerFn({ method: "POST" })
       recurrence: z.enum(["daily", "weekly", "monthly", "custom"]).nullable().optional(),
       recurrence_days: z.string().nullable().optional(),
       recurrence_end: z.string().datetime().nullable().optional(),
-      color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(),
-    })
+      color: z
+        .string()
+        .regex(/^#[0-9a-fA-F]{6}$/)
+        .nullable()
+        .optional(),
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -87,7 +94,7 @@ export const listEvents = createServerFn({ method: "POST" })
       start: z.string().datetime().optional(),
       end: z.string().datetime().optional(),
       limit: z.number().int().min(1).max(100).default(50),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

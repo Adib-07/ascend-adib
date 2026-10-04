@@ -39,11 +39,11 @@ export const unifiedTutor = createServerFn({ method: "POST" })
           z.object({
             role: z.enum(["user", "assistant", "system"]),
             content: z.string().min(1).max(8000),
-          })
+          }),
         )
         .max(20)
         .optional(),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     if (!ENABLE_UNIFIED_TUTOR) {

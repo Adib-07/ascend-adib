@@ -22,7 +22,9 @@ export function sendBrowserNotification(title: string, body: string) {
   if ("Notification" in window && Notification.permission === "granted") {
     try {
       new Notification(title, { body, icon: "/favicon.ico" });
-    } catch { /* noop */ }
+    } catch {
+      /* noop */
+    }
   }
 }
 

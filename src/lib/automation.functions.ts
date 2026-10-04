@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { automationRateLimit } from "./rate-limit";
 
 const TRIGGER_TYPES = [
   "task_completed",
@@ -24,7 +25,7 @@ const ACTION_TYPES = [
 ] as const;
 
 export const createAutomationRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, automationRateLimit])
   .inputValidator(
     z.object({
       name: z.string().min(1).max(100),
@@ -34,14 +35,14 @@ export const createAutomationRule = createServerFn({ method: "POST" })
       condition_config: z.record(z.unknown()).default({}),
       action_type: z.enum(ACTION_TYPES),
       action_config: z.record(z.unknown()).default({}),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: rule, error } = await supabase
       .from("automation_rules")
-      .insert({ 
-        ...data, 
+      .insert({
+        ...data,
         user_id: userId,
         trigger_config: data.trigger_config as any,
         condition_config: data.condition_config as any,
@@ -54,7 +55,7 @@ export const createAutomationRule = createServerFn({ method: "POST" })
   });
 
 export const updateAutomationRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, automationRateLimit])
   .inputValidator(
     z.object({
       id: z.string().uuid(),
@@ -66,7 +67,7 @@ export const updateAutomationRule = createServerFn({ method: "POST" })
       condition_config: z.record(z.unknown()).optional(),
       action_type: z.enum(ACTION_TYPES).optional(),
       action_config: z.record(z.unknown()).optional(),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -87,7 +88,7 @@ export const updateAutomationRule = createServerFn({ method: "POST" })
   });
 
 export const deleteAutomationRule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, automationRateLimit])
   .inputValidator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -106,7 +107,7 @@ export const listAutomationRules = createServerFn({ method: "POST" })
     z.object({
       enabled: z.boolean().optional(),
       limit: z.number().int().min(1).max(50).default(50),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -128,7 +129,7 @@ export const listAutomationLogs = createServerFn({ method: "POST" })
     z.object({
       rule_id: z.string().uuid().optional(),
       limit: z.number().int().min(1).max(100).default(50),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

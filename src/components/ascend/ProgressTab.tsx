@@ -7,8 +7,10 @@ import { Progress } from "@/components/ui/progress";
 function weekBounds() {
   const now = new Date();
   const dow = (now.getDay() + 6) % 7; // Mon=0
-  const mon = new Date(now); mon.setDate(now.getDate() - dow);
-  const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const mon = new Date(now);
+  mon.setDate(now.getDate() - dow);
+  const sun = new Date(mon);
+  sun.setDate(mon.getDate() + 6);
   const fmt = (d: Date) => d.toISOString().slice(0, 10);
   return { start: fmt(mon), end: fmt(sun) };
 }
@@ -32,30 +34,57 @@ export default function ProgressTab() {
     return map;
   }, [topics]);
 
-  const totalDone = topics.filter(t => t.status === "Done" || t.progress >= 100).length;
+  const totalDone = topics.filter((t) => t.status === "Done" || t.progress >= 100).length;
 
   // Habit streak (highest streak across habits)
   const streak = (habits.list.data ?? []).reduce((m, h) => Math.max(m, h.streak), 0);
   // Weekly study "hours" proxy = number of habit completions this week (simple, since no time-tracker yet)
-  const weekDone = (logs.data ?? []).filter(l => l.done).length;
+  const weekDone = (logs.data ?? []).filter((l) => l.done).length;
 
   if (topics.length === 0 && (habits.list.data ?? []).length === 0) {
-    return <EmptyState title="Nothing to chart yet." hint="Add topics in Learn and habits in the Habits tab — analytics will appear here." />;
+    return (
+      <EmptyState
+        title="Nothing to chart yet."
+        hint="Add topics in Learn and habits in the Habits tab — analytics will appear here."
+      />
+    );
   }
 
   return (
     <div className="space-y-6">
-      <SectionHeader kicker="Progress" title="The Ledger of Mastery" subtitle="Quiet metrics. Steady gains." />
+      <SectionHeader
+        kicker="Progress"
+        title="The Ledger of Mastery"
+        subtitle="Quiet metrics. Steady gains."
+      />
 
       <div className="grid sm:grid-cols-3 gap-4">
-        <Card><p className="text-xs uppercase tracking-wider text-muted-foreground">Topics Completed</p><p className="font-serif text-4xl text-primary mt-1">{totalDone}</p></Card>
-        <Card><p className="text-xs uppercase tracking-wider text-muted-foreground">Current Streak</p><p className="font-serif text-4xl text-[var(--gold)] mt-1">{streak}<span className="text-base ml-1 text-muted-foreground">days</span></p></Card>
-        <Card><p className="text-xs uppercase tracking-wider text-muted-foreground">This Week (sessions)</p><p className="font-serif text-4xl text-primary mt-1">{weekDone}</p></Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">Topics Completed</p>
+          <p className="font-serif text-4xl text-primary mt-1">{totalDone}</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">Current Streak</p>
+          <p className="font-serif text-4xl text-[var(--gold)] mt-1">
+            {streak}
+            <span className="text-base ml-1 text-muted-foreground">days</span>
+          </p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+            This Week (sessions)
+          </p>
+          <p className="font-serif text-4xl text-primary mt-1">{weekDone}</p>
+        </Card>
       </div>
 
       <Card>
-        <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] mb-4">Skill Categories</p>
-        {Object.keys(bySkill).length === 0 ? <p className="text-sm text-muted-foreground">Add learn topics to see breakdown.</p> : (
+        <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)] mb-4">
+          Skill Categories
+        </p>
+        {Object.keys(bySkill).length === 0 ? (
+          <p className="text-sm text-muted-foreground">Add learn topics to see breakdown.</p>
+        ) : (
           <div className="space-y-4">
             {Object.entries(bySkill).map(([skill, s]) => {
               const avg = Math.round(s.sum / s.total);
@@ -63,7 +92,9 @@ export default function ProgressTab() {
                 <div key={skill}>
                   <div className="flex justify-between text-sm mb-1">
                     <span className="font-medium text-primary">{skill}</span>
-                    <span className="text-muted-foreground">{s.done}/{s.total} · {avg}%</span>
+                    <span className="text-muted-foreground">
+                      {s.done}/{s.total} · {avg}%
+                    </span>
                   </div>
                   <Progress value={avg} />
                 </div>

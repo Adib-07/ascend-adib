@@ -13,7 +13,7 @@ import {
 
 function mockSupabase(
   responses: Map<string, { data: any; error: any }>,
-  capture: Record<string, any>
+  capture: Record<string, any>,
 ) {
   const builder: Record<string, (...args: unknown[]) => unknown> = {
     select: () => builder,
@@ -46,7 +46,11 @@ function mockSupabase(
     storage: {
       from: () => ({
         upload: () => Promise.resolve({ data: null, error: null }),
-        download: () => Promise.resolve({ data: { arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) }, error: null }),
+        download: () =>
+          Promise.resolve({
+            data: { arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) },
+            error: null,
+          }),
         remove: () => Promise.resolve({ data: null, error: null }),
       }),
     },
@@ -149,7 +153,10 @@ describe("profileCSV", () => {
 
 describe("profileJSON", () => {
   it("profiles array of objects", async () => {
-    const json = [{ a: 1, b: "x" }, { a: 2, b: "y" }];
+    const json = [
+      { a: 1, b: "x" },
+      { a: 2, b: "y" },
+    ];
     const profile = await profileJSON(new TextEncoder().encode(JSON.stringify(json)));
     expect(profile.rowCount).toBe(2);
     expect(profile.columnCount).toBe(2);
@@ -167,7 +174,15 @@ describe("profileJSON", () => {
 });
 
 describe("dataset ingestion state machine", () => {
-  const validStatuses = ["pending", "downloading", "validating", "extracting", "processing", "ready", "failed"];
+  const validStatuses = [
+    "pending",
+    "downloading",
+    "validating",
+    "extracting",
+    "processing",
+    "ready",
+    "failed",
+  ];
 
   it("defines all required statuses", () => {
     expect(validStatuses).toContain("pending");
@@ -181,7 +196,7 @@ describe("dataset ingestion state machine", () => {
 
   it("has terminal states", () => {
     const terminal = ["ready", "failed"];
-    expect(validStatuses.filter(s => terminal.includes(s))).toEqual(terminal);
+    expect(validStatuses.filter((s) => terminal.includes(s))).toEqual(terminal);
   });
 });
 

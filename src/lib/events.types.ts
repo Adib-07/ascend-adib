@@ -76,7 +76,7 @@ export function createEvent<T extends DomainEventType>(
   type: T,
   userId: string,
   entityId: string,
-  payload: DomainEventPayload
+  payload: DomainEventPayload,
 ): DomainEvent<T> {
   return {
     type,

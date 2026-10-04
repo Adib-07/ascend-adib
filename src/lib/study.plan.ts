@@ -19,7 +19,10 @@ export interface StudyPlan {
   totalMinutes: number;
 }
 
-function getAvailableMinutes(availability: Record<string, number> | null, dayOfWeek: number): number {
+function getAvailableMinutes(
+  availability: Record<string, number> | null,
+  dayOfWeek: number,
+): number {
   const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   const key = days[dayOfWeek];
   return availability?.[key] ?? 60; // default 60 min
@@ -30,7 +33,7 @@ export const generateStudyPlan = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       horizonDays: z.number().int().min(1).max(30).default(14),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -65,7 +68,14 @@ export const generateStudyPlan = createServerFn({ method: "POST" })
 
     // get upcoming exams with syllabus
     const examsWithTopics = [];
-    for (const exam of (await supabase.from("exams").select("*").eq("user_id", userId).gte("exam_date", new Date().toISOString().split("T")[0]).order("exam_date")).data ?? []) {
+    for (const exam of (
+      await supabase
+        .from("exams")
+        .select("*")
+        .eq("user_id", userId)
+        .gte("exam_date", new Date().toISOString().split("T")[0])
+        .order("exam_date")
+    ).data ?? []) {
       const syllabus = (exam.syllabus as any[]) ?? [];
       const topicIds = syllabus.map((s: any) => s.id).filter(Boolean);
       const { data: topics } = await supabase
@@ -135,7 +145,7 @@ export const generateStudyPlan = createServerFn({ method: "POST" })
       }
     }
 
-    const totalMinutes = blocks.flatMap(b => b.blocks).reduce((s, b) => s + b.durationMinutes, 0);
+    const totalMinutes = blocks.flatMap((b) => b.blocks).reduce((s, b) => s + b.durationMinutes, 0);
 
     return {
       generatedAt: new Date().toISOString(),

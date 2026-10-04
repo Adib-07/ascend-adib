@@ -12,7 +12,16 @@ import { Card } from "./ui-bits";
 import { Button } from "@/components/ui/button";
 import { useLearnTopics } from "@/lib/ascend-data";
 
-const SUBS = ["Learn", "Notes", "Coding", "Quiz", "Flashcards", "Exam Prep", "Projects", "Progress"] as const;
+const SUBS = [
+  "Learn",
+  "Notes",
+  "Coding",
+  "Quiz",
+  "Flashcards",
+  "Exam Prep",
+  "Projects",
+  "Progress",
+] as const;
 
 export default function LearningHub() {
   const [sub, setSub] = useState<(typeof SUBS)[number]>("Learn");
@@ -35,20 +44,36 @@ export default function LearningHub() {
       <div>
         <p className="text-[11px] tracking-[0.2em] uppercase text-[var(--gold)]">Learning Hub</p>
         <h1 className="font-serif text-3xl md:text-4xl text-primary mt-2">The Library</h1>
-        <p className="text-sm text-muted-foreground mt-2">Where the AI engineer is forged, one quiet hour at a time.</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Where the AI engineer is forged, one quiet hour at a time.
+        </p>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Card><p className="text-xs uppercase tracking-wider text-muted-foreground">In Progress</p><p className="font-serif text-3xl text-[var(--gold)] mt-1">{inProgress}</p></Card>
-        <Card><p className="text-xs uppercase tracking-wider text-muted-foreground">Completed</p><p className="font-serif text-3xl text-[var(--forest)] mt-1">{completed}</p></Card>
-        <Card><p className="text-xs uppercase tracking-wider text-muted-foreground">Hours Studied</p><p className="font-serif text-3xl text-primary mt-1">{hoursStudied}<span className="text-sm text-muted-foreground ml-1">hrs</span></p></Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">In Progress</p>
+          <p className="font-serif text-3xl text-[var(--gold)] mt-1">{inProgress}</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">Completed</p>
+          <p className="font-serif text-3xl text-[var(--forest)] mt-1">{completed}</p>
+        </Card>
+        <Card>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">Hours Studied</p>
+          <p className="font-serif text-3xl text-primary mt-1">
+            {hoursStudied}
+            <span className="text-sm text-muted-foreground ml-1">hrs</span>
+          </p>
+        </Card>
       </div>
 
       {currentlyStudying && (
         <Card className="border-[var(--gold)]/40 bg-[var(--gold)]/5">
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-widest text-[var(--gold)]">Currently studying</p>
+              <p className="text-[10px] uppercase tracking-widest text-[var(--gold)]">
+                Currently studying
+              </p>
               <p className="font-serif text-xl text-primary mt-1">{currentlyStudying.topic}</p>
               <p className="text-xs text-muted-foreground mt-1">{currentlyStudying.skill}</p>
             </div>
@@ -60,7 +85,10 @@ export default function LearningHub() {
               <span>{currentlyStudying.progress}%</span>
             </div>
             <div className="h-2 bg-[var(--linen)] rounded-full overflow-hidden">
-              <div className="h-full bg-[var(--gold)] rounded-full transition-all duration-700 ease-out" style={{ width: `${currentlyStudying.progress}%` }} />
+              <div
+                className="h-full bg-[var(--gold)] rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${currentlyStudying.progress}%` }}
+              />
             </div>
           </div>
         </Card>
@@ -74,7 +102,9 @@ export default function LearningHub() {
               onClick={() => setSub(s)}
               className={cn(
                 "px-3 py-2 text-sm whitespace-nowrap transition-colors border-b-2 -mb-px",
-                sub === s ? "border-[var(--gold)] text-primary font-medium" : "border-transparent text-muted-foreground hover:text-primary"
+                sub === s
+                  ? "border-[var(--gold)] text-primary font-medium"
+                  : "border-transparent text-muted-foreground hover:text-primary",
               )}
             >
               {s}

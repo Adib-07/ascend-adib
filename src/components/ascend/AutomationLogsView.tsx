@@ -22,7 +22,9 @@ export default function AutomationLogsView() {
         <CardTitle>Automation Logs</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading...</p> : (
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
           <div className="space-y-2">
             {logs?.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No logs yet.</p>
@@ -38,7 +40,8 @@ export default function AutomationLogsView() {
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(log.created_at).toLocaleString()} • Matched: {log.matched_rules} • Executed: {log.executed_automations}
+                        {new Date(log.created_at).toLocaleString()} • Matched: {log.matched_rules} •
+                        Executed: {log.executed_automations}
                       </p>
                       {log.error_message && (
                         <p className="text-sm text-red-600">{log.error_message}</p>

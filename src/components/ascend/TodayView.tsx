@@ -1,11 +1,23 @@
 import { useState, useMemo, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { cn } from "@/lib/utils";
-import { 
-  Sun, Calendar, Clock, Target, CheckSquare, 
-  BookOpen, Zap, FileText, AlertTriangle, 
-  TrendingUp, ArrowRight, CheckCircle2, 
-  AlertCircle, Bookmark, Flame, X
+import {
+  Sun,
+  Calendar,
+  Clock,
+  Target,
+  CheckSquare,
+  BookOpen,
+  Zap,
+  FileText,
+  AlertTriangle,
+  TrendingUp,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  Bookmark,
+  Flame,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -113,14 +125,14 @@ interface WeakArea {
 
 export default function TodayView() {
   const [date, setDate] = useState(new Date());
-  
+
   // Data fetching
   const tasksQ = useTasks();
   const examsQ = useExams();
   const habitsQ = useHabits();
   const habitsLogsQ = useHabitLogs(
     new Date().toISOString().split("T")[0],
-    new Date(Date.now() + 6 * 86400000).toISOString().split("T")[0]
+    new Date(Date.now() + 6 * 86400000).toISOString().split("T")[0],
   );
   const goalsQ = useGoals();
   const projectsQ = useProjects();
@@ -145,37 +157,40 @@ export default function TodayView() {
   const todayDate = new Date();
 
   // Today's tasks
-  const todayTasks = tasks.filter(t => !t.done && t.due_date === todayStr);
-  const overdueTasks = tasks.filter(t => !t.done && t.due_date && t.due_date < todayStr);
-  const upcomingTasks = tasks.filter(t => !t.done && t.due_date && t.due_date > todayStr).slice(0, 5);
+  const todayTasks = tasks.filter((t) => !t.done && t.due_date === todayStr);
+  const overdueTasks = tasks.filter((t) => !t.done && t.due_date && t.due_date < todayStr);
+  const upcomingTasks = tasks
+    .filter((t) => !t.done && t.due_date && t.due_date > todayStr)
+    .slice(0, 5);
 
   // Today's habits
-  const todayHabitLogs = habitLogs.filter(l => l.day === todayStr);
-  const completedHabitsToday = todayHabitLogs.filter(l => l.done).length;
+  const todayHabitLogs = habitLogs.filter((l) => l.day === todayStr);
+  const completedHabitsToday = todayHabitLogs.filter((l) => l.done).length;
   const totalHabits = habits.length;
 
   // Upcoming exams with intelligence
   const upcomingExams = exams
-    .filter(e => e.exam_date && new Date(e.exam_date) >= new Date())
+    .filter((e) => e.exam_date && new Date(e.exam_date) >= new Date())
     .sort((a, b) => new Date(a.exam_date!).getTime() - new Date(b.exam_date!).getTime())
     .slice(0, 3);
 
   // Active goals
-  const activeGoals = goals.filter(g => !g.done).slice(0, 3);
+  const activeGoals = goals.filter((g) => !g.done).slice(0, 3);
 
   // Active projects
   const activeProjects = projects
-    .filter(p => p.status !== "Done" && p.status !== "Completed")
+    .filter((p) => p.status !== "Done" && p.status !== "Completed")
     .slice(0, 3);
 
   // Today's habit progress
-  const completedHabitsToday = todayHabitLogs.filter(l => l.done).length;
+  const completedHabitsToday = todayHabitLogs.filter((l) => l.done).length;
   const totalHabits = habits.length;
 
   // Today's task progress
-  const completedTasksToday = tasks.filter(t => t.done && t.due_date === todayStr).length;
-  const totalTasksToday = tasks.filter(t => t.due_date === todayStr).length;
-  const taskProgress = totalTasksToday > 0 ? Math.round((completedTasksToday / totalTasksToday) * 100) : 0;
+  const completedTasksToday = tasks.filter((t) => t.done && t.due_date === todayStr).length;
+  const totalTasksToday = tasks.filter((t) => t.due_date === todayStr).length;
+  const taskProgress =
+    totalTasksToday > 0 ? Math.round((completedTasksToday / totalTasksToday) * 100) : 0;
 
   // Daily intention
   const dailyIntention = dailyBriefing?.daily_intention;
@@ -231,7 +246,9 @@ export default function TodayView() {
         <MetricCard
           title="Upcoming Exams"
           value={upcomingExams.length}
-          subtitle={upcomingExams.length > 0 ? `${upcomingExams[0]?.daysRemaining ?? 0} days` : "None"}
+          subtitle={
+            upcomingExams.length > 0 ? `${upcomingExams[0]?.daysRemaining ?? 0} days` : "None"
+          }
           icon={<Calendar className="h-5 w-5" />}
         />
       </div>
@@ -266,14 +283,15 @@ export default function TodayView() {
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium">Today's Tasks</h3>
-                  {totalTasksToday > 0 && (
-                    <Progress value={taskProgress} className="w-32 h-2" />
-                  )}
+                  {totalTasksToday > 0 && <Progress value={taskProgress} className="w-32 h-2" />}
                 </div>
                 {todayTasks.length > 0 ? (
                   <ul className="space-y-2">
                     {todayTasks.slice(0, 5).map((task) => (
-                      <li key={task.id} className="flex items-center gap-3 p-3 bg-accent/30 rounded-xl group">
+                      <li
+                        key={task.id}
+                        className="flex items-center gap-3 p-3 bg-accent/30 rounded-xl group"
+                      >
                         <Button
                           variant="ghost"
                           size="icon"
@@ -285,22 +303,28 @@ export default function TodayView() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{task.title}</p>
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <span className={cn(
-                              "px-1.5 py-0.5 rounded text-[10px] font-medium",
-                              task.priority === "High" && "bg-red-100 text-red-700",
-                              task.priority === "Medium" && "bg-amber-100 text-amber-700",
-                              task.priority === "Low" && "bg-green-100 text-green-700"
-                            )}>
+                            <span
+                              className={cn(
+                                "px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                task.priority === "High" && "bg-red-100 text-red-700",
+                                task.priority === "Medium" && "bg-amber-100 text-amber-700",
+                                task.priority === "Low" && "bg-green-100 text-green-700",
+                              )}
+                            >
                               {task.priority}
                             </span>
-                            {task.type && <span className="text-muted-foreground">• {task.type}</span>}
+                            {task.type && (
+                              <span className="text-muted-foreground">• {task.type}</span>
+                            )}
                           </p>
                         </div>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-muted-foreground text-center py-6">No tasks scheduled for today. Enjoy the freedom!</p>
+                  <p className="text-muted-foreground text-center py-6">
+                    No tasks scheduled for today. Enjoy the freedom!
+                  </p>
                 )}
               </div>
 
@@ -314,9 +338,22 @@ export default function TodayView() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="font-medium">{exam.name}</p>
-                            <p className="text-sm text-muted-foreground">{exam.subject} • {exam.exam_date ? format(new Date(exam.exam_date), "MMM d") : "No date"}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {exam.subject} •{" "}
+                              {exam.exam_date
+                                ? format(new Date(exam.exam_date), "MMM d")
+                                : "No date"}
+                            </p>
                           </div>
-                          <Badge variant={exam.priority === "CRITICAL" ? "destructive" : exam.priority === "HIGH" ? "default" : "secondary"}>
+                          <Badge
+                            variant={
+                              exam.priority === "CRITICAL"
+                                ? "destructive"
+                                : exam.priority === "HIGH"
+                                  ? "default"
+                                  : "secondary"
+                            }
+                          >
                             {exam.priority}
                           </Badge>
                         </div>
@@ -332,11 +369,16 @@ export default function TodayView() {
                   <h3 className="font-medium mb-3">Areas Needing Attention</h3>
                   <div className="space-y-2">
                     {weakAreas.slice(0, 3).map((area) => (
-                      <div key={area.topicId} className="p-3 bg-red-50 border border-red-200 rounded-xl">
+                      <div
+                        key={area.topicId}
+                        className="p-3 bg-red-50 border border-red-200 rounded-xl"
+                      >
                         <div className="flex items-start justify-between">
                           <div>
                             <p className="font-medium text-red-900">{area.topic}</p>
-                            <p className="text-sm text-red-700">{area.subject} • {area.progress}% complete</p>
+                            <p className="text-sm text-red-700">
+                              {area.subject} • {area.progress}% complete
+                            </p>
                             <p className="text-xs text-red-600 mt-1">{area.signals.join(" • ")}</p>
                           </div>
                           <Badge variant={area.severity === "HIGH" ? "destructive" : "default"}>
@@ -361,10 +403,26 @@ export default function TodayView() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-2 sm:grid-cols-2 md:grid-cols-4">
-                <QuickActionButton icon={<Plus className="h-5 w-5" />} label="New Task" onClick={() => {}} />
-                <QuickActionButton icon={<Calendar className="h-5 w-5" />} label="New Event" onClick={() => {}} />
-                <QuickActionButton icon={<Target className="h-5 w-5" />} label="Log Habit" onClick={() => {}} />
-                <QuickActionButton icon={<Zap className="h-5 w-5" />} label="Run Automation" onClick={() => {}} />
+                <QuickActionButton
+                  icon={<Plus className="h-5 w-5" />}
+                  label="New Task"
+                  onClick={() => {}}
+                />
+                <QuickActionButton
+                  icon={<Calendar className="h-5 w-5" />}
+                  label="New Event"
+                  onClick={() => {}}
+                />
+                <QuickActionButton
+                  icon={<Target className="h-5 w-5" />}
+                  label="Log Habit"
+                  onClick={() => {}}
+                />
+                <QuickActionButton
+                  icon={<Zap className="h-5 w-5" />}
+                  label="Run Automation"
+                  onClick={() => {}}
+                />
               </div>
             </CardContent>
           </Card>
@@ -403,7 +461,12 @@ export default function TodayView() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{goal.text}</p>
-                          <p className="text-xs text-muted-foreground">{goal.scope} • {goal.deadline ? format(new Date(goal.deadline), "MMM d") : "No deadline"}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {goal.scope} •{" "}
+                            {goal.deadline
+                              ? format(new Date(goal.deadline), "MMM d")
+                              : "No deadline"}
+                          </p>
                         </div>
                         <Badge variant={goal.done ? "secondary" : "default"}>
                           {goal.done ? "Done" : "Active"}
@@ -435,7 +498,10 @@ export default function TodayView() {
                         <div>
                           <p className="font-medium">{project.name}</p>
                           <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            {project.status} • {project.deadline ? format(new Date(project.deadline), "MMM d") : "No deadline"}
+                            {project.status} •{" "}
+                            {project.deadline
+                              ? format(new Date(project.deadline), "MMM d")
+                              : "No deadline"}
                           </p>
                           <Progress value={project.progress} className="w-full h-1.5 mt-2" />
                         </div>
@@ -464,12 +530,19 @@ export default function TodayView() {
               <CardContent>
                 <div className="space-y-2">
                   {weakAreas.slice(0, 2).map((area) => (
-                    <div key={area.topicId} className="p-3 bg-white border border-red-200 rounded-xl">
+                    <div
+                      key={area.topicId}
+                      className="p-3 bg-white border border-red-200 rounded-xl"
+                    >
                       <div className="flex items-start justify-between">
                         <div>
                           <p className="font-medium text-red-900">{area.topic}</p>
-                          <p className="text-xs text-red-700">{area.subject} • {area.progress}% complete</p>
-                          <p className="text-[10px] text-red-600 mt-1">{area.signals.join(" • ")}</p>
+                          <p className="text-xs text-red-700">
+                            {area.subject} • {area.progress}% complete
+                          </p>
+                          <p className="text-[10px] text-red-600 mt-1">
+                            {area.signals.join(" • ")}
+                          </p>
                         </div>
                         <Badge variant={area.severity === "HIGH" ? "destructive" : "default"}>
                           {area.severity}
@@ -488,7 +561,14 @@ export default function TodayView() {
 }
 
 // Helper Components
-function MetricCard({ title, value, subtitle, icon, trend, trendColor }: {
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  trend,
+  trendColor,
+}: {
   title: string;
   value: string;
   subtitle: string;
@@ -505,16 +585,18 @@ function MetricCard({ title, value, subtitle, icon, trend, trendColor }: {
             <p className="text-3xl font-bold font-serif mt-1">{value}</p>
             <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
           </div>
-          <div className="p-3 bg-primary/10 rounded-xl">
-            {icon}
-          </div>
+          <div className="p-3 bg-primary/10 rounded-xl">{icon}</div>
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function QuickActionButton({ icon, label, onClick }: {
+function QuickActionButton({
+  icon,
+  label,
+  onClick,
+}: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;

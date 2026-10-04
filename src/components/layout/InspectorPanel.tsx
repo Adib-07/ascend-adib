@@ -52,9 +52,9 @@ export function InspectorPanel({ isOpen, onClose, ref }: InspectorPanelProps) {
                   { id: "ai", label: "AI" },
                   { id: "upcoming", label: "Upcoming" },
                 ].map((tab) => (
-                  <TabsTrigger 
-                    key={tab.id} 
-                    value={tab.id} 
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
                     className="px-3 py-1.5 text-sm font-medium"
                   >
                     {tab.label}
@@ -83,7 +83,7 @@ export function InspectorPanel({ isOpen, onClose, ref }: InspectorPanelProps) {
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="related" className="h-full">
             <div className="p-4 space-y-4">
               <div className="text-sm text-muted-foreground">
@@ -91,7 +91,7 @@ export function InspectorPanel({ isOpen, onClose, ref }: InspectorPanelProps) {
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="ai" className="h-full">
             <div className="p-4 space-y-4">
               <div className="text-sm text-muted-foreground">
@@ -99,7 +99,7 @@ export function InspectorPanel({ isOpen, onClose, ref }: InspectorPanelProps) {
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="upcoming" className="h-full">
             <div className="p-4 space-y-4">
               <div className="text-sm text-muted-foreground">

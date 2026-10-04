@@ -23,7 +23,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [focusSessionsToday, setFocusSessionsToday] = useState(0);
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+
   const sidebarRef = useRef<HTMLAsideElement>(null);
   const inspectorRef = useRef<HTMLAsideElement>(null);
 
@@ -62,7 +62,11 @@ export function AppLayout({ children }: AppLayoutProps) {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
       // Close sidebar on mobile when clicking outside
-      if (window.innerWidth < 1024 && sidebarOpen && !sidebarRef.current?.contains(event.target as Node)) {
+      if (
+        window.innerWidth < 1024 &&
+        sidebarOpen &&
+        !sidebarRef.current?.contains(event.target as Node)
+      ) {
         setSidebarOpen(false);
       }
     }
@@ -72,17 +76,32 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, [sidebarOpen]);
 
   const handleSearch = () => setPaletteOpen(true);
-  const handleQuickCapture = () => { /* TODO: implement */ };
-  const handleNewAutomation = () => { /* TODO */ };
-  const handleNewTask = () => { /* TODO */ };
-  const handleNewEvent = () => { /* TODO */ };
-  const handleNewDocument = () => { /* TODO */ };
+  const handleQuickCapture = () => {
+    setCurrentView("quick-capture");
+    setPaletteOpen(false);
+  };
+  const handleNewAutomation = () => {
+    setCurrentView("automations");
+    setPaletteOpen(false);
+  };
+  const handleNewTask = () => {
+    setCurrentView("tasks");
+    setPaletteOpen(false);
+  };
+  const handleNewEvent = () => {
+    setCurrentView("calendar");
+    setPaletteOpen(false);
+  };
+  const handleNewDocument = () => {
+    setCurrentView("documents");
+    setPaletteOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-background font-sans antialiased">
       <OfflineBar />
       <PWAInstallBanner />
-      
+
       {/* Sidebar */}
       <Sidebar
         isOpen={sidebarOpen}
@@ -94,7 +113,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
           aria-hidden="true"
@@ -112,15 +131,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       />
 
       {/* Main Content Area */}
-      <div className={cn(
-        "flex-1 overflow-hidden transition-all duration-300",
-        "lg:ml-72"
-      )}>
-        <main 
-          role="main" 
+      <div className={cn("flex-1 overflow-hidden transition-all duration-300", "lg:ml-72")}>
+        <main
+          role="main"
           className={cn(
             "h-[calc(100vh-3.5rem)] overflow-auto transition-all duration-300",
-            "lg:ml-0"
+            "lg:ml-0",
           )}
         >
           {children}
@@ -136,7 +152,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Mobile inspector overlay */}
       {inspectorOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-black/30 lg:hidden"
           onClick={() => setInspectorOpen(false)}
           aria-hidden="true"

@@ -1,11 +1,11 @@
 # ASCEND — STAGE 4 DATA ARCHITECTURE
 
-| Field | Value |
-|---|---|
-| Project | Ascend — AI Journey productivity app (B.Tech CSE student + freelancer → AI Engineer) |
-| Repo branch | `ascend-data-integration` (synced with `origin/main` at `b25f74c`) |
-| Date of document | 2026-08-21 |
-| Status | Architecture proposal — **NO migrations created, no tables created, nothing implemented** |
+| Field                | Value                                                                                      |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| Project              | Ascend — AI Journey productivity app (B.Tech CSE student + freelancer → AI Engineer)       |
+| Repo branch          | `ascend-data-integration` (synced with `origin/main` at `b25f74c`)                         |
+| Date of document     | 2026-08-21                                                                                 |
+| Status               | Architecture proposal — **NO migrations created, no tables created, nothing implemented**  |
 | Authoritative source | Actual repository (no prior Stage 1–3 docs were present; findings reconstructed from code) |
 
 > **Accuracy note:** Stage 1–3 report files were **not present** in the repository or git history. All findings below were reconstructed by direct inspection of the codebase (`src/`), `supabase/migrations/`, `package.json`, `AGENTS.md`, and `supabase/config.toml`. Items that cannot be verified from the repository are explicitly marked **UNVERIFIED**. No dataset was selected in any prior stage, so all dataset-specific sections are marked **UNVERIFIED**.
@@ -27,6 +27,7 @@ The Stage 4 goal is to introduce (a) structured, user-owned extensions to the ex
 **Common pattern (all 18 tables):** `id UUID PK DEFAULT gen_random_uuid()`, `user_id UUID NOT NULL REFERENCES auth.users ON DELETE CASCADE`, `created_at TIMESTAMPTZ DEFAULT now()`. Most have `updated_at` + a `set_updated_at()` trigger.
 
 **Tables (EXISTING — do not drop/alter columns):**
+
 1. `daily_intentions` — one intention text per (user, day).
 2. `tasks` — daily tasks, priority, due_date, type, done, mit_slot, reminder_time.
 3. `learn_topics` — study topics: skill category, status, progress %, difficulty, source, deadline.
@@ -52,26 +53,28 @@ The Stage 4 goal is to introduce (a) structured, user-owned extensions to the ex
 
 ## 3. Keep / Extend / Refactor / Replace Decisions
 
-| Object | Decision | Rationale |
-|---|---|---|
-| All 18 existing tables | **KEEP** (additive only) | Working, RLS-protected, referenced by 30+ components. Never `DROP`/`ALTER TYPE`/rename columns. |
-| `types.ts` (auto-generated) | **REGENERATE** after any migration | Hand-editing breaks the generated contract. |
-| CSE Tutor / Life Skills `localStorage` seeds | **EXTEND → migrate to Supabase** (optional, phased) | Client-only persistence is single-device; moving to DB enables cross-device sync. Low priority; keep localStorage as fallback. |
-| AI server functions pattern | **KEEP** | `createServerFn` + Lovable AI Gateway + `zod` validator is sound and consistent. |
-| Document/PDF handling | **REPLACE (absent → NEW)** | No PDF functionality exists today (grep hits were `localStorage`/`storage` config false positives). |
-| Work automation pipeline | **EXTEND** existing `outreach`/`clients`/`work_projects`; add NEW tables for leads/research/website-audit/proposals | Existing tables cover clients/projects/outreach; lead-discovery and research are net-new. |
+| Object                                       | Decision                                                                                                            | Rationale                                                                                                                      |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| All 18 existing tables                       | **KEEP** (additive only)                                                                                            | Working, RLS-protected, referenced by 30+ components. Never `DROP`/`ALTER TYPE`/rename columns.                                |
+| `types.ts` (auto-generated)                  | **REGENERATE** after any migration                                                                                  | Hand-editing breaks the generated contract.                                                                                    |
+| CSE Tutor / Life Skills `localStorage` seeds | **EXTEND → migrate to Supabase** (optional, phased)                                                                 | Client-only persistence is single-device; moving to DB enables cross-device sync. Low priority; keep localStorage as fallback. |
+| AI server functions pattern                  | **KEEP**                                                                                                            | `createServerFn` + Lovable AI Gateway + `zod` validator is sound and consistent.                                               |
+| Document/PDF handling                        | **REPLACE (absent → NEW)**                                                                                          | No PDF functionality exists today (grep hits were `localStorage`/`storage` config false positives).                            |
+| Work automation pipeline                     | **EXTEND** existing `outreach`/`clients`/`work_projects`; add NEW tables for leads/research/website-audit/proposals | Existing tables cover clients/projects/outreach; lead-discovery and research are net-new.                                      |
 
 ---
 
 ## 4. Student Data Architecture
 
 **User-owned, per-user (RLS).** Existing tables cover the Student Mode fully:
+
 - Daily planning: `daily_intentions`, `tasks`.
 - Learning Hub: `learn_topics`, `notes`, `coding_problems`, `quiz_items`, `flashcard_decks`, `flashcards`, `exams`, `academic_projects`.
 - Progress analytics: derived from above (no separate table).
 - Habits: `habits`, `habit_logs`. Goals: `goals`.
 
 **Proposed extensions (EXTEND EXISTING — additive columns only, all `IF NOT EXISTS`):**
+
 - `learn_topics`: add `source_url TEXT`, `estimated_hours NUMERIC` — optional enrichment. **NEW columns, no column renames.**
 - `exams`: `syllabus` already JSONB; no change needed, but a companion `exam_syllabus_items` table could be added (**NEW**) if row-level tracking is desired. Currently **UNVERIFIED** whether needed.
 
@@ -120,7 +123,7 @@ All Student data remains **user-owned** and isolated by `user_id`.
 
 - **Server:** `src/lib/life-skills.server.ts` + `life-skills.functions.ts` (`askProfessor`, `chatMentor`). Supports kinds: `learn`/`book`/`business`/`resources`/`memory`/`answerCheck`/`flashcards`.
 - **Client:** `LifeSkillsProfessor.tsx` persists check-states and seeds in `localStorage`.
-- **RAG:** **NONE.** Book/business/resource answers are generated from the model's training; `resources` mode instructs the model to recommend *real existing* resources and "Never invent URLs."
+- **RAG:** **NONE.** Book/business/resource answers are generated from the model's training; `resources` mode instructs the model to recommend _real existing_ resources and "Never invent URLs."
 - Data: **AI-generated content** + **curated knowledge** (localStorage).
 
 ---
@@ -130,6 +133,7 @@ All Student data remains **user-owned** and isolated by `user_id`.
 **Current state: NO document/PDF functionality exists.** (Confirmed: no `pdfjs`, no upload UI, no storage bucket, no `File` handling in `src/`.)
 
 **Proposed NEW architecture (not implemented):**
+
 - **Storage bucket:** `documents` (NEW) — private, user-scoped path `user_id/<uuid>/<filename>`. Must have RLS/Storage policies restricting to owner.
 - **Tables (NEW):**
   - `user_documents` (user_id, filename, storage_path, mime_type, size_bytes, status, created_at).
@@ -143,6 +147,7 @@ All Student data remains **user-owned** and isolated by `user_id`.
 ## 11. Knowledge Architecture
 
 Three knowledge classes:
+
 1. **User-owned data** — all 18 tables; the user's tasks, notes, topics, habits, clients, etc.
 2. **Curated knowledge** — tutor/life-skills seed content + system prompts (today in `localStorage`/server `.ts` files). Can be promoted to a `knowledge_items` table (**NEW**, optional) for cross-device sync and versioning.
 3. **AI-generated content** — tutor/coach responses (ephemeral today; persist optionally).
@@ -156,6 +161,7 @@ Three knowledge classes:
 **Current state: NO RAG, NO vector store, NO embeddings.** `config.toml` does not enable `pgvector`; whether the hosted Supabase project has the `vector` extension available is **UNVERIFIED**.
 
 **Retrieval classification:**
+
 - **Structured SQL/database retrieval (no vectors):** personalization for tutors using the user's own `learn_topics`/`notes`/`exams` — simple `SELECT WHERE user_id=auth.uid()`. Recommended first step; no new infra.
 - **Document retrieval (vector/semantic):** user-uploaded PDFs/notes → `document_embeddings` (requires pgvector). Needed only if semantic search over docs is required.
 - **What does NOT require RAG:** all three existing tutors (prompt-only), progress analytics, all CRUD features.
@@ -168,6 +174,7 @@ Three knowledge classes:
 ## 13. Work / Freelance Architecture
 
 Existing tables cover the core CRM/finance:
+
 - `clients`, `work_projects`, `finance_entries`, `services`, `outreach`.
 - `PipelineView.tsx` currently stores some pipeline/services data in `localStorage` (`ascend_services_v1`) — **inconsistent with Supabase-first design**; candidate for **EXTEND** (move to `services` table, which already exists with `starter/standard/premium_price`).
 
@@ -213,7 +220,7 @@ Existing tables cover the core CRM/finance:
 
 ## 18. AI Website-Building Architecture
 
-**Not present.** Ascend itself is not a website builder. The phrase "AI Website-Building" in the Stage 5A checklist most plausibly refers to an *optional* Work-mode feature where the AI helps a freelancer **draft a prospect's website / audit a prospect's existing site** as a lead-magnet service.
+**Not present.** Ascend itself is not a website builder. The phrase "AI Website-Building" in the Stage 5A checklist most plausibly refers to an _optional_ Work-mode feature where the AI helps a freelancer **draft a prospect's website / audit a prospect's existing site** as a lead-magnet service.
 
 **Proposed (NEW, optional, UNVERIFIED):** `website_audits` (user_id, lead_id FK, url, audit_markdown, opportunities JSONB, generated_at). AI generates an audit/mock site from a URL or prompt; output is **AI-generated content** owned by the user, used as an outreach asset. No autonomous publishing. Human approval before sending to prospect.
 
@@ -224,6 +231,7 @@ Existing tables cover the core CRM/finance:
 **No datasets are ingested today, and none were selected in a prior stage (UNVERIFIED).**
 
 Proposed ingestion pattern (when a dataset IS selected):
+
 1. Source fetched (static file / API) → validated (§22).
 2. Normalized into `shared_knowledge` or `knowledge_items` (**NEW**) with `source_id`, `license`, `fetched_at`, `hash`.
 3. Optionally chunked + embedded into a **shared** (non-user-scoped) vector table `corpus_embeddings` with RLS disabled for read but write-restricted to `service_role` only.
@@ -237,17 +245,18 @@ No ingestion runs now. Do not download/import datasets in Stage 5B until §20 pr
 
 **No dataset has been selected.** Every entry below is **UNVERIFIED** and MUST be populated before any ingestion:
 
-| Field | Status |
-|---|---|
-| Selected source name | **UNVERIFIED** |
-| URL | **UNVERIFIED** |
-| License | **UNVERIFIED** |
-| Provenance / publisher | **UNVERIFIED** |
-| Intended purpose | **UNVERIFIED** |
+| Field                          | Status         |
+| ------------------------------ | -------------- |
+| Selected source name           | **UNVERIFIED** |
+| URL                            | **UNVERIFIED** |
+| License                        | **UNVERIFIED** |
+| Provenance / publisher         | **UNVERIFIED** |
+| Intended purpose               | **UNVERIFIED** |
 | Static / live / user-generated | **UNVERIFIED** |
-| Integration recommendation | **UNVERIFIED** |
+| Integration recommendation     | **UNVERIFIED** |
 
 Template to fill per dataset when chosen:
+
 ```
 - source: <name>        [UNVERIFIED]
 - url: <canonical url>  [UNVERIFIED]
@@ -317,7 +326,7 @@ Template to fill per dataset when chosen:
 
 ## 27. Performance Architecture
 
-- Client-side: React Query caching; `localStorage` for tutor seeds (cheap). 
+- Client-side: React Query caching; `localStorage` for tutor seeds (cheap).
 - DB: only index today is `goals_user_northstar_unique`. **Proposed NEW indexes (optional):** `learn_topics(user_id, skill)`, `document_chunks(document_id)`, `document_embeddings` ivfflat/hnsw on `embedding`. **UNVERIFIED** which are needed.
 - RAG query: `SELECT ... FROM document_embeddings ORDER BY embedding <=> $1 LIMIT k` with `WHERE user_id=auth.uid()`. Requires pgvector + index.
 - Keep payloads small; `maxOutputTokens 3000` already caps tutor responses.
@@ -338,23 +347,26 @@ Template to fill per dataset when chosen:
 Legend: **EXISTING** | **EXTEND EXISTING** (additive column) | **NEW**
 
 ### EXISTING (18 — keep, never alter destructively)
+
 daily_intentions, tasks, learn_topics, notes, coding_problems, quiz_items, flashcard_decks, flashcards, exams, academic_projects, habits, habit_logs, goals, clients, work_projects, finance_entries, services, outreach
 
 ### EXTEND EXISTING (additive columns only, `IF NOT EXISTS`)
+
 - `learn_topics` + `source_url TEXT`, + `estimated_hours NUMERIC`
 - `outreach` + `lead_id UUID REFERENCES leads(id) ON DELETE SET NULL`, + `ai_drafted BOOLEAN DEFAULT false`, + `approved BOOLEAN DEFAULT false`
-- `work_projects` + `lead_id UUID REFERENCES leads(id) ON DELETE SET NULL`  *(UNVERIFIED)*
+- `work_projects` + `lead_id UUID REFERENCES leads(id) ON DELETE SET NULL` _(UNVERIFIED)_
 
 ### NEW (proposed — not created)
+
 - `leads` (user_id, name, source_platform, contact, niche, status, discovered_at, raw_notes)
 - `lead_research` (user_id, lead_id FK, summary, pain_points, tech_stack_detected, social_urls JSONB, research_method, researched_at)
-- `website_audits` (user_id, lead_id FK, url, audit_markdown, opportunities JSONB, generated_at)  *(UNVERIFIED)*
-- `proposals` (user_id, lead_id/client_id FK, title, body_markdown, status, created_at)  *(UNVERIFIED)*
+- `website_audits` (user*id, lead_id FK, url, audit_markdown, opportunities JSONB, generated_at) *(UNVERIFIED)\_
+- `proposals` (user*id, lead_id/client_id FK, title, body_markdown, status, created_at) *(UNVERIFIED)\_
 - `user_documents` (user_id, filename, storage_path, mime_type, size_bytes, status, created_at)
 - `document_chunks` (user_id, document_id FK, chunk_index, content_text, token_count)
-- `document_embeddings` (user_id, chunk_id FK, embedding `vector`)  *requires pgvector — UNVERIFIED availability*
-- `knowledge_items` (user_id NULLable for shared, title, body, source_id, license, version, fetched_at, hash)  *(UNVERIFIED; for curated/shared knowledge)*
-- `ai_responses` (user_id, feature, prompt_hash, response_text, model, created_at)  *optional cache — UNVERIFIED*
+- `document_embeddings` (user*id, chunk_id FK, embedding `vector`) \_requires pgvector — UNVERIFIED availability*
+- `knowledge_items` (user*id NULLable for shared, title, body, source_id, license, version, fetched_at, hash) *(UNVERIFIED; for curated/shared knowledge)\_
+- `ai_responses` (user*id, feature, prompt_hash, response_text, model, created_at) \_optional cache — UNVERIFIED*
 
 Every NEW/EXTEND table gets: `user_id` FK→auth.users (except shared `knowledge_items` which is service-role-managed), RLS per-user policy, `created_at`.
 
@@ -396,11 +408,11 @@ All user-scoped edges enforce `auth.uid()=user_id` at RLS level.
 
 ## 32. Implementation Phases
 
-- **Phase 0 — Artifact gate:** This document present; §20 provenance filled before any dataset ingest. *(done by this file)*
+- **Phase 0 — Artifact gate:** This document present; §20 provenance filled before any dataset ingest. _(done by this file)_
 - **Phase 1 — Schema (additive):** NEW tables with full RLS + EXTEND columns. Migrations additive only. Regenerate `types.ts`.
 - **Phase 2 — Data layer:** Hooks in `ascend-data.ts`/`ascend-hooks.ts` for new tables.
 - **Phase 3 — Work automation:** leads/research/outreach linking; AI draft + human approval UI.
-- **Phase 4 — Document/PDF + RAG:** Storage bucket, parser, embeddings, pgvector (if available), retrieval UI. *(highest infra risk)*
+- **Phase 4 — Document/PDF + RAG:** Storage bucket, parser, embeddings, pgvector (if available), retrieval UI. _(highest infra risk)_
 - **Phase 5 — Knowledge/datasets:** Only after §20 filled; shared corpus + RAG.
 - **Phase 6 — AI personalization:** Inject user `learn_topics`/`notes` into tutors (SQL retrieval, no vectors).
 - **Phase 7 — Regression:** Full manual checklist (§12 of Stage 5A report).
@@ -420,15 +432,15 @@ All user-scoped edges enforce `auth.uid()=user_id` at RLS level.
 
 ## 34. Risks
 
-| Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
-| New table missing RLS | Med | High (leak) | Enforce per-user policy template on every NEW table |
-| pgvector unavailable on plan | Med | Med | Verify extension before Phase 4; fallback to SQL retrieval |
-| Altering existing column breaks 30+ components | Low | High | Additive migrations only |
-| AI auto-sends outreach | Low | High (reputational) | Human approval gate, no auto-dispatch |
-| Dataset license violation | Med | High | §20 provenance + license check before ingest |
-| types.ts drift | Med | Med | Regenerate + build/lint gate |
-| Lovable history rewrite | Low | High | Never squash/force-push pushed commits |
+| Risk                                           | Likelihood | Impact              | Mitigation                                                 |
+| ---------------------------------------------- | ---------- | ------------------- | ---------------------------------------------------------- |
+| New table missing RLS                          | Med        | High (leak)         | Enforce per-user policy template on every NEW table        |
+| pgvector unavailable on plan                   | Med        | Med                 | Verify extension before Phase 4; fallback to SQL retrieval |
+| Altering existing column breaks 30+ components | Low        | High                | Additive migrations only                                   |
+| AI auto-sends outreach                         | Low        | High (reputational) | Human approval gate, no auto-dispatch                      |
+| Dataset license violation                      | Med        | High                | §20 provenance + license check before ingest               |
+| types.ts drift                                 | Med        | Med                 | Regenerate + build/lint gate                               |
+| Lovable history rewrite                        | Low        | High                | Never squash/force-push pushed commits                     |
 
 ---
 
@@ -460,4 +472,4 @@ All user-scoped edges enforce `auth.uid()=user_id` at RLS level.
 
 ---
 
-*End of Stage 4 Data Architecture. No code, migrations, tables, datasets, or configuration were created or modified by producing this document.*
+_End of Stage 4 Data Architecture. No code, migrations, tables, datasets, or configuration were created or modified by producing this document._

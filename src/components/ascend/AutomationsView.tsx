@@ -4,7 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { listAutomationRules } from "@/lib/automation.functions";
-import { executeManualAutomation, evaluateAutomationRule } from "@/lib/automation.execution.functions";
+import {
+  executeManualAutomation,
+  evaluateAutomationRule,
+} from "@/lib/automation.execution.functions";
 import { Plus, Play, Eye, Zap, Trash2 } from "lucide-react";
 
 export default function AutomationsView() {
@@ -31,16 +34,23 @@ export default function AutomationsView() {
         <Button onClick={() => setEditingId(null)}>New Automation</Button>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading...</p> : (
+        {isLoading ? (
+          <p>Loading...</p>
+        ) : (
           <>
             {rules?.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No automations yet.</p>
             ) : (
               <div className="space-y-3">
                 {rules?.map((rule) => (
-                  <div key={rule.id} className="flex items-center justify-between p-3 border rounded-lg bg-[var(--card)]">
+                  <div
+                    key={rule.id}
+                    className="flex items-center justify-between p-3 border rounded-lg bg-[var(--card)]"
+                  >
                     <div className="flex items-center gap-3">
-                      <Badge variant={rule.enabled ? "default" : "secondary"}>{rule.enabled ? "Enabled" : "Disabled"}</Badge>
+                      <Badge variant={rule.enabled ? "default" : "secondary"}>
+                        {rule.enabled ? "Enabled" : "Disabled"}
+                      </Badge>
                       <div>
                         <p className="font-medium">{rule.name}</p>
                         <p className="text-sm text-muted-foreground">{rule.description}</p>
@@ -50,10 +60,20 @@ export default function AutomationsView() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleRun(rule.id)} title="Run now">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRun(rule.id)}
+                        title="Run now"
+                      >
                         <Play className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleEvaluate(rule.id)} title="Evaluate">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEvaluate(rule.id)}
+                        title="Evaluate"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" title="Edit">
@@ -69,7 +89,7 @@ export default function AutomationsView() {
             )}
           </>
         )}
-        </CardContent>
-      </Card>
-    );
-  }
+      </CardContent>
+    </Card>
+  );
+}

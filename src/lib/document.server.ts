@@ -177,7 +177,9 @@ export async function retrieveChunksHybrid(
   queryEmbedding: number[],
   documentIds?: string[],
   limit = 8,
-): Promise<{ content_text: string; page_number: number | null; heading: string | null; score: number }[]> {
+): Promise<
+  { content_text: string; page_number: number | null; heading: string | null; score: number }[]
+> {
   const terms = query
     .toLowerCase()
     .split(/\W+/)
@@ -242,7 +244,7 @@ export async function retrieveChunksHybrid(
   // Deduplicate by content_text
   const seen = new Set<string>();
   const merged = [...vectorResults, ...keywordResults]
-    .filter(r => {
+    .filter((r) => {
       if (seen.has(r.content_text)) return false;
       seen.add(r.content_text);
       return true;

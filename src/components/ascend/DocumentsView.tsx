@@ -75,7 +75,9 @@ export default function DocumentsView() {
   const [askError, setAskError] = useState<string | null>(null);
   const [askPending, setAskPending] = useState(false);
 
-  const [phase, setPhase] = useState<"idle" | "uploading" | "processing" | "done" | "error">("idle");
+  const [phase, setPhase] = useState<"idle" | "uploading" | "processing" | "done" | "error">(
+    "idle",
+  );
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
 
@@ -95,14 +97,38 @@ export default function DocumentsView() {
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async ({ file, docType, subject }: { file: File; docType: string; subject: string }) => {
+    mutationFn: async ({
+      file,
+      docType,
+      subject,
+    }: {
+      file: File;
+      docType: string;
+      subject: string;
+    }) => {
       const allowedMimeTypes = ["application/pdf", "text/plain", "text/markdown"] as const;
-      const allowedDocTypes = ["syllabus", "lecture_notes", "study_material", "textbook", "exam_prep", "client_requirements", "other"] as const;
-      const fileType = file.type as typeof allowedMimeTypes[number];
+      const allowedDocTypes = [
+        "syllabus",
+        "lecture_notes",
+        "study_material",
+        "textbook",
+        "exam_prep",
+        "client_requirements",
+        "other",
+      ] as const;
+      const fileType = file.type as (typeof allowedMimeTypes)[number];
       const mimeType = allowedMimeTypes.includes(fileType) ? fileType : "application/pdf";
-      const docTypeValue = docType as typeof allowedDocTypes[number];
+      const docTypeValue = docType as (typeof allowedDocTypes)[number];
       const documentType = allowedDocTypes.includes(docTypeValue) ? docTypeValue : "other";
-      const res = await uploadDocument({ data: { filename: file.name, mimeType, sizeBytes: file.size, documentType, subject: subject || undefined } });
+      const res = await uploadDocument({
+        data: {
+          filename: file.name,
+          mimeType,
+          sizeBytes: file.size,
+          documentType,
+          subject: subject || undefined,
+        },
+      });
       const { documentId, uploadUrl } = res;
       const res2 = await fetch(uploadUrl, {
         method: "PUT",
@@ -199,12 +225,24 @@ export default function DocumentsView() {
           <h2 className="font-serif text-2xl text-primary">Documents</h2>
           <p className="text-sm text-muted-foreground">Upload and query your personal documents</p>
         </div>
-        <Button onClick={() => { fileRef.current?.click(); }} disabled={phase === "uploading"}>
-          <FilePlus2 className="h-4 w-4 mr-2" />Add Document
+        <Button
+          onClick={() => {
+            fileRef.current?.click();
+          }}
+          disabled={phase === "uploading"}
+        >
+          <FilePlus2 className="h-4 w-4 mr-2" />
+          Add Document
         </Button>
       </div>
 
-      <input type="file" ref={fileRef} onChange={handleFileSelect} className="hidden" accept=".pdf,.txt,.md" />
+      <input
+        type="file"
+        ref={fileRef}
+        onChange={handleFileSelect}
+        className="hidden"
+        accept=".pdf,.txt,.md"
+      />
 
       {file && phase === "idle" && (
         <Card className="bg-muted/50 border-border/50">
@@ -214,15 +252,31 @@ export default function DocumentsView() {
                 <Inbox className="h-10 w-10 text-muted-foreground" />
                 <div>
                   <p className="font-medium">{file.name}</p>
-                  <p className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(1)} KB · {file.type}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {(file.size / 1024).toFixed(1)} KB · {file.type}
+                  </p>
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => { setFile(null); fileRef.current!.value = ""; }}>
-                  <X className="h-4 w-4 mr-1" />Cancel
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFile(null);
+                    fileRef.current!.value = "";
+                  }}
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Cancel
                 </Button>
-                <Button onClick={startUpload} disabled={phase === "uploading" as "idle" | "uploading" | "processing" | "done" | "error"}>
-                  <Upload className="h-4 w-4 mr-1" />Upload
+                <Button
+                  onClick={startUpload}
+                  disabled={
+                    phase ===
+                    ("uploading" as "idle" | "uploading" | "processing" | "done" | "error")
+                  }
+                >
+                  <Upload className="h-4 w-4 mr-1" />
+                  Upload
                 </Button>
               </div>
             </div>
@@ -275,17 +329,24 @@ export default function DocumentsView() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
           ) : docs.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 gap-2">
               <Inbox className="h-12 w-12 text-muted-foreground/50" />
               <p className="font-medium text-muted-foreground">No documents yet</p>
-              <p className="text-sm text-muted-foreground">Upload a PDF, TXT, or Markdown file to get started</p>
+              <p className="text-sm text-muted-foreground">
+                Upload a PDF, TXT, or Markdown file to get started
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
               {docs.map((doc) => (
-                <div key={doc.id} className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-muted/30 transition-colors">
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-muted/30 transition-colors"
+                >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <FileText className="h-8 w-8 text-muted-foreground" />
                     <div className="min-w-0">
@@ -313,7 +374,8 @@ export default function DocumentsView() {
       <Card>
         <CardHeader>
           <CardTitle className="font-serif text-xl flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />Ask Your Documents
+            <Sparkles className="h-5 w-5 text-primary" />
+            Ask Your Documents
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -343,7 +405,8 @@ export default function DocumentsView() {
                   <ul className="mt-1 space-y-1">
                     {sources.map((s, i) => (
                       <li key={i}>
-                        {s.title} {s.page ? `— page ${s.page}` : ""} {s.heading ? ` ({s.heading})` : ""}
+                        {s.title} {s.page ? `— page ${s.page}` : ""}{" "}
+                        {s.heading ? ` ({s.heading})` : ""}
                       </li>
                     ))}
                   </ul>
@@ -358,11 +421,17 @@ export default function DocumentsView() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Document?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently remove the document and its chunks.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This will permanently remove the document and its chunks.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { if (deleteDialogOpen) deleteMutation.mutate(deleteDialogOpen); }}>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteDialogOpen) deleteMutation.mutate(deleteDialogOpen);
+              }}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -27,7 +27,7 @@ function assessWeakArea(topic: any): WeakArea | null {
 
   if (topic.last_practiced) {
     const daysSince = Math.floor(
-      (Date.now() - new Date(topic.last_practiced).getTime()) / 86400000
+      (Date.now() - new Date(topic.last_practiced).getTime()) / 86400000,
     );
     if (daysSince > 14) {
       signals.push(`Not studied for ${daysSince} days`);

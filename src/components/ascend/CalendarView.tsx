@@ -15,15 +15,25 @@ export default function CalendarView() {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="flex items-center gap-2"><Calendar className="h-5 w-5" /> Calendar</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Calendar className="h-5 w-5" /> Calendar
+        </CardTitle>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setView("month")}>Month</Button>
-          <Button variant="outline" size="sm" onClick={() => setView("week")}>Week</Button>
-          <Button variant="outline" size="sm" onClick={() => setView("day")}>Day</Button>
+          <Button variant="outline" size="sm" onClick={() => setView("month")}>
+            Month
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setView("week")}>
+            Week
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setView("day")}>
+            Day
+          </Button>
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? <p>Loading events...</p> : (
+        {isLoading ? (
+          <p>Loading events...</p>
+        ) : (
           <div className="space-y-2">
             {events?.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No events yet.</p>
@@ -34,11 +44,14 @@ export default function CalendarView() {
                     <div>
                       <p className="font-medium">{ev.title}</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(ev.start_at), "MMM d, yyyy h:mm a")} – {format(new Date(ev.end_at), "h:mm a")}
+                        {format(new Date(ev.start_at), "MMM d, yyyy h:mm a")} –{" "}
+                        {format(new Date(ev.end_at), "h:mm a")}
                         {ev.location && ` • ${ev.location}`}
                       </p>
                     </div>
-                    <Button variant="ghost" size="sm">Edit</Button>
+                    <Button variant="ghost" size="sm">
+                      Edit
+                    </Button>
                   </li>
                 ))}
               </ul>

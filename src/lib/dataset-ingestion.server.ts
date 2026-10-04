@@ -6,8 +6,18 @@ import { mapAuthError } from "@/lib/auth-errors";
 const KAGGLE_USERNAME = process.env.KAGGLE_USERNAME;
 const KAGGLE_KEY = process.env.KAGGLE_KEY;
 
-export const ALLOWED_ARCHIVE_TYPES = ["application/zip", "application/x-zip-compressed", "application/gzip", "application/x-gzip"];
-export const ALLOWED_DATA_TYPES = ["text/csv", "application/json", "application/parquet", "text/plain"];
+export const ALLOWED_ARCHIVE_TYPES = [
+  "application/zip",
+  "application/x-zip-compressed",
+  "application/gzip",
+  "application/x-gzip",
+];
+export const ALLOWED_DATA_TYPES = [
+  "text/csv",
+  "application/json",
+  "application/parquet",
+  "text/plain",
+];
 export const MAX_DOWNLOAD_SIZE = 200 * 1024 * 1024; // 200MB
 
 interface DatasetProfile {
@@ -19,7 +29,10 @@ interface DatasetProfile {
     sampleValues: (string | number)[];
     missingCount: number;
   }>;
-  stats: Record<string, { min?: number; max?: number; mean?: number; std?: number; unique?: number }>;
+  stats: Record<
+    string,
+    { min?: number; max?: number; mean?: number; std?: number; unique?: number }
+  >;
   targetColumnSuggestions: string[];
 }
 
@@ -31,7 +44,9 @@ export function sanitizePathSegment(segment: string): string {
   return segment.replace(/[^a-zA-Z0-9-_]/g, "_");
 }
 
-async function downloadFromKaggle(slug: string): Promise<{ buffer: ArrayBuffer; filename: string; mimeType: string }> {
+async function downloadFromKaggle(
+  slug: string,
+): Promise<{ buffer: ArrayBuffer; filename: string; mimeType: string }> {
   if (!KAGGLE_USERNAME || !KAGGLE_KEY) {
     throw new Error("Kaggle credentials not configured on server");
   }
@@ -94,11 +109,14 @@ export function detectFileType(filename: string, data: Uint8Array): string {
 
 export async function profileCSV(data: Uint8Array): Promise<DatasetProfile> {
   const text = new TextDecoder("utf-8").decode(data);
-  const lines = text.trim().split("\n").filter(l => l.length > 0);
+  const lines = text
+    .trim()
+    .split("\n")
+    .filter((l) => l.length > 0);
   if (lines.length < 2) throw new Error("CSV has no data rows");
 
-  const headers = lines[0].split(",").map(h => h.trim().replace(/^"|"$/g, ""));
-  const rows = lines.slice(1).map(l => {
+  const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+  const rows = lines.slice(1).map((l) => {
     const result: string[] = [];
     let current = "";
     let inQuotes = false;
@@ -120,13 +138,13 @@ export async function profileCSV(data: Uint8Array): Promise<DatasetProfile> {
   const columnCount = headers.length;
   const rowCount = rows.length;
   const columns = headers.map((name, idx) => {
-    const values = rows.map(r => r[idx] ?? "").filter(v => v !== "");
+    const values = rows.map((r) => r[idx] ?? "").filter((v) => v !== "");
     const missingCount = rowCount - values.length;
-    const sampleValues = values.slice(0, 5).map(v => {
+    const sampleValues = values.slice(0, 5).map((v) => {
       const num = parseFloat(v);
       return isNaN(num) ? v.replace(/^"|"$/g, "") : num;
     });
-    const numericValues = values.map(v => parseFloat(v)).filter(v => !isNaN(v));
+    const numericValues = values.map((v) => parseFloat(v)).filter((v) => !isNaN(v));
     let type = "string";
     if (numericValues.length > values.length * 0.8) type = "numeric";
     else if (new Set(values).size <= 20 && values.length > 0) type = "categorical";
@@ -138,7 +156,9 @@ export async function profileCSV(data: Uint8Array): Promise<DatasetProfile> {
         min: sorted[0],
         max: sorted[sorted.length - 1],
         mean: numericValues.reduce((a, b) => a + b, 0) / numericValues.length,
-        std: Math.sqrt(numericValues.reduce((a, b) => a + Math.pow(b - stats.mean, 2), 0) / numericValues.length),
+        std: Math.sqrt(
+          numericValues.reduce((a, b) => a + Math.pow(b - stats.mean, 2), 0) / numericValues.length,
+        ),
         unique: stats.unique,
       };
     }
@@ -147,8 +167,8 @@ export async function profileCSV(data: Uint8Array): Promise<DatasetProfile> {
   });
 
   const targetColumnSuggestions = columns
-    .filter(c => c.type === "categorical" && c.stats.unique >= 2 && c.stats.unique <= 10)
-    .map(c => c.name);
+    .filter((c) => c.type === "categorical" && c.stats.unique >= 2 && c.stats.unique <= 10)
+    .map((c) => c.name);
 
   return { rowCount, columnCount, columns, stats: {}, targetColumnSuggestions };
 }
@@ -164,17 +184,23 @@ export async function profileJSON(data: Uint8Array): Promise<DatasetProfile> {
   if (rows.length === 0) throw new Error("JSON has no data rows");
   const sample = rows[0];
   const headers = Object.keys(sample);
-  const columns = headers.map(name => {
-    const values = rows.map(r => r[name]).filter(v => v !== null && v !== undefined);
+  const columns = headers.map((name) => {
+    const values = rows.map((r) => r[name]).filter((v) => v !== null && v !== undefined);
     const missingCount = rows.length - values.length;
     const sampleValues = values.slice(0, 5);
-    const numericValues = values.map(v => parseFloat(String(v))).filter(v => !isNaN(v));
+    const numericValues = values.map((v) => parseFloat(String(v))).filter((v) => !isNaN(v));
     let type = "string";
     if (numericValues.length > values.length * 0.8) type = "numeric";
     else if (new Set(values).size <= 20) type = "categorical";
     return { name, type, sampleValues, missingCount, stats: { unique: new Set(values).size } };
   });
-  return { rowCount: rows.length, columnCount: headers.length, columns, stats: {}, targetColumnSuggestions: [] };
+  return {
+    rowCount: rows.length,
+    columnCount: headers.length,
+    columns,
+    stats: {},
+    targetColumnSuggestions: [],
+  };
 }
 
 export async function profileDataset(filename: string, data: Uint8Array): Promise<DatasetProfile> {
@@ -186,7 +212,9 @@ export async function profileDataset(filename: string, data: Uint8Array): Promis
 
 async function computeChecksum(buffer: ArrayBuffer): Promise<string> {
   const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 // ============================================================================
@@ -199,7 +227,7 @@ export const ingestDataset = createServerFn({ method: "POST" })
     z.object({
       externalDatasetId: z.string().uuid(),
       forceReingest: z.boolean().optional(),
-    })
+    }),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -285,9 +313,9 @@ export const ingestDataset = createServerFn({ method: "POST" })
       if (extracted.length === 0) throw new Error("Archive is empty");
 
       // Find main data file (prefer CSV, then JSON, then largest)
-      let mainFile = extracted.find(f => f.name.toLowerCase().endsWith(".csv"));
-      if (!mainFile) mainFile = extracted.find(f => f.name.toLowerCase().endsWith(".json"));
-      if (!mainFile) mainFile = extracted.reduce((a, b) => a.data.length > b.data.length ? a : b);
+      let mainFile = extracted.find((f) => f.name.toLowerCase().endsWith(".csv"));
+      if (!mainFile) mainFile = extracted.find((f) => f.name.toLowerCase().endsWith(".json"));
+      if (!mainFile) mainFile = extracted.reduce((a, b) => (a.data.length > b.data.length ? a : b));
 
       // Profile
       await supabase
@@ -303,8 +331,11 @@ export const ingestDataset = createServerFn({ method: "POST" })
       const { error: uploadError } = await supabase.storage
         .from("dataset-files")
         .upload(storagePath, mainFile.data, {
-          contentType: mainFile.name.endsWith(".csv") ? "text/csv" :
-                       mainFile.name.endsWith(".json") ? "application/json" : "application/octet-stream",
+          contentType: mainFile.name.endsWith(".csv")
+            ? "text/csv"
+            : mainFile.name.endsWith(".json")
+              ? "application/json"
+              : "application/octet-stream",
           upsert: true,
         });
       if (uploadError) throw uploadError;
@@ -324,7 +355,10 @@ export const ingestDataset = createServerFn({ method: "POST" })
           row_count: profile.rowCount,
           column_count: profile.columnCount,
           columns_json: profile.columns,
-          profile_json: { stats: profile.stats, targetColumnSuggestions: profile.targetColumnSuggestions },
+          profile_json: {
+            stats: profile.stats,
+            targetColumnSuggestions: profile.targetColumnSuggestions,
+          },
           ingestion_status: "ready",
           error_message: null,
           checksum,
@@ -357,13 +391,17 @@ export const getDatasetFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ datasetFileId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const { data: file, error } = await supabase
       .from("dataset_files")
       .select("*")
       .eq("id", data.datasetFileId)
       .single();
     if (error || !file) throw new Error("Dataset file not found");
+    // Global files (user_id = null) are accessible to all; user-owned files only to owner
+    if (file.user_id !== null && file.user_id !== userId) {
+      throw new Error("Dataset file not found");
+    }
     return file;
   });
 
@@ -371,8 +409,12 @@ export const listDatasetFiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(z.object({ externalDatasetId: z.string().uuid().optional() }))
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
-    let query = supabase.from("dataset_files").select("*").order("created_at", { ascending: false });
+    const { supabase, userId } = context;
+    let query = supabase
+      .from("dataset_files")
+      .select("*")
+      .or(`user_id.is.null,user_id.eq.${userId}`)
+      .order("created_at", { ascending: false });
     if (data.externalDatasetId) query = query.eq("external_dataset_id", data.externalDatasetId);
     const { data: files, error } = await query;
     if (error) throw error;
@@ -384,7 +426,11 @@ export const deleteDatasetFile = createServerFn({ method: "POST" })
   .inputValidator(z.object({ datasetFileId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
-    const { data: file } = await supabase.from("dataset_files").select("*").eq("id", data.datasetFileId).single();
+    const { data: file } = await supabase
+      .from("dataset_files")
+      .select("*")
+      .eq("id", data.datasetFileId)
+      .single();
     if (!file) throw new Error("Dataset file not found");
 
     // Only allow deletion of user-owned files (global files managed by admin)
@@ -407,13 +453,28 @@ export const deleteDatasetFile = createServerFn({ method: "POST" })
 
 export const getDatasetSample = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ datasetFileId: z.string().uuid(), limit: z.number().int().min(1).max(100).optional() }))
+  .inputValidator(
+    z.object({
+      datasetFileId: z.string().uuid(),
+      limit: z.number().int().min(1).max(100).optional(),
+    }),
+  )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
-    const { data: file } = await supabase.from("dataset_files").select("*").eq("id", data.datasetFileId).single();
+    const { supabase, userId } = context;
+    const { data: file } = await supabase
+      .from("dataset_files")
+      .select("*")
+      .eq("id", data.datasetFileId)
+      .single();
     if (!file || !file.storage_path) throw new Error("Dataset file not found or not ready");
+    // Global files (user_id = null) are accessible to all; user-owned files only to owner
+    if (file.user_id !== null && file.user_id !== userId) {
+      throw new Error("Dataset file not found or not ready");
+    }
 
-    const { data: fileData, error } = await supabase.storage.from("dataset-files").download(file.storage_path);
+    const { data: fileData, error } = await supabase.storage
+      .from("dataset-files")
+      .download(file.storage_path);
     if (error || !fileData) throw new Error("Failed to download dataset file");
 
     const buffer = await fileData.arrayBuffer();
@@ -421,7 +482,7 @@ export const getDatasetSample = createServerFn({ method: "POST" })
 
     return {
       profile,
-      sampleRows: profile.columns.map(c => c.sampleValues),
+      sampleRows: profile.columns.map((c) => c.sampleValues),
       columns: profile.columns,
     };
   });

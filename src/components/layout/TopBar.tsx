@@ -1,17 +1,36 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { 
-  Search, Command as CmdIcon, Plus, Bell, 
-  Settings, User, LogOut, ChevronDown, 
-  Zap, FileText, Calendar, Target, Brain,
-  Command as CmdIcon2, Sun, Moon, Bell, User, X
+import {
+  Search,
+  Command as CmdIcon,
+  Plus,
+  Bell,
+  Settings,
+  User,
+  LogOut,
+  ChevronDown,
+  Zap,
+  FileText,
+  Calendar,
+  Target,
+  Brain,
+  Command as CmdIcon2,
+  Sun,
+  Moon,
+  Bell,
+  User,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
-  DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
@@ -61,9 +80,7 @@ export function TopBar({
             aria-label="Global search"
           >
             <Search className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground" />
-            <span className="text-muted-foreground group-hover:text-foreground">
-              Search...
-            </span>
+            <span className="text-muted-foreground group-hover:text-foreground">Search...</span>
             <kbd className="ml-auto text-[10px] font-mono text-muted-foreground/50 px-1.5 py-0.5 rounded">
               <CmdIcon2 className="h-3 w-3" />K
             </kbd>
@@ -160,7 +177,9 @@ export function TopBar({
                 />
                 <div className="absolute right-0 mt-2 w-56 rounded-xl bg-[var(--card)] border border-border shadow-lg py-1 z-50 animate-in fade-in-0 zoom-in-95 duration-150">
                   <div className="px-3 py-2 border-b border-border">
-                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">Account</p>
+                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">
+                      Account
+                    </p>
                     <p className="text-sm font-medium truncate">{user?.email}</p>
                   </div>
                   <div className="px-1">
@@ -172,9 +191,11 @@ export function TopBar({
                       <User className="h-4 w-4" />
                       Profile
                     </button>
-                    <button 
+                    <button
                       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left rounded-lg hover:bg-accent text-destructive"
-                      onClick={() => { signOut().catch(() => {}); }}
+                      onClick={() => {
+                        signOut().catch(() => {});
+                      }}
                     >
                       <LogOut className="h-4 w-4" />
                       Sign out

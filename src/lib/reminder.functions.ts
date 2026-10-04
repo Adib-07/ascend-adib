@@ -13,7 +13,7 @@ export const createReminder = createServerFn({ method: "POST" })
       related_type: z.enum(["task", "event", "habit", "custom"]).optional(),
       related_id: z.string().uuid().optional(),
       delivery_channel: z.enum(["in_app", "push", "email"]).default("in_app"),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -37,7 +37,7 @@ export const updateReminder = createServerFn({ method: "POST" })
       timezone: z.string().optional(),
       status: z.enum(["pending", "sent", "dismissed", "failed"]).optional(),
       delivery_channel: z.enum(["in_app", "push", "email"]).optional(),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -73,7 +73,7 @@ export const listReminders = createServerFn({ method: "POST" })
     z.object({
       status: z.enum(["pending", "sent", "dismissed", "failed"]).optional(),
       limit: z.number().int().min(1).max(100).default(50),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

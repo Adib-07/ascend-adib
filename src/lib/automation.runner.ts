@@ -3,6 +3,7 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { generateText } from "ai";
 import { MAX_TOKENS, MODEL, TEMPERATURE } from "./tutor.server";
+import { logAutomationError, logAIError } from "./logger";
 
 export type AutomationTriggerType =
   | "scheduled_time"
@@ -144,12 +145,10 @@ export interface SerializedExecutionResult {
   error?: string;
 }
 
-
-
 export async function checkIdempotency(
   supabase: SupabaseClient,
   ruleId: string,
-  executionId: string
+  executionId: string,
 ): Promise<boolean> {
   const { data, error } = await supabase
     .from("automation_logs")
@@ -170,7 +169,7 @@ export async function logExecution(
   triggerData: Record<string, unknown> | null,
   conditionResult: boolean | null,
   actionResult: Record<string, unknown> | null,
-  errorMessage: string | null
+  errorMessage: string | null,
 ): Promise<string> {
   const { data, error } = await supabase
     .from("automation_logs")
@@ -194,7 +193,7 @@ export async function evaluateConditions(
   supabase: SupabaseClient,
   userId: string,
   conditions: ConditionConfig[],
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
 ): Promise<{ passed: boolean; results: Array<{ condition: ConditionConfig; passed: boolean }> }> {
   const results: Array<{ condition: ConditionConfig; passed: boolean }> = [];
 
@@ -241,7 +240,7 @@ export async function evaluateConditions(
 async function buildContext(
   supabase: SupabaseClient,
   userId: string,
-  triggerData: Record<string, unknown> | null
+  triggerData: Record<string, unknown> | null,
 ): Promise<Record<string, unknown>> {
   const context: Record<string, unknown> = { ...(triggerData ?? {}) };
 
@@ -289,7 +288,7 @@ export async function evaluateAutomation(
   supabase: SupabaseClient,
   userId: string,
   rule: Tables<"automation_rules">,
-  triggerData: Record<string, unknown> | null
+  triggerData: Record<string, unknown> | null,
 ): Promise<EvaluationResult> {
   const executionId = await generateExecutionId(rule.id, new Date());
 
@@ -410,7 +409,7 @@ export async function evaluateAutomation(
     return { shouldExecute: false, reason, executionId };
   }
 
-  const conditions = (rule.condition_config as unknown) as ConditionConfig[];
+  const conditions = rule.condition_config as unknown as ConditionConfig[];
   if (conditions && conditions.length > 0) {
     const context = await buildContext(supabase, rule.user_id, triggerData);
     const { passed } = await evaluateConditions(supabase, rule.user_id, conditions, context);
@@ -448,7 +447,7 @@ export async function executeAutomation(
   userId: string,
   rule: Tables<"automation_rules">,
   triggerData: Record<string, unknown> | null,
-  executionId?: string
+  executionId?: string,
 ): Promise<ExecutionResult> {
   const execId = executionId || (await generateExecutionId(rule.id, new Date()));
   const results: ActionResult[] = [];
@@ -519,13 +518,16 @@ export async function executeAutomation(
         if (!actionConfig.habit_id) throw new Error("habit_id required for create_habit_log");
         const { data, error } = await supabase
           .from("habit_logs")
-          .upsert({
-            user_id: userId,
-            habit_id: actionConfig.habit_id,
-            day: new Date().toISOString().split("T")[0],
-            done: true,
-            value: actionConfig.habit_value || 1,
-          }, { onConflict: "user_id,habit_id,day" })
+          .upsert(
+            {
+              user_id: userId,
+              habit_id: actionConfig.habit_id,
+              day: new Date().toISOString().split("T")[0],
+              done: true,
+              value: actionConfig.habit_value || 1,
+            },
+            { onConflict: "user_id,habit_id,day" },
+          )
           .select()
           .single();
         if (error) throw error;
@@ -590,6 +592,7 @@ export async function executeAutomation(
     actionsExecuted++;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
+    logAutomationError(rule.id, err, { actionType, actionConfig });
     results.push({ success: false, error: err.message });
     actionsFailed++;
   }
@@ -606,7 +609,7 @@ export async function runAutomation(
   supabase: SupabaseClient,
   userId: string,
   ruleId: string,
-  triggerData?: Record<string, unknown>
+  triggerData?: Record<string, unknown>,
 ): Promise<ExecutionResult> {
   const { data: rule, error } = await supabase
     .from("automation_rules")
@@ -616,20 +619,54 @@ export async function runAutomation(
     .single();
 
   if (error || !rule) {
-    return { success: false, actionsExecuted: 0, actionsFailed: 0, results: [], error: "Rule not found" };
+    return {
+      success: false,
+      actionsExecuted: 0,
+      actionsFailed: 0,
+      results: [],
+      error: "Rule not found",
+    };
   }
 
   if (!rule.enabled) {
-    return { success: false, actionsExecuted: 0, actionsFailed: 0, results: [], error: "Rule disabled" };
+    return {
+      success: false,
+      actionsExecuted: 0,
+      actionsFailed: 0,
+      results: [],
+      error: "Rule disabled",
+    };
   }
 
   const evaluation = await evaluateAutomation(supabase, userId, rule, triggerData ?? null);
   if (!evaluation.shouldExecute) {
-    await logExecution(supabase, userId, rule.id, evaluation.executionId, "skipped", triggerData ?? null, null, null, evaluation.reason);
-    return { success: false, actionsExecuted: 0, actionsFailed: 0, results: [], error: evaluation.reason };
+    await logExecution(
+      supabase,
+      userId,
+      rule.id,
+      evaluation.executionId,
+      "skipped",
+      triggerData ?? null,
+      null,
+      null,
+      evaluation.reason,
+    );
+    return {
+      success: false,
+      actionsExecuted: 0,
+      actionsFailed: 0,
+      results: [],
+      error: evaluation.reason,
+    };
   }
 
-  const executionResult = await executeAutomation(supabase, userId, rule, triggerData ?? null, evaluation.executionId);
+  const executionResult = await executeAutomation(
+    supabase,
+    userId,
+    rule,
+    triggerData ?? null,
+    evaluation.executionId,
+  );
 
   await logExecution(
     supabase,
@@ -640,12 +677,16 @@ export async function runAutomation(
     triggerData ?? null,
     true,
     { results: executionResult.results },
-    executionResult.error || null
+    executionResult.error || null,
   );
 
   await supabase
     .from("automation_rules")
-    .update({ last_run_at: new Date().toISOString(), last_triggered_at: new Date().toISOString(), run_count: rule.run_count + 1 })
+    .update({
+      last_run_at: new Date().toISOString(),
+      last_triggered_at: new Date().toISOString(),
+      run_count: rule.run_count + 1,
+    })
     .eq("id", ruleId);
 
   return { ...executionResult, logId: undefined };
@@ -654,7 +695,7 @@ export async function runAutomation(
 export async function runManualAutomation(
   supabase: SupabaseClient,
   userId: string,
-  ruleId: string
+  ruleId: string,
 ): Promise<ExecutionResult> {
   return runAutomation(supabase, userId, ruleId, { manual: true });
 }

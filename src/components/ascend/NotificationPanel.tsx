@@ -20,7 +20,13 @@ type Props = {
   onDismiss: (id: string) => void;
 };
 
-export default function NotificationPanel({ open, onClose, notifications, onMarkAllRead, onDismiss }: Props) {
+export default function NotificationPanel({
+  open,
+  onClose,
+  notifications,
+  onMarkAllRead,
+  onDismiss,
+}: Props) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

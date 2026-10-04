@@ -31,7 +31,8 @@ function AuthPage() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
+          email,
+          password,
           options: { emailRedirectTo: `${window.location.origin}/app` },
         });
         if (error) throw error;
@@ -82,16 +83,38 @@ function AuthPage() {
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1" />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1"
+              />
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1" />
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1"
+              />
             </div>
             <Button type="submit" disabled={loading} className="w-full">
               {loading ? (
-                <span className="inline-flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />Please wait…</span>
-              ) : mode === "signin" ? "Sign in" : "Create account"}
+                <span className="inline-flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Please wait…
+                </span>
+              ) : mode === "signin" ? (
+                "Sign in"
+              ) : (
+                "Create account"
+              )}
             </Button>
           </form>
 
@@ -99,7 +122,9 @@ function AuthPage() {
             onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
             className="mt-6 text-sm text-muted-foreground hover:text-primary transition-colors"
           >
-            {mode === "signin" ? "New here? Create an account →" : "Already have an account? Sign in →"}
+            {mode === "signin"
+              ? "New here? Create an account →"
+              : "Already have an account? Sign in →"}
           </button>
         </div>
       </div>

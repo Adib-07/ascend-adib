@@ -15,6 +15,7 @@ import {
   type DomainEventPayload,
   createEvent,
 } from "./events.types";
+import { logAutomationError, logSchedulerError } from "./logger";
 
 export interface EventDispatchResult {
   success: boolean;
@@ -33,7 +34,7 @@ export interface EventDispatchContext {
 async function checkEventIdempotency(
   supabase: SupabaseClient,
   userId: string,
-  eventIdempotencyKey: string
+  eventIdempotencyKey: string,
 ): Promise<boolean> {
   const { data, error } = await supabase
     .from("event_processing_logs")
@@ -54,7 +55,7 @@ async function logEventProcessing(
   status: "success" | "failed" | "skipped",
   matchedRules: number,
   executedAutomations: number,
-  errorMessage: string | null
+  errorMessage: string | null,
 ): Promise<string> {
   const { data, error } = await supabase
     .from("event_processing_logs")
@@ -77,7 +78,7 @@ async function logEventProcessing(
 export async function dispatchEvent(
   supabase: SupabaseClient,
   userId: string,
-  event: DomainEvent
+  event: DomainEvent,
 ): Promise<EventDispatchResult> {
   const eventIdempotencyKey = `${event.type}:${event.entityId}:${event.timestamp}`;
 
@@ -112,7 +113,10 @@ export async function dispatchEvent(
   const errors: string[] = [];
 
   for (const rule of rules ?? []) {
-    const evaluation = await evaluateAutomation(supabase, userId, rule, { ...triggerData, event_type: event.type });
+    const evaluation = await evaluateAutomation(supabase, userId, rule, {
+      ...triggerData,
+      event_type: event.type,
+    });
     if (!evaluation.shouldExecute) {
       continue;
     }
@@ -132,6 +136,7 @@ export async function dispatchEvent(
       }
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      logAutomationError(rule.id, err, { eventType: event.type, eventEntityId: event.entityId });
       errors.push(`Automation ${rule.id} threw: ${err.message}`);
     }
   }
@@ -146,7 +151,7 @@ export async function dispatchEvent(
     status,
     matchedRules,
     executedAutomations,
-    errors.length > 0 ? errors.join("; ") : null
+    errors.length > 0 ? errors.join("; ") : null,
   );
 
   return {
@@ -159,7 +164,7 @@ export async function dispatchEvent(
 
 export async function runScheduledAutomationSweep(
   supabase: SupabaseClient,
-  options: { batchSize?: number; lookAheadMinutes?: number } = {}
+  options: { batchSize?: number; lookAheadMinutes?: number } = {},
 ): Promise<{
   processedRules: number;
   executedAutomations: number;
@@ -214,7 +219,10 @@ export async function runScheduledAutomationSweep(
       const evaluation = await evaluateAutomation(supabase, rule.user_id, rule, triggerData);
 
       if (!evaluation.shouldExecute) {
-        if (evaluation.reason.includes("idempotency") || evaluation.reason.includes("Already executed")) {
+        if (
+          evaluation.reason.includes("idempotency") ||
+          evaluation.reason.includes("Already executed")
+        ) {
           skipped++;
         } else if (evaluation.reason.includes("Schedule not matched")) {
           // Not due yet, not an error
@@ -233,6 +241,7 @@ export async function runScheduledAutomationSweep(
         }
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
+        logAutomationError(rule.id, err, { scheduled: true, triggerData });
         errors.push(`Rule ${rule.id} threw: ${err.message}`);
       }
     }
@@ -253,7 +262,7 @@ export async function runScheduledAutomationSweep(
 
 export async function processDueReminders(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<{ processed: number; errors: string[] }> {
   const now = new Date().toISOString();
 
@@ -291,10 +300,7 @@ export async function processDueReminders(
         errors.push(...result.errors);
       }
 
-      await supabase
-        .from("reminders")
-        .update({ status: "sent" })
-        .eq("id", reminder.id);
+      await supabase.from("reminders").update({ status: "sent" }).eq("id", reminder.id);
       processed++;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -308,7 +314,7 @@ export async function processDueReminders(
 export async function processUpcomingEvents(
   supabase: SupabaseClient,
   userId: string,
-  lookAheadMinutes: number = 30
+  lookAheadMinutes: number = 30,
 ): Promise<{ processed: number; errors: string[] }> {
   const now = new Date();
   const lookAheadTime = new Date(now.getTime() + lookAheadMinutes * 60 * 1000);
@@ -359,7 +365,7 @@ export async function processUpcomingEvents(
 
 export async function processOverdueTasks(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
 ): Promise<{ processed: number; errors: string[] }> {
   const today = new Date().toISOString().split("T")[0];
 

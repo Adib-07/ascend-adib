@@ -47,7 +47,11 @@ export function clearSessionLocal(): void {
 }
 
 export function addMessageLocal(message: LocalMessage): void {
-  const session = loadSessionLocal() || { sessionId: crypto.randomUUID(), messages: [], lastSynced: 0 };
+  const session = loadSessionLocal() || {
+    sessionId: crypto.randomUUID(),
+    messages: [],
+    lastSynced: 0,
+  };
   session.messages.push(message);
   saveSessionLocal(session);
 }
@@ -116,11 +120,13 @@ export async function syncSessionToDB(userId: string): Promise<boolean> {
         .eq("user_id", userId)
         .order("created_at", { ascending: true });
 
-      const dbMsgSet = new Set((dbMessages ?? []).map((m: any) => `${m.role}:${m.content}:${m.created_at}`));
-      
+      const dbMsgSet = new Set(
+        (dbMessages ?? []).map((m: any) => `${m.role}:${m.content}:${m.created_at}`),
+      );
+
       // Find local messages not in DB
       const newMessages = local.messages.filter(
-        (lm) => !dbMsgSet.has(`${lm.role}:${lm.content}:${lm.timestamp}`)
+        (lm) => !dbMsgSet.has(`${lm.role}:${lm.content}:${lm.timestamp}`),
       );
 
       if (newMessages.length > 0) {
@@ -146,13 +152,12 @@ export async function syncSessionToDB(userId: string): Promise<boolean> {
         .eq("id", local.sessionId);
     } else {
       // New session - create it and all messages
-      const { error: sessionError } = await getTutorSessionsTable()
-        .insert({
-          id: local.sessionId,
-          user_id: userId,
-          mode: local.messages[0]?.mode ?? "CHAT",
-          context_snapshot: { syncedFromLocal: true },
-        });
+      const { error: sessionError } = await getTutorSessionsTable().insert({
+        id: local.sessionId,
+        user_id: userId,
+        mode: local.messages[0]?.mode ?? "CHAT",
+        context_snapshot: { syncedFromLocal: true },
+      });
 
       if (sessionError) throw sessionError;
 
@@ -182,7 +187,10 @@ export async function syncSessionToDB(userId: string): Promise<boolean> {
   }
 }
 
-export async function loadSessionFromDB(userId: string, sessionId: string): Promise<LocalMessage[]> {
+export async function loadSessionFromDB(
+  userId: string,
+  sessionId: string,
+): Promise<LocalMessage[]> {
   try {
     const { data } = await getTutorMessagesTable()
       .select("role, content, sources, datasets, grounded, syllabus_match, mode, created_at")
@@ -208,13 +216,15 @@ export async function loadSessionFromDB(userId: string, sessionId: string): Prom
   }
 }
 
-export async function initializeSession(userId: string): Promise<{ sessionId: string; messages: LocalMessage[] }> {
+export async function initializeSession(
+  userId: string,
+): Promise<{ sessionId: string; messages: LocalMessage[] }> {
   const local = loadSessionLocal();
-  
+
   if (local?.sessionId) {
     // Try to load from DB first (source of truth)
     const dbMessages = await loadSessionFromDB(userId, local.sessionId);
-    
+
     if (dbMessages.length > 0) {
       // Merge: DB is source of truth, but local may have newer
       const merged = mergeMessages(dbMessages, local.messages);
@@ -223,7 +233,7 @@ export async function initializeSession(userId: string): Promise<{ sessionId: st
       saveSessionLocal(local);
       return { sessionId: local.sessionId, messages: merged };
     }
-    
+
     // DB has no messages, but local does - will sync on first send
     return { sessionId: local.sessionId, messages: local.messages };
   }
@@ -243,7 +253,7 @@ function mergeMessages(dbMessages: LocalMessage[], localMessages: LocalMessage[]
   // DB is source of truth
   const dbSet = new Set(dbMessages.map((m) => `${m.role}:${m.content}:${m.timestamp}`));
   const merged = [...dbMessages];
-  
+
   // Add local messages not in DB
   for (const lm of localMessages) {
     const key = `${lm.role}:${lm.content}:${lm.timestamp}`;
@@ -251,7 +261,7 @@ function mergeMessages(dbMessages: LocalMessage[], localMessages: LocalMessage[]
       merged.push(lm);
     }
   }
-  
+
   // Sort by timestamp
   merged.sort((a, b) => a.timestamp - b.timestamp);
   return merged;

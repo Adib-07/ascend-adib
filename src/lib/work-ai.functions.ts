@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { aiRateLimit } from "./rate-limit";
 import type { OutreachChannel } from "./work-ai-core";
 
 const leadSchema = z.object({
@@ -19,7 +20,7 @@ const researchSchema = z.object({
 });
 
 export const workAssistant = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, aiRateLimit])
   .inputValidator(
     z.object({
       action: z.enum([

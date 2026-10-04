@@ -24,7 +24,7 @@ export const upsertStudentProfile = createServerFn({ method: "POST" })
       study_availability: z.record(z.number()).optional(),
       preferred_session_length: z.number().int().positive().optional(),
       exam_alert_days_before: z.number().int().nonnegative().optional(),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

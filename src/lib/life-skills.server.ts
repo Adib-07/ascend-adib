@@ -34,11 +34,16 @@ If the user asks for mentorship/advice: be a wise, honest mentor. Ask clarifying
 export const KIND_EXTENSIONS: Record<string, string> = {
   learn: "",
   book: "\n\nWhen asked about a book: You must NEVER reproduce copyrighted text verbatim. Instead, extract and explain the author's ideas, frameworks, and lessons entirely in your own words. Structure the book lesson as: ## What This Book Is Really About, ## The 5 Core Ideas (explained deeply, one at a time), ## The Most Actionable Lesson, ## What You Can Skip, ## Memory Technique (to remember the whole book in one image), ## 3 Questions to Test Understanding",
-  business: "\n\nFor business terms, ALWAYS use this exact structure: ## Simple Definition (one sentence, no jargon), ## Real-Life Example (a company or person you know — Zepto, Zomato, Virat Kohli's brand, Adib's freelance work), ## Why Founders & Investors Care, ## Common Mistake (what people misunderstand), ## When YOU Would Use This, ## Memory Trick (vivid, unforgettable), ## Quick Quiz (one question)",
-  resources: "\n\nRecommend real, existing, well-known resources (YouTube channels, books, podcasts, courses, TED talks). For each: name, creator, why it's the best for this topic, and what specifically to learn from it. Never invent URLs. Mark if it is free or paid. Structure as ## Recommendation 1, ## Recommendation 2, etc.",
-  memory: "\n\nCreate a complete memory system for this concept. Include: ## The Palace Technique (place items in a familiar location), ## A Vivid Story (connecting all ideas), ## Acronym or Mnemonic, ## One Unforgettable Visual Image, ## 30-Second Verbal Summary (to say aloud), ## 7-Day Spaced Repetition Schedule (Day 1/3/7/14/30/90)",
-  answerCheck: "\n\nThe user answered a reflection question. Give warm, honest, specific feedback in 3-5 sentences. Point out what they got right, what they might have missed, and one deeper insight.",
-  flashcards: "\n\nGenerate exactly 5 flashcards for the topic. Return ONLY a JSON array (no fences, no prose) with shape: [{\"q\":\"...\",\"a\":\"...\"}]. Keep answers under 40 words.",
+  business:
+    "\n\nFor business terms, ALWAYS use this exact structure: ## Simple Definition (one sentence, no jargon), ## Real-Life Example (a company or person you know — Zepto, Zomato, Virat Kohli's brand, Adib's freelance work), ## Why Founders & Investors Care, ## Common Mistake (what people misunderstand), ## When YOU Would Use This, ## Memory Trick (vivid, unforgettable), ## Quick Quiz (one question)",
+  resources:
+    "\n\nRecommend real, existing, well-known resources (YouTube channels, books, podcasts, courses, TED talks). For each: name, creator, why it's the best for this topic, and what specifically to learn from it. Never invent URLs. Mark if it is free or paid. Structure as ## Recommendation 1, ## Recommendation 2, etc.",
+  memory:
+    "\n\nCreate a complete memory system for this concept. Include: ## The Palace Technique (place items in a familiar location), ## A Vivid Story (connecting all ideas), ## Acronym or Mnemonic, ## One Unforgettable Visual Image, ## 30-Second Verbal Summary (to say aloud), ## 7-Day Spaced Repetition Schedule (Day 1/3/7/14/30/90)",
+  answerCheck:
+    "\n\nThe user answered a reflection question. Give warm, honest, specific feedback in 3-5 sentences. Point out what they got right, what they might have missed, and one deeper insight.",
+  flashcards:
+    '\n\nGenerate exactly 5 flashcards for the topic. Return ONLY a JSON array (no fences, no prose) with shape: [{"q":"...","a":"..."}]. Keep answers under 40 words.',
 };
 
 export const MENTOR_SYSTEM =

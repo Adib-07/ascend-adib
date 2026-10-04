@@ -6,9 +6,12 @@ export const getDailyBriefing = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
-      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
       regenerate: z.boolean().default(false),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -37,15 +40,19 @@ export const getWeeklyReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     z.object({
-      week_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      week_start: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
       regenerate: z.boolean().default(false),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const today = new Date();
     const dow = today.getDay();
-    const weekStart = data.week_start || new Date(today.getTime() - dow * 86400000).toISOString().split("T")[0];
+    const weekStart =
+      data.week_start || new Date(today.getTime() - dow * 86400000).toISOString().split("T")[0];
 
     if (!data.regenerate) {
       const { data: existing } = await supabase
@@ -70,7 +77,7 @@ export const listDailyBriefings = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       limit: z.number().int().min(1).max(30).default(7),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
@@ -89,7 +96,7 @@ export const listWeeklyReviews = createServerFn({ method: "POST" })
   .inputValidator(
     z.object({
       limit: z.number().int().min(1).max(12).default(4),
-    })
+    }),
   )
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;

@@ -72,16 +72,14 @@ describe("document server utilities", () => {
         { page: 2, text: "Page 2 content " + "x".repeat(500) },
       ];
       const chunks = chunkPages(pages, "doc-1", "user-1");
-      expect(chunks.some(c => c.page_number === 1)).toBe(true);
-      expect(chunks.some(c => c.page_number === 2)).toBe(true);
+      expect(chunks.some((c) => c.page_number === 1)).toBe(true);
+      expect(chunks.some((c) => c.page_number === 2)).toBe(true);
     });
 
     it("tracks headings", () => {
-      const pages = [
-        { page: 1, text: "1. Introduction\n\nThis is the intro text." },
-      ];
+      const pages = [{ page: 1, text: "1. Introduction\n\nThis is the intro text." }];
       const chunks = chunkPages(pages, "doc-1", "user-1");
-      expect(chunks.some(c => c.heading === "1. Introduction")).toBe(true);
+      expect(chunks.some((c) => c.heading === "1. Introduction")).toBe(true);
     });
 
     it("includes document_id and user_id", () => {
