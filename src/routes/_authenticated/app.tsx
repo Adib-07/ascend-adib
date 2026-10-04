@@ -16,54 +16,42 @@ import WorkProjectsView from "@/components/ascend/WorkProjectsView";
 import IncomeView from "@/components/ascend/IncomeView";
 import PipelineView from "@/components/ascend/PipelineView";
 import WorkAssistantView from "@/components/ascend/WorkAssistantView";
+import DocumentsView from "@/components/ascend/DocumentsView";
+import StudentTutorView from "@/components/ascend/StudentTutorView";
 import CSETutorView from "@/components/ascend/CSETutorView";
 import LifeSkillsProfessor from "@/components/ascend/LifeSkillsProfessor";
 import EnglishCoach from "@/components/ascend/EnglishCoach";
-import DocumentsView from "@/components/ascend/DocumentsView";
-import StudentTutorView from "@/components/ascend/StudentTutorView";
 import WorkOverview from "@/components/ascend/WorkOverview";
 import CommandPalette from "@/components/ascend/CommandPalette";
 import FocusMode, { getFocusSessions } from "@/components/ascend/FocusMode";
 import NotificationPanel from "@/components/ascend/NotificationPanel";
 import PWAInstallBanner from "@/components/ascend/PWAInstallBanner";
 import OfflineBar from "@/components/ascend/OfflineBar";
+import CalendarView from "@/components/ascend/CalendarView";
+import RemindersView from "@/components/ascend/RemindersView";
+import AutomationsView from "@/components/ascend/AutomationsView";
+import AutomationLogsView from "@/components/ascend/AutomationLogsView";
+import UpcomingScheduleView from "@/components/ascend/UpcomingScheduleView";
 import { useTasks, todayISO } from "@/lib/ascend-data";
 import { useExams } from "@/lib/ascend-hooks";
-import {
-  buildDailyNotifications,
-  requestNotificationPermission,
-  type AppNotification,
-} from "@/lib/notifications";
+import { buildDailyNotifications, requestNotificationPermission, type AppNotification } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/app")({
   head: () => ({ meta: [{ title: "Ascend" }] }),
   component: AppShell,
 });
 
-type Mode = "student" | "work";
-const STUDENT_TABS = [
-  "Daily Tasks",
-  "Learning Hub",
-  "Habits",
-  "Goals",
-  "Documents",
-  "AI Tutor",
-  "CSE Tutor",
-  "🧠 Life Skills",
-  "🗣 English",
-] as const;
-const WORK_TABS = [
-  "Overview",
-  "Clients",
-  "Projects",
-  "Income",
-  "Pipeline",
-  "AI Assistant",
-] as const;
+type Mode = "student" | "work" | "schedule";
+const STUDENT_TABS = ["Daily Tasks", "Learning Hub", "Habits", "Goals", "Documents", "AI Tutor", "CSE Tutor", "🧠 Life Skills", "🗣 English"] as const;
+const WORK_TABS = ["Overview", "Clients", "Projects", "Income", "Pipeline", "AI Assistant"] as const;
+const SCHEDULE_TABS = ["Calendar", "Reminders", "Automations", "Automation Logs", "Upcoming"] as const;
 
 function AppShell() {
   const [mode, setMode] = useState<Mode>("student");
   const [tab, setTab] = useState<string>(STUDENT_TABS[0]);
+  const [prevStudentTab, setPrevStudentTab] = useState<string>(STUDENT_TABS[0]);
+  const [prevWorkTab, setPrevWorkTab] = useState<string>(WORK_TABS[0]);
+  const [prevScheduleTab, setPrevScheduleTab] = useState<string>(SCHEDULE_TABS[0]);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [focusOpen, setFocusOpen] = useState(false);
   const [avatarOpen, setAvatarOpen] = useState(false);
@@ -78,7 +66,7 @@ function AppShell() {
   const tasksQ = useTasks();
   const examsQ = useExams().list;
 
-  const tabs = mode === "student" ? STUDENT_TABS : WORK_TABS;
+  const tabs = mode === "student" ? STUDENT_TABS : mode === "work" ? WORK_TABS : SCHEDULE_TABS;
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
@@ -97,9 +85,17 @@ function AppShell() {
     return () => window.clearInterval(id);
   }, [focusOpen]);
 
+  useEffect(() => {
+    if (mode === "student") setPrevStudentTab(tab);
+    else if (mode === "work") setPrevWorkTab(tab);
+    else setPrevScheduleTab(tab);
+  }, [tab, mode]);
+
   const notifications: AppNotification[] = useMemo(() => {
     const raw = buildDailyNotifications(tasksQ.data ?? [], examsQ.data ?? []);
-    return raw.filter((n) => !dismissed.has(n.id)).map((n) => ({ ...n, read: readIds.has(n.id) }));
+    return raw
+      .filter((n) => !dismissed.has(n.id))
+      .map((n) => ({ ...n, read: readIds.has(n.id) }));
   }, [tasksQ.data, examsQ.data, dismissed, readIds]);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -110,6 +106,7 @@ function AppShell() {
     };
     document.title = `${titles[tab] ?? tab} — Ascend`;
   }, [tab]);
+
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -127,7 +124,16 @@ function AppShell() {
     setTab(t);
   }
   function switchMode(m: Mode) {
-    switchTo(m, m === "student" ? STUDENT_TABS[0] : WORK_TABS[0]);
+    if (m === "student") {
+      setMode("student");
+      setTab(prevStudentTab);
+    } else if (m === "work") {
+      setMode("work");
+      setTab(prevWorkTab);
+    } else {
+      setMode("schedule");
+      setTab(prevScheduleTab);
+    }
   }
 
   async function signOut() {
@@ -139,24 +145,13 @@ function AppShell() {
 
   const initial = (email?.[0] ?? "A").toUpperCase();
 
-  const quickActions = useMemo(
-    () => [
-      {
-        label: "New Task",
-        hint: "Add a task to today",
-        run: () => switchTo("student", "Daily Tasks"),
-      },
-      {
-        label: "New Learning Topic",
-        hint: "Track a topic in Learn",
-        run: () => switchTo("student", "Learning Hub"),
-      },
-      { label: "New Habit", hint: "Add a daily habit", run: () => switchTo("student", "Habits") },
-      { label: "New Client", hint: "Add to your roster", run: () => switchTo("work", "Clients") },
-      { label: "Start Focus Session", hint: "Open Pomodoro timer", run: () => setFocusOpen(true) },
-    ],
-    [],
-  );
+  const quickActions = useMemo(() => [
+    { label: "New Task", hint: "Add a task to today", run: () => switchTo("student", "Daily Tasks") },
+    { label: "New Learning Topic", hint: "Track a topic in Learn", run: () => switchTo("student", "Learning Hub") },
+    { label: "New Habit", hint: "Add a daily habit", run: () => switchTo("student", "Habits") },
+    { label: "New Client", hint: "Add to your roster", run: () => switchTo("work", "Clients") },
+    { label: "Start Focus Session", hint: "Open Pomodoro timer", run: () => setFocusOpen(true) },
+  ], []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -170,9 +165,7 @@ function AppShell() {
             </span>
           </div>
 
-          <div className="hidden md:block">
-            <ModeToggle mode={mode} onChange={switchMode} />
-          </div>
+          <div className="hidden md:block"><ModeToggle mode={mode} onChange={switchMode} /></div>
 
           <div className="flex items-center gap-1 shrink-0">
             <button
@@ -182,17 +175,9 @@ function AppShell() {
             >
               <Search className="h-3.5 w-3.5" />
               <span>Search</span>
-              <kbd className="text-[10px] font-mono inline-flex items-center gap-0.5">
-                <CmdIcon className="h-3 w-3" />K
-              </kbd>
+              <kbd className="text-[10px] font-mono inline-flex items-center gap-0.5"><CmdIcon className="h-3 w-3" />K</kbd>
             </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="sm:hidden"
-              onClick={() => setPaletteOpen(true)}
-              aria-label="Search"
-            >
+            <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setPaletteOpen(true)} aria-label="Search">
               <Search className="h-4 w-4" />
             </Button>
             <button
@@ -229,13 +214,7 @@ function AppShell() {
                 onClose={() => setNotifOpen(false)}
                 notifications={notifications}
                 onMarkAllRead={() => setReadIds(new Set(notifications.map((n) => n.id)))}
-                onDismiss={(id) =>
-                  setDismissed((prev) => {
-                    const next = new Set(prev);
-                    next.add(id);
-                    return next;
-                  })
-                }
+                onDismiss={(id) => setDismissed((prev) => { const next = new Set(prev); next.add(id); return next; })}
               />
             </div>
 
@@ -246,29 +225,17 @@ function AppShell() {
                 className="flex items-center gap-1 h-9 pl-1.5 pr-2 rounded-full hover:bg-secondary transition-colors"
                 aria-label="Account menu"
               >
-                <span className="h-7 w-7 rounded-full bg-[var(--forest)] text-[var(--gold)] font-serif text-sm inline-flex items-center justify-center">
-                  {initial}
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "h-3 w-3 text-muted-foreground transition-transform",
-                    avatarOpen && "rotate-180",
-                  )}
-                />
+                <span className="h-7 w-7 rounded-full bg-[var(--forest)] text-[var(--gold)] font-serif text-sm inline-flex items-center justify-center">{initial}</span>
+                <ChevronDown className={cn("h-3 w-3 text-muted-foreground transition-transform", avatarOpen && "rotate-180")} />
               </button>
               {avatarOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-lg bg-[var(--card)] ring-1 ring-border shadow-[var(--shadow-lg)] py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
                   <div className="px-3 py-2 border-b border-border">
-                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">
-                      Signed in as
-                    </p>
+                    <p className="text-[10px] tracking-widest uppercase text-muted-foreground">Signed in as</p>
                     <p className="text-sm text-primary truncate">{email || "—"}</p>
                   </div>
                   <button
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      signOut().catch(() => toast.error("Sign out failed"));
-                    }}
+                    onMouseDown={(e) => { e.preventDefault(); signOut().catch(() => toast.error("Sign out failed")); }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary text-left"
                   >
                     <LogOut className="h-4 w-4 text-muted-foreground" />
@@ -298,12 +265,10 @@ function AppShell() {
                   )}
                 >
                   {t}
-                  <span
-                    className={cn(
-                      "absolute left-2 right-2 -bottom-px h-0.5 rounded-full transition-all",
-                      active ? "bg-[var(--gold)] opacity-100" : "opacity-0",
-                    )}
-                  />
+                  <span className={cn(
+                    "absolute left-2 right-2 -bottom-px h-0.5 rounded-full transition-all",
+                    active ? "bg-[var(--gold)] opacity-100" : "opacity-0"
+                  )} />
                 </button>
               );
             })}
@@ -312,10 +277,7 @@ function AppShell() {
       </header>
 
       <main role="main" className="mx-auto max-w-7xl px-4 md:px-8 py-6 md:py-10">
-        <div
-          className="animate-in fade-in slide-in-from-bottom-2 duration-300"
-          key={`${mode}-${tab}`}
-        >
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300" key={`${mode}-${tab}`}>
           {mode === "student" && tab === "Daily Tasks" && <DailyTasks />}
           {mode === "student" && tab === "Learning Hub" && <LearningHub />}
           {mode === "student" && tab === "Habits" && <HabitsView />}
@@ -325,17 +287,17 @@ function AppShell() {
           {mode === "student" && tab === "CSE Tutor" && <CSETutorView />}
           {mode === "student" && tab === "🧠 Life Skills" && <LifeSkillsProfessor />}
           {mode === "student" && tab === "🗣 English" && <EnglishCoach />}
-          {mode === "work" && tab === "Overview" && (
-            <WorkOverview
-              onStartFocus={() => setFocusOpen(true)}
-              onNavigate={(t) => switchTo("work", t)}
-            />
-          )}
+          {mode === "work" && tab === "Overview" && <WorkOverview onStartFocus={() => setFocusOpen(true)} onNavigate={(t) => switchTo("work", t)} />}
           {mode === "work" && tab === "Clients" && <ClientsView />}
           {mode === "work" && tab === "Projects" && <WorkProjectsView />}
           {mode === "work" && tab === "Income" && <IncomeView />}
           {mode === "work" && tab === "Pipeline" && <PipelineView />}
           {mode === "work" && tab === "AI Assistant" && <WorkAssistantView />}
+          {mode === "schedule" && tab === "Calendar" && <CalendarView />}
+          {mode === "schedule" && tab === "Reminders" && <RemindersView />}
+          {mode === "schedule" && tab === "Automations" && <AutomationsView />}
+          {mode === "schedule" && tab === "Automation Logs" && <AutomationLogsView />}
+          {mode === "schedule" && tab === "Upcoming" && <UpcomingScheduleView />}
         </div>
       </main>
 
@@ -354,7 +316,7 @@ function AppShell() {
 function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
   return (
     <div className="inline-flex rounded-full border border-border bg-secondary p-1">
-      {(["student", "work"] as const).map((m) => (
+      {(["student", "work", "schedule"] as const).map((m) => (
         <button
           key={m}
           onClick={() => onChange(m)}
@@ -362,12 +324,13 @@ function ModeToggle({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => voi
             "px-4 py-1.5 text-xs md:text-sm rounded-full transition-all font-medium min-w-[76px]",
             mode === m
               ? "bg-primary text-primary-foreground shadow-sm"
-              : "text-muted-foreground hover:text-primary",
+              : "text-muted-foreground hover:text-primary"
           )}
         >
-          {m === "student" ? "Student" : "Work"}
+          {m === "student" ? "Student" : m === "work" ? "Work" : "Schedule"}
         </button>
       ))}
     </div>
   );
 }
+

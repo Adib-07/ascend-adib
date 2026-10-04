@@ -1,21 +1,20 @@
-// Tests for the Ascend Context Engine.
-// Pure logic is tested directly from context-engine-core.
-// Retrieval authorization is tested with a mock Supabase client to prove
-// that the engine always scopes queries to the authenticated userId (RLS + eq).
-
 import { describe, expect, it } from "bun:test";
 import {
-  buildSystemPrompt,
-  buildUserPrompt,
+  normalizeKeywords,
   classifyQuestion,
   enforceBudget,
-  normalizeKeywords,
   rankDocumentChunks,
+  buildUserPrompt,
+  buildSystemPrompt,
+  SOURCE_TIER,
   type ContextItem,
   type RawDocChunk,
 } from "./context-engine-core";
 import { retrieveDocumentChunks } from "./context-engine.server";
 
+// Minimal mock of the RLS-scoped Supabase client injected by requireSupabaseAuth.
+// It records the user_id filter so tests can prove retrieval never trusts a
+// client-supplied user id.
 function mockSupabase(rows: unknown[], capture: Record<string, unknown>) {
   const builder: Record<string, (...args: unknown[]) => unknown> = {
     select: () => builder,
@@ -30,7 +29,7 @@ function mockSupabase(rows: unknown[], capture: Record<string, unknown>) {
   return { from: () => builder };
 }
 
-const sampleChunks: RawDocChunk[] = [
+const authSampleChunks: RawDocChunk[] = [
   {
     content_text:
       "Diffraction is the bending of waves around obstacles. In Engineering Physics we study single-slit diffraction and interference patterns.",
@@ -50,7 +49,6 @@ const sampleChunks: RawDocChunk[] = [
     docSubject: "History",
   },
 ];
-
 describe("normalizeKeywords", () => {
   it("removes stopwords and punctuation", () => {
     expect(normalizeKeywords("The Quick brown foxes!")).toEqual([
@@ -62,6 +60,10 @@ describe("normalizeKeywords", () => {
 
   it("returns empty when only short/stopwords", () => {
     expect(normalizeKeywords("a an the to of")).toEqual([]);
+  });
+
+  it("deduplicates terms", () => {
+    expect(normalizeKeywords("study study learn learn")).toEqual(["study", "learn"]);
   });
 });
 
@@ -82,12 +84,37 @@ describe("classifyQuestion", () => {
     expect(classifyQuestion("Improve my english speaking fluency")).toBe("ENGLISH");
   });
 
+  it("classifies work questions", () => {
+    expect(classifyQuestion("How to write a proposal for a client?")).toBe("WORK");
+  });
+
   it("falls back to general", () => {
     expect(classifyQuestion("What is the meaning of life?")).toBe("GENERAL");
   });
 });
 
 describe("rankDocumentChunks", () => {
+  const sampleChunks: RawDocChunk[] = [
+    {
+      content_text:
+        "Diffraction is the bending of waves around obstacles. In Engineering Physics we study single-slit diffraction and interference patterns.",
+      page_number: 3,
+      heading: "Wave Optics",
+      docTitle: "Engineering Physics Notes",
+      docType: "lecture_notes",
+      docSubject: "Engineering Physics",
+    },
+    {
+      content_text:
+        "The French Revolution began in 1789. It was a period of radical social and political upheaval.",
+      page_number: 1,
+      heading: "Introduction",
+      docTitle: "World History Book",
+      docType: "textbook",
+      docSubject: "History",
+    },
+  ];
+
   it("ranks relevant subject chunks first", () => {
     const terms = normalizeKeywords("diffraction Engineering Physics");
     const ranked = rankDocumentChunks(sampleChunks, terms, {
@@ -144,23 +171,23 @@ describe("buildUserPrompt", () => {
   it("includes source labels for citations", () => {
     const items: ContextItem[] = [
       {
-        source: "document",
-        title: "Engineering Physics Notes",
-        page: 3,
-        heading: "Wave Optics",
-        text: "Diffraction bends waves.",
+        source: "task",
+        title: "Finish DB assignment",
+        page: null,
+        heading: null,
+        text: "Due tomorrow at 7 PM",
         score: 5,
       },
     ];
-    const prompt = buildUserPrompt("What is diffraction?", items);
-    expect(prompt).toContain("Engineering Physics Notes");
-    expect(prompt).toContain("page 3");
-    expect(prompt).toContain("Wave Optics");
+    const prompt = buildUserPrompt("What should I do today?", items);
+    expect(prompt).toContain("Finish DB assignment");
+    expect(prompt).toContain("TASK");
+    expect(prompt).toContain("Due tomorrow at 7 PM");
   });
 
   it("signals no evidence when empty", () => {
     const prompt = buildUserPrompt("Anything?", []);
-    expect(prompt).toContain("no relevant uploaded documents");
+    expect(prompt).toContain("no relevant");
   });
 });
 
@@ -173,6 +200,13 @@ describe("buildSystemPrompt", () => {
   });
 });
 
+describe("SOURCE_TIER", () => {
+  it("prioritizes user data over curated", () => {
+    expect(SOURCE_TIER.task).toBeLessThan(SOURCE_TIER.curated);
+    expect(SOURCE_TIER.goal).toBeLessThan(SOURCE_TIER.official);
+    expect(SOURCE_TIER.dataset).toBeGreaterThan(SOURCE_TIER.curated);
+  });
+});
 describe("retrieveDocumentChunks authorization", () => {
   it("scopes the query to the authenticated userId (no client user_id trust)", () => {
     const capture: Record<string, unknown> = {};

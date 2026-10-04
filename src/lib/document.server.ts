@@ -170,6 +170,89 @@ export async function retrieveChunks(
   }[];
 }
 
+export async function retrieveChunksHybrid(
+  supabase: SupabaseClient,
+  userId: string,
+  query: string,
+  queryEmbedding: number[],
+  documentIds?: string[],
+  limit = 8,
+): Promise<{ content_text: string; page_number: number | null; heading: string | null; score: number }[]> {
+  const terms = query
+    .toLowerCase()
+    .split(/\W+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3);
+
+  // Vector similarity search using pgvector
+  let vecQuery = supabase
+    .from("document_chunks")
+    .select("content_text, page_number, heading, embedding")
+    .eq("user_id", userId)
+    .order("embedding", { ascending: false }) // pgvector uses <-> for distance, but we can use order by embedding <-> queryEmbedding
+    .limit(limit * 2); // fetch more for hybrid merge
+
+  // Use raw SQL for vector similarity with cosine distance
+  const embeddingLiteral = `[${queryEmbedding.join(",")}]`;
+  const { data: vecData, error: vecError } = await supabase.rpc("match_document_chunks", {
+    query_embedding: queryEmbedding,
+    match_count: limit * 2,
+    filter_user_id: userId,
+    filter_document_ids: documentIds ?? null,
+  });
+  if (vecError) throw vecError;
+
+  // Keyword search
+  let kwQuery = supabase
+    .from("document_chunks")
+    .select("content_text, page_number, heading")
+    .eq("user_id", userId);
+  if (documentIds && documentIds.length > 0) {
+    kwQuery = kwQuery.in("document_id", documentIds);
+  }
+  const orFilter = query
+    .toLowerCase()
+    .split(/\W+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3)
+    .map((t) => `content_text.ilike.%${t.replace(/%/g, "")}%`)
+    .join(",");
+  kwQuery = kwQuery.or(orFilter).limit(limit);
+
+  const { data: kwData, error: kwError } = await kwQuery;
+  if (kwError) throw kwError;
+
+  // Merge results: prioritize vector results, then keyword
+  const vectorResults = (vecData ?? []).map((row: any) => ({
+    content_text: row.content_text,
+    page_number: row.page_number,
+    heading: row.heading,
+    score: 1 - row.similarity, // similarity from rpc
+    source: "vector" as const,
+  }));
+
+  const keywordResults = (kwData ?? []).map((row: any) => ({
+    content_text: row.content_text,
+    page_number: row.page_number,
+    heading: row.heading,
+    score: 0.5, // base keyword score
+    source: "keyword" as const,
+  }));
+
+  // Deduplicate by content_text
+  const seen = new Set<string>();
+  const merged = [...vectorResults, ...keywordResults]
+    .filter(r => {
+      if (seen.has(r.content_text)) return false;
+      seen.add(r.content_text);
+      return true;
+    })
+    .sort((a, b) => a.score - b.score)
+    .slice(0, limit);
+
+  return merged.map(({ score, source, ...rest }) => rest);
+}
+
 export async function processDocumentImpl({
   supabase,
   userId,

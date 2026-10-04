@@ -16,28 +16,38 @@ export type QueryCategory =
   | "FREELANCING";
 
 export type ContextSource =
-  | "document"
+  | "task"
+  | "goal"
+  | "project"
+  | "habit"
+  | "note"
   | "learn_topic"
   | "exam"
-  | "goal"
   | "client"
-  | "project"
+  | "dataset"
   | "curated"
   | "official"
-  | "dataset";
+  | "document"
+  | "event"
+  | "reminder";
 
 // Priority tiers for grounded retrieval (1 = highest). Used to order evidence
 // when multiple source types are relevant to a query.
 export const SOURCE_TIER: Record<ContextSource, number> = {
-  document: 1,
+  task: 1,
+  goal: 1,
   learn_topic: 1,
+  exam: 2,
+  habit: 2,
+  note: 2,
+  project: 2,
+  client: 2,
+  event: 2,
+  reminder: 2,
   curated: 3,
   official: 4,
   dataset: 5,
-  exam: 2,
-  goal: 2,
-  client: 2,
-  project: 2,
+  document: 1,
 };
 
 export interface ContextItem {
@@ -50,6 +60,7 @@ export interface ContextItem {
   url?: string;
   license?: string;
   provenance?: string;
+  metadata?: Record<string, string | number | boolean | null>;
 }
 
 // True when the item is grounded in an external reference source (used to decide
@@ -58,95 +69,27 @@ export function isGroundedSource(source: ContextSource): boolean {
   return (
     source === "curated" ||
     source === "official" ||
-    source === "document" ||
-    source === "learn_topic"
+    source === "task" ||
+    source === "goal" ||
+    source === "learn_topic" ||
+    source === "exam" ||
+    source === "habit" ||
+    source === "note" ||
+    source === "project" ||
+    source === "client"
   );
 }
 
 // Terms that carry little retrieval signal.
 const STOPWORDS = new Set<string>([
-  "the",
-  "and",
-  "for",
-  "are",
-  "but",
-  "not",
-  "you",
-  "all",
-  "any",
-  "can",
-  "had",
-  "her",
-  "was",
-  "one",
-  "our",
-  "out",
-  "day",
-  "get",
-  "has",
-  "him",
-  "his",
-  "how",
-  "man",
-  "new",
-  "now",
-  "old",
-  "see",
-  "two",
-  "way",
-  "who",
-  "boy",
-  "did",
-  "its",
-  "let",
-  "put",
-  "say",
-  "she",
-  "too",
-  "use",
-  "that",
-  "this",
-  "with",
-  "from",
-  "they",
-  "will",
-  "would",
-  "there",
-  "their",
-  "what",
-  "when",
-  "where",
-  "which",
-  "while",
-  "about",
-  "into",
-  "over",
-  "than",
-  "then",
-  "them",
-  "these",
-  "those",
-  "your",
-  "have",
-  "been",
-  "were",
-  "does",
-  "doing",
-  "should",
-  "could",
-  "please",
-  "explain",
-  "describe",
-  "tell",
-  "me",
-  "my",
-  "give",
-  "make",
-  "help",
-  "need",
-  "want",
-  "question",
-  "answer",
+  "the","and","for","are","but","not","you","all","any","can","had","her","was",
+  "one","our","out","day","get","has","him","his","how","man","new","now","old",
+  "see","two","way","who","boy","did","its","let","put","say","she","too","use",
+  "that","this","with","from","they","will","would","there","their","what","when",
+  "where","which","while","about","into","over","than","then","them","these",
+  "those","your","have","been","were","does","doing","should","could","please",
+  "explain","describe","tell","me","my","give","make","help","need","want",
+  "question","answer",
 ]);
 
 export function normalizeKeywords(query: string): string[] {
@@ -160,141 +103,46 @@ export function normalizeKeywords(query: string): string[] {
 
 const CATEGORY_KEYWORDS: Record<QueryCategory, string[]> = {
   ACADEMIC: [
-    "study",
-    "subject",
-    "topic",
-    "learn",
-    "course",
-    "chapter",
-    "lecture",
-    "physics",
-    "chemistry",
-    "math",
-    "mathematics",
-    "engineering",
-    "biology",
-    "derivative",
-    "integral",
-    "theorem",
-    "formula",
-    "concept",
-    "theory",
+    "study","subject","topic","learn","course","chapter","lecture","physics",
+    "chemistry","math","mathematics","engineering","biology","derivative",
+    "integral","theorem","formula","concept","theory",
   ],
   PROGRAMMING: [
-    "code",
-    "coding",
-    "program",
-    "python",
-    "javascript",
-    "function",
-    "debug",
-    "algorithm",
-    "leetcode",
-    "bug",
-    "syntax",
-    "react",
-    "typescript",
-    "api",
-    "database",
-    "query",
-    "variable",
-    "class",
-    "object",
+    "code","coding","program","python","javascript","function","debug",
+    "algorithm","leetcode","bug","syntax","react","typescript","api",
+    "database","query","variable","class","object",
   ],
   EXAM_PREPARATION: [
-    "exam",
-    "revision",
-    "revise",
-    "prepare",
-    "preparation",
-    "mock",
-    "test",
-    "practice paper",
-    "previous year",
-    "question paper",
-    "solve",
+    "exam","revision","revise","prepare","preparation","mock","test",
+    "practice paper","previous year","question paper","solve",
   ],
-  SYLLABUS: ["syllabus", "curriculum", "topics covered", "course outline", "units"],
+  SYLLABUS: ["syllabus","curriculum","topics covered","course outline","units"],
   DOCUMENT: [
-    "document",
-    "pdf",
-    "notes",
-    "uploaded",
-    "file",
-    "my notes",
-    "attachment",
-    "handout",
-    "slide",
-    "slides",
+    "document","pdf","notes","uploaded","file","my notes","attachment",
+    "handout","slide","slides",
   ],
   ENGLISH: [
-    "english",
-    "grammar",
-    "vocabulary",
-    "fluency",
-    "pronounce",
-    "pronunciation",
-    "speak",
-    "speaking",
-    "interview",
-    "communication",
-    "email",
-    "writing",
+    "english","grammar","vocabulary","fluency","pronounce","pronunciation",
+    "speak","speaking","interview","communication","email","writing",
   ],
   LIFE_SKILLS: [
-    "habit",
-    "focus",
-    "negotiat",
-    "productivity",
-    "money",
-    "finance",
-    "leadership",
-    "mindset",
-    "discipline",
-    "routine",
-    "time",
-    "consistency",
-    "motivation",
-    "soft skill",
+    "habit","focus","negotiate","productivity","money","finance",
+    "leadership","mindset","discipline","routine","time","consistency",
+    "motivation","soft skill",
   ],
   GENERAL: [],
   WORK: [
-    "client",
-    "project",
-    "invoice",
-    "proposal",
-    "freelance",
-    "freelancing",
-    "upwork",
-    "fiverr",
-    "contract",
-    "scope",
-    "deliverable",
-    "meeting",
-    "stakeholder",
-    "deadline",
+    "client","project","invoice","proposal","freelance","freelancing",
+    "upwork","fiverr","contract","scope","deliverable","meeting",
+    "stakeholder","deadline",
   ],
   CLIENT: [
-    "client",
-    "prospect",
-    "lead",
-    "outreach",
-    "onboarding",
-    "retainer",
-    "account",
-    "relationship",
+    "client","prospect","lead","outreach","onboarding","retainer",
+    "account","relationship",
   ],
   FREELANCING: [
-    "freelance",
-    "freelancing",
-    "upwork",
-    "fiverr",
-    "gig",
-    "bid",
-    "proposal",
-    "contract",
-    "rate",
-    "negotiat",
+    "freelance","freelancing","upwork","fiverr","gig","bid",
+    "proposal","contract","rate","negotiate",
   ],
 };
 
@@ -315,7 +163,9 @@ export function classifyQuestion(query: string): QueryCategory {
   return best;
 }
 
-// Document types that are most relevant for each question category.
+// Maps a query category to the document types that are most relevant for it.
+// Used to bias chunk ranking so that, e.g., a SYLLABUS query prefers syllabus
+// pages over unrelated client documents.
 const CATEGORY_DOC_TYPES: Partial<Record<QueryCategory, string[]>> = {
   ACADEMIC: ["syllabus", "lecture_notes", "study_material", "textbook", "exam_prep"],
   EXAM_PREPARATION: ["syllabus", "lecture_notes", "study_material", "exam_prep"],
@@ -365,15 +215,9 @@ export function rankDocumentChunks(
       termScore += Math.min(hits, 5);
     }
 
-    // Only apply relevance boosts when the chunk actually matched a term,
-    // so unrelated documents (e.g. only matching on heading) are excluded.
     let score = termScore;
     if (termScore > 0) {
-      if (
-        opts.subject &&
-        c.docSubject &&
-        c.docSubject.toLowerCase() === opts.subject.toLowerCase()
-      ) {
+      if (opts.subject && c.docSubject && c.docSubject.toLowerCase() === opts.subject.toLowerCase()) {
         score += 6;
       }
       if (wantedTypes && c.docType && wantedTypes.includes(c.docType)) {
@@ -392,10 +236,7 @@ export function rankDocumentChunks(
     } satisfies ContextItem;
   });
 
-  // Document questions: keep all candidates even with low score;
-  // otherwise drop zero-score noise.
   const filtered = opts.category === "DOCUMENT" ? scored : scored.filter((i) => i.score > 0);
-
   filtered.sort((a, b) => b.score - a.score);
   return enforceBudget(filtered, maxItems, maxChars);
 }
@@ -420,12 +261,12 @@ export function buildSystemPrompt(category?: QueryCategory): string {
   return `You are the Ascend Personalized Assistant for a B.Tech CSE student who is also building a freelancing career.
 
 PRINCIPLES:
-- You have access to the user's OWN uploaded documents and stored application data (evidence).
+- You have access to the user's OWN data and stored application data (evidence).
 - Clearly separate USER-PROVIDED EVIDENCE from your general knowledge.
-- When you use evidence, cite it inline using the exact source label provided, e.g. "(Source: Engineering Physics Notes, page 3)".
-- If the provided evidence does NOT contain the answer, say explicitly: "This is not covered in your uploaded documents or stored data."
-- Never invent page numbers, syllabus items, requirements, exam dates, facts, or citations.
-- Never claim that external/general information came from the user's documents.
+- When you use evidence, cite it inline using the exact source label provided, e.g. "(Source: Task: Finish DB assignment, due tomorrow)" or "(Source: Engineering Physics Notes, page 3)".
+- If the provided evidence does NOT contain the answer, say explicitly: "This is not covered in your data."
+- Never invent facts, dates, page numbers, or citations.
+- Never claim that external/general information came from the user's data.
 - Be concise, accurate, and faithful to the evidence.
 ${category ? `- Focus area for this query: ${category}.` : ""}
 - If no evidence is supplied, answer using general knowledge but clearly state the answer is NOT based on the user's own materials.`;
@@ -433,7 +274,7 @@ ${category ? `- Focus area for this query: ${category}.` : ""}
 
 export function buildUserPrompt(query: string, items: ContextItem[]): string {
   if (items.length === 0) {
-    return `The user has no relevant uploaded documents or stored data for this question. Answer using your general knowledge, but clearly state that the answer is NOT based on the user's own materials.
+    return `The user has no relevant data for this question. Answer using your general knowledge, but clearly state that the answer is NOT based on the user's own materials.
 
 QUESTION: ${query}`;
   }

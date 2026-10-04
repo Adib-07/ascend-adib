@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,16 +37,14 @@ import {
   FilePlus2,
   Inbox,
 } from "lucide-react";
-import {
-  DOCUMENT_TYPES,
-  useDeleteDocument,
-  useDocuments,
-  useRetryDocument,
-  useUploadDocument,
-  type UserDocument,
-} from "@/lib/documents";
-import { askWithContext } from "@/lib/context-engine.functions";
+import { toast } from "sonner";
 import { mapAuthError } from "@/lib/auth-errors";
+
+import { uploadDocument as uploadDocumentFn } from "@/lib/document.functions";
+import { completeUpload as completeUploadFn } from "@/lib/document.functions";
+import { listDocuments as listDocumentsFn } from "@/lib/document.functions";
+import { deleteDocument as deleteDocumentFn } from "@/lib/document.functions";
+import { askDocument as askDocumentFn } from "@/lib/document.functions";
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -76,374 +75,294 @@ export default function DocumentsView() {
   const [askError, setAskError] = useState<string | null>(null);
   const [askPending, setAskPending] = useState(false);
 
-  // Upload lifecycle: idle -> uploading -> processing -> done/error
-  const [phase, setPhase] = useState<"idle" | "uploading" | "processing" | "done" | "error">(
-    "idle",
-  );
+  const [phase, setPhase] = useState<"idle" | "uploading" | "processing" | "done" | "error">("idle");
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [processingDocId, setProcessingDocId] = useState<string | null>(null);
-  const cancelledRef = useRef<{ current: boolean }>({ current: false });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<string | null>(null);
 
-  const [pendingDelete, setPendingDelete] = useState<UserDocument | null>(null);
+  const uploadDocument = useServerFn(uploadDocumentFn);
+  const completeUpload = useServerFn(completeUploadFn);
+  const listDocuments = useServerFn(listDocumentsFn);
+  const deleteDocument = useServerFn(deleteDocumentFn);
+  const askDocument = useServerFn(askDocumentFn);
 
-  const docs = useDocuments();
-  const upload = useUploadDocument();
-  const retry = useRetryDocument();
-  const remove = useDeleteDocument();
-  const ask = useServerFn(askWithContext);
+  const qc = useQueryClient();
 
-  const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFile(e.target.files?.[0] ?? null);
-  };
+  const docsQuery = useQuery({
+    queryKey: ["documents"],
+    queryFn: async () => {
+      return listDocuments({ data: {} });
+    },
+  });
 
-  const resetUpload = () => {
-    setFile(null);
-    setSubject("");
-    setDocType("other");
-    setPhase("idle");
-    setUploadError(null);
-    setProcessingDocId(null);
-    cancelledRef.current.current = false;
-    if (fileRef.current) fileRef.current.value = "";
-  };
-
-  const onUpload = async () => {
-    if (!file || phase === "uploading" || phase === "processing") return;
-    cancelledRef.current.current = false;
-    setUploadError(null);
-    setPhase("uploading");
-    try {
-      const res = await upload.mutateAsync({
-        file,
-        documentType: docType,
-        subject,
-        cancelled: cancelledRef.current,
+  const uploadMutation = useMutation({
+    mutationFn: async ({ file, docType, subject }: { file: File; docType: string; subject: string }) => {
+      const allowedMimeTypes = ["application/pdf", "text/plain", "text/markdown"] as const;
+      const allowedDocTypes = ["syllabus", "lecture_notes", "study_material", "textbook", "exam_prep", "client_requirements", "other"] as const;
+      const fileType = file.type as typeof allowedMimeTypes[number];
+      const mimeType = allowedMimeTypes.includes(fileType) ? fileType : "application/pdf";
+      const docTypeValue = docType as typeof allowedDocTypes[number];
+      const documentType = allowedDocTypes.includes(docTypeValue) ? docTypeValue : "other";
+      const res = await uploadDocument({ data: { filename: file.name, mimeType, sizeBytes: file.size, documentType, subject: subject || undefined } });
+      const { documentId, uploadUrl } = res;
+      const res2 = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
       });
-      setProcessingDocId(res.docId);
-      setPhase("processing");
-      try {
-        await retry.mutateAsync(res.docId);
-        setPhase("done");
-      } catch (err) {
-        setPhase("error");
-        setUploadError(err instanceof Error ? err.message : "Processing failed. Please try again.");
-      }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") {
-        // User cancelled during upload — nothing was committed.
-        resetUpload();
-        return;
-      }
-      setPhase("error");
-      setUploadError(err instanceof Error ? err.message : "Upload failed. Please try again.");
-    } finally {
-      if (phase !== "error") docs.refetch();
-    }
-  };
+      if (!res2.ok) throw new Error("Upload failed");
+      await completeUpload({ data: { documentId } });
+      return documentId;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documents"] });
+    },
+  });
 
-  const onCancelUpload = async () => {
-    if (phase === "uploading") {
-      // The storage transfer can't be interrupted mid-flight; flag it so the
-      // mutation rolls back the object once the request resolves.
-      cancelledRef.current.current = true;
+  const deleteMutation = useMutation({
+    mutationFn: async (documentId: string) => {
+      await deleteDocument({ data: { documentId } });
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Document deleted");
+    },
+    onError: (err: any) => {
+      toast.error(mapAuthError(err));
+    },
+  });
+
+  const askMutation = useMutation({
+    mutationFn: async (question: string) => {
+      const res = await askDocument({ data: { question, documentIds: undefined } });
+      return res.text;
+    },
+    onSuccess: (text) => {
+      setAnswer(text);
+    },
+    onError: (err: any) => {
+      setAskError(mapAuthError(err));
+    },
+    onSettled: () => {
+      setAskPending(false);
+    },
+  });
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    if (!["application/pdf", "text/plain", "text/markdown"].includes(f.type)) {
+      toast.error("Only PDF, TXT, and Markdown files are supported");
       return;
     }
-    if (phase === "processing" && processingDocId) {
-      // Server-side extraction can't be safely interrupted — cancel by deleting
-      // the unwanted document (record + storage + chunks), never leaving orphans.
-      const id = processingDocId;
-      resetUpload();
-      try {
-        await remove.mutateAsync({ id } as UserDocument);
-      } catch {
-        /* surface via list refresh */
-      }
+    if (f.size > 50 * 1024 * 1024) {
+      toast.error("File size must be under 50MB");
+      return;
     }
-  };
+    setFile(f);
+    setUploadError(null);
+    setPhase("idle");
+  }
 
-  const onAsk = async () => {
+  async function startUpload() {
+    if (!file) return;
+    setPhase("uploading");
+    setUploadError(null);
+    try {
+      await uploadMutation.mutateAsync({ file, docType, subject });
+      setPhase("processing");
+      toast.success("Upload complete, processing...");
+      setFile(null);
+      if (fileRef.current) fileRef.current.value = "";
+    } catch (err: any) {
+      setPhase("error");
+      setUploadError(err.message);
+      toast.error(mapAuthError(err));
+    }
+  }
+
+  async function handleAsk() {
     if (!question.trim()) return;
     setAskPending(true);
     setAskError(null);
-    try {
-      const res = await ask({ data: { question } });
-      setAnswer(res.text);
-      setSources(
-        res.sources
-          .filter((s) => s.source === "document")
-          .map((s) => ({ title: s.title, page: s.page, heading: s.heading })),
-      );
-    } catch (err) {
-      setAskError(mapAuthError(err));
-      setAnswer(null);
-      setSources([]);
-    } finally {
-      setAskPending(false);
-    }
-  };
+    setAnswer(null);
+    setSources([]);
+    await askMutation.mutateAsync(question);
+  }
 
-  const confirmDelete = async () => {
-    if (!pendingDelete) return;
-    try {
-      await remove.mutateAsync(pendingDelete);
-    } catch (err) {
-      // Let the UI reflect the failure; do not hide it.
-      console.error("Delete failed", err);
-    } finally {
-      setPendingDelete(null);
-    }
-  };
-
-  const busy = phase === "uploading" || phase === "processing";
+  const docs = docsQuery.data ?? [];
+  const isLoading = docsQuery.isLoading;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-serif text-2xl text-forest">Documents</h2>
-        <p className="text-sm text-muted-foreground">
-          Upload your syllabus, notes, study material, or client documents. They are private to your
-          account and can be used by the AI assistant.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-serif text-2xl text-primary">Documents</h2>
+          <p className="text-sm text-muted-foreground">Upload and query your personal documents</p>
+        </div>
+        <Button onClick={() => { fileRef.current?.click(); }} disabled={phase === "uploading"}>
+          <FilePlus2 className="h-4 w-4 mr-2" />Add Document
+        </Button>
       </div>
 
-      <Card className="border-border">
-        <CardHeader>
-          <CardTitle className="text-forest text-lg">Upload a document</CardTitle>
+      <input type="file" ref={fileRef} onChange={handleFileSelect} className="hidden" accept=".pdf,.txt,.md" />
+
+      {file && phase === "idle" && (
+        <Card className="bg-muted/50 border-border/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Inbox className="h-10 w-10 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">{file.name}</p>
+                  <p className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(1)} KB · {file.type}</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => { setFile(null); fileRef.current!.value = ""; }}>
+                  <X className="h-4 w-4 mr-1" />Cancel
+                </Button>
+                <Button onClick={startUpload} disabled={phase === "uploading" as "idle" | "uploading" | "processing" | "done" | "error"}>
+                  <Upload className="h-4 w-4 mr-1" />Upload
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {phase === "uploading" && (
+        <Card className="bg-muted/50 border-border/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p>Uploading...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {phase === "processing" && (
+        <Card className="bg-muted/50 border-border/50">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p>Processing document (extracting text, chunking)...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {phase === "error" && (
+        <AlertDialog open={true} onOpenChange={() => setPhase("idle")}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Upload Failed</AlertDialogTitle>
+              <AlertDialogDescription>{uploadError}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setPhase("idle")}>OK</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="font-serif text-xl">Your Documents</CardTitle>
+          <Badge variant="outline" className="text-xs">
+            {docs.length} documents
+          </Badge>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".pdf,.txt,.md,text/plain,text/markdown,application/pdf"
-            className="hidden"
-            onChange={onPick}
-            disabled={busy}
-          />
-          <div className="flex flex-wrap items-center gap-3">
-            <Button
-              variant="outline"
-              className="border-gold text-forest"
-              onClick={() => fileRef.current?.click()}
-              disabled={busy}
-            >
-              <Upload className="mr-2 h-4 w-4" /> Choose file
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              {file ? file.name : "PDF, TXT, or Markdown (max 50 MB)"}
-            </span>
-            {file && !busy && (
-              <button
-                type="button"
-                className="text-xs text-muted-foreground hover:text-red-600"
-                onClick={() => setFile(null)}
-              >
-                clear
-              </button>
-            )}
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-forest">Document type</Label>
-              <Select value={docType} onValueChange={setDocType} disabled={busy}>
-                <SelectTrigger className="border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOCUMENT_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t.replace(/_/g, " ")}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : docs.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <Inbox className="h-12 w-12 text-muted-foreground/50" />
+              <p className="font-medium text-muted-foreground">No documents yet</p>
+              <p className="text-sm text-muted-foreground">Upload a PDF, TXT, or Markdown file to get started</p>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-forest">Subject / context (optional)</Label>
-              <Input
-                className="border-border"
-                placeholder="e.g. Engineering Physics"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                disabled={busy}
-              />
+          ) : (
+            <div className="space-y-3">
+              {docs.map((doc) => (
+                <div key={doc.id} className="flex items-center justify-between p-3 border border-border/50 rounded-lg hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{doc.filename}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-2">
+                        <StatusBadge status={doc.status} />
+                        {doc.page_count && <span>· {doc.page_count} pages</span>}
+                        {doc.document_type && <span>· {doc.document_type}</span>}
+                        <span>· {(doc.size_bytes ?? 0 / 1024).toFixed(1)} KB</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteDialogOpen(doc.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-
-          {phase === "uploading" && (
-            <p className="text-sm text-forest flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Uploading…
-            </p>
           )}
-          {phase === "processing" && (
-            <p className="text-sm text-forest flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin" /> Processing your document…
-            </p>
-          )}
-          {phase === "error" && uploadError && (
-            <p className="text-sm text-red-600 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" /> {uploadError}
-            </p>
-          )}
-
-          <div className="flex items-center gap-2">
-            {!busy && (
-              <Button
-                className="bg-forest text-ivory hover:bg-forest/90"
-                disabled={!file}
-                onClick={onUpload}
-              >
-                <FilePlus2 className="mr-2 h-4 w-4" /> Upload &amp; Process
-              </Button>
-            )}
-            {busy && (
-              <Button
-                variant="outline"
-                className="border-red-300 text-red-700 hover:bg-red-50"
-                onClick={onCancelUpload}
-              >
-                <X className="mr-2 h-4 w-4" /> Cancel
-              </Button>
-            )}
-          </div>
         </CardContent>
       </Card>
 
-      <Card className="border-border">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-forest text-lg flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-gold" /> Ask your documents
+          <CardTitle className="font-serif text-xl flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />Ask Your Documents
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Textarea
-            className="border-border"
-            placeholder="Ask a question based on your uploaded documents..."
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-          />
-          <Button
-            className="bg-gold text-ivory hover:bg-gold/90"
-            disabled={askPending || !question.trim()}
-            onClick={onAsk}
-          >
-            {askPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="question">Question</Label>
+            <Textarea
+              id="question"
+              placeholder="What does my DBMS notes say about normalization?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              rows={3}
+              className="mt-2"
+            />
+          </div>
+          <Button onClick={handleAsk} disabled={askPending || !question.trim()}>
+            {askPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Ask
           </Button>
           {askError && <p className="text-sm text-red-600">{askError}</p>}
           {answer && (
-            <div className="space-y-2">
-              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm whitespace-pre-wrap">
-                {answer}
-              </div>
+            <div className="space-y-2 border-t pt-4">
+              <p className="font-medium">Answer</p>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{answer}</p>
               {sources.length > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  <span className="font-medium text-forest">Sources: </span>
-                  {sources
-                    .map((s) =>
-                      [
-                        s.title,
-                        s.page ? `page ${s.page}` : null,
-                        s.heading ? `“${s.heading}”` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · "),
-                    )
-                    .join("  |  ")}
-                </div>
+                <details className="text-xs text-muted-foreground">
+                  <summary>Sources</summary>
+                  <ul className="mt-1 space-y-1">
+                    {sources.map((s, i) => (
+                      <li key={i}>
+                        {s.title} {s.page ? `— page ${s.page}` : ""} {s.heading ? ` ({s.heading})` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      <div className="space-y-3">
-        <h3 className="font-serif text-xl text-forest">Your documents</h3>
-        {docs.isLoading && <p className="text-sm text-muted-foreground">Loading…</p>}
-
-        {docs.data?.length === 0 && !docs.isLoading && (
-          <div className="rounded-md border border-dashed border-border p-8 text-center">
-            <Inbox className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="mt-3 text-sm text-muted-foreground">
-              Upload your syllabus, notes, textbooks, or PDFs to study with Ascend.
-            </p>
-          </div>
-        )}
-
-        {docs.data?.map((doc: UserDocument) => (
-          <Card key={doc.id} className="border-border">
-            <CardContent className="flex items-center gap-3 p-4">
-              <FileText className="h-5 w-5 text-gold shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="truncate font-medium text-forest">{doc.filename}</span>
-                  <StatusBadge status={doc.status} />
-                  {doc.document_type && doc.document_type !== "other" && (
-                    <Badge variant="secondary" className="bg-muted text-forest">
-                      {doc.document_type.replace(/_/g, " ")}
-                    </Badge>
-                  )}
-                </div>
-                <p className="truncate text-xs text-muted-foreground">
-                  {doc.subject && <span>Subject: {doc.subject} · </span>}
-                  {doc.page_count != null && <span>{doc.page_count} pages · </span>}
-                  {new Date(doc.created_at).toLocaleDateString()}
-                </p>
-                {doc.status === "processing" && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-forest">
-                    <Loader2 className="h-3 w-3 animate-spin" /> Processing your document…
-                  </p>
-                )}
-                {doc.status === "failed" && doc.error_message && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
-                    <AlertCircle className="h-3 w-3" /> Processing failed. Try again.
-                  </p>
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-1">
-                {doc.status === "failed" && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title="Retry"
-                    onClick={() => retry.mutate(doc.id)}
-                  >
-                    <RefreshCw className="h-4 w-4 text-forest" />
-                  </Button>
-                )}
-                {doc.status === "ready" && <CheckCircle2 className="h-4 w-4 text-forest" />}
-                {doc.status === "processing" && (
-                  <Loader2 className="h-4 w-4 animate-spin text-gold" />
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Delete"
-                  onClick={() => setPendingDelete(doc)}
-                >
-                  <Trash2 className="h-4 w-4 text-red-600" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+      <AlertDialog open={!!deleteDialogOpen} onOpenChange={() => setDeleteDialogOpen(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-serif">Delete this document?</AlertDialogTitle>
-            <AlertDialogDescription>
-              “{pendingDelete?.filename}” will be permanently removed, including its extracted
-              content. This cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogTitle>Delete Document?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently remove the document and its chunks.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-red-600 text-white hover:bg-red-700"
-              onClick={confirmDelete}
-            >
+            <AlertDialogAction onClick={() => { if (deleteDialogOpen) deleteMutation.mutate(deleteDialogOpen); }}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

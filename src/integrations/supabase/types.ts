@@ -626,6 +626,10 @@ export type Database = {
           type: string
           updated_at: string
           user_id: string
+          recurrence: string | null
+          recurrence_days: string | null
+          recurrence_end: string | null
+          completed_at: string | null
         }
         Insert: {
           created_at?: string
@@ -640,6 +644,10 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id: string
+          recurrence?: string | null
+          recurrence_days?: string | null
+          recurrence_end?: string | null
+          completed_at?: string | null
         }
         Update: {
           created_at?: string
@@ -654,6 +662,10 @@ export type Database = {
           type?: string
           updated_at?: string
           user_id?: string
+          recurrence?: string | null
+          recurrence_days?: string | null
+          recurrence_end?: string | null
+          completed_at?: string | null
         }
         Relationships: []
       }
@@ -703,6 +715,723 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      external_datasets: {
+        Row: {
+          id: string
+          name: string
+          source: string
+          url: string
+          license: string
+          description: string | null
+          subject_domain: string
+          difficulty: string
+          learning_purpose: string | null
+          provenance: string | null
+          kaggle_slug: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          source: string
+          url: string
+          license: string
+          description?: string | null
+          subject_domain: string
+          difficulty?: string
+          learning_purpose?: string | null
+          provenance?: string | null
+          kaggle_slug?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          source?: string
+          url?: string
+          license?: string
+          description?: string | null
+          subject_domain?: string
+          difficulty?: string
+          learning_purpose?: string | null
+          provenance?: string | null
+          kaggle_slug?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      },
+      dataset_files: {
+        Row: {
+          id: string
+          external_dataset_id: string | null
+          user_id: string | null
+          filename: string
+          storage_path: string
+          mime_type: string | null
+          size_bytes: number | null
+          file_format: string | null
+          row_count: number | null
+          column_count: number | null
+          columns_json: Json | null
+          profile_json: Json | null
+          ingestion_status: string
+          error_message: string | null
+          checksum: string | null
+          ingested_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          external_dataset_id?: string | null
+          user_id?: string | null
+          filename: string
+          storage_path: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          file_format?: string | null
+          row_count?: number | null
+          column_count?: number | null
+          columns_json?: Json | null
+          profile_json?: Json | null
+          ingestion_status?: string
+          error_message?: string | null
+          checksum?: string | null
+          ingested_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          external_dataset_id?: string | null
+          user_id?: string | null
+          filename?: string
+          storage_path?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          file_format?: string | null
+          row_count?: number | null
+          column_count?: number | null
+          columns_json?: Json | null
+          profile_json?: Json | null
+          ingestion_status?: string
+          error_message?: string | null
+          checksum?: string | null
+          ingested_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dataset_files_external_dataset_id_fkey"
+            columns: ["external_dataset_id"]
+            isOneToOne: false
+            referencedRelation: "external_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      user_documents: {
+        Row: {
+          id: string
+          user_id: string
+          filename: string
+          storage_path: string
+          mime_type: string | null
+          size_bytes: number | null
+          document_type: string
+          subject: string | null
+          page_count: number | null
+          status: string
+          error_message: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          filename: string
+          storage_path: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          document_type?: string
+          subject?: string | null
+          page_count?: number | null
+          status?: string
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          filename?: string
+          storage_path?: string
+          mime_type?: string | null
+          size_bytes?: number | null
+          document_type?: string
+          subject?: string | null
+          page_count?: number | null
+          status?: string
+          error_message?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      document_chunks: {
+        Row: {
+          id: string
+          user_id: string
+          document_id: string
+          chunk_index: number
+          page_number: number | null
+          heading: string | null
+          content_text: string
+          token_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          document_id: string
+          chunk_index: number
+          page_number?: number | null
+          heading?: string | null
+          content_text: string
+          token_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          document_id?: string
+          chunk_index?: number
+          page_number?: number | null
+          heading?: string | null
+          content_text?: string
+          token_count?: number
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "user_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      events: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          description: string | null
+          start_at: string
+          end_at: string
+          timezone: string
+          all_day: boolean
+          location: string | null
+          task_id: string | null
+          project_id: string | null
+          recurrence: string | null
+          recurrence_days: string | null
+          recurrence_end: string | null
+          color: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          description?: string | null
+          start_at: string
+          end_at: string
+          timezone?: string
+          all_day?: boolean
+          location?: string | null
+          task_id?: string | null
+          project_id?: string | null
+          recurrence?: string | null
+          recurrence_days?: string | null
+          recurrence_end?: string | null
+          color?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          description?: string | null
+          start_at?: string
+          end_at?: string
+          timezone?: string
+          all_day?: boolean
+          location?: string | null
+          task_id?: string | null
+          project_id?: string | null
+          recurrence?: string | null
+          recurrence_days?: string | null
+          recurrence_end?: string | null
+          color?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      reminders: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string | null
+          trigger_at: string
+          timezone: string
+          status: string
+          related_type: string | null
+          related_id: string | null
+          delivery_channel: string
+          sent_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message?: string | null
+          trigger_at: string
+          timezone?: string
+          status?: string
+          related_type?: string | null
+          related_id?: string | null
+          delivery_channel?: string
+          sent_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string | null
+          trigger_at?: string
+          timezone?: string
+          status?: string
+          related_type?: string | null
+          related_id?: string | null
+          delivery_channel?: string
+          sent_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      automation_rules: {
+        Row: {
+          id: string
+          user_id: string
+          name: string
+          description: string | null
+          enabled: boolean
+          trigger_type: string
+          trigger_config: Json
+          condition_config: Json
+          action_type: string
+          action_config: Json
+          last_run_at: string | null
+          run_count: number
+          last_error: string | null
+          created_at: string
+          updated_at: string
+          last_triggered_at: string | null
+          timezone: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name: string
+          description?: string | null
+          enabled?: boolean
+          trigger_type: string
+          trigger_config?: Json
+          condition_config?: Json
+          action_type: string
+          action_config?: Json
+          last_run_at?: string | null
+          run_count?: number
+          last_error?: string | null
+          created_at?: string
+          updated_at?: string
+          last_triggered_at?: string | null
+          timezone?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string
+          description?: string | null
+          enabled?: boolean
+          trigger_type?: string
+          trigger_config?: Json
+          condition_config?: Json
+          action_type?: string
+          action_config?: Json
+          last_run_at?: string | null
+          run_count?: number
+          last_error?: string | null
+          created_at?: string
+          updated_at?: string
+          last_triggered_at?: string | null
+          timezone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_rules_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      automation_logs: {
+        Row: {
+          id: string
+          user_id: string
+          rule_id: string
+          status: string
+          trigger_data: Json | null
+          condition_result: boolean | null
+          action_result: Json | null
+          error_message: string | null
+          executed_at: string
+          execution_id: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          rule_id: string
+          status: string
+          trigger_data?: Json | null
+          condition_result?: boolean | null
+          action_result?: Json | null
+          error_message?: string | null
+          executed_at?: string
+          execution_id?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          rule_id?: string
+          status?: string
+          trigger_data?: Json | null
+          condition_result?: boolean | null
+          action_result?: Json | null
+          error_message?: string | null
+          executed_at?: string
+          execution_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_logs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      daily_briefing: {
+        Row: {
+          id: string
+          user_id: string
+          briefing_date: string
+          overdue_tasks: Json
+          today_tasks: Json
+          today_events: Json
+          today_habits: Json
+          upcoming_deadlines: Json
+          active_projects: Json
+          daily_intention: string | null
+          priority_summary: string | null
+          generated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          briefing_date: string
+          overdue_tasks?: Json
+          today_tasks?: Json
+          today_events?: Json
+          today_habits?: Json
+          upcoming_deadlines?: Json
+          active_projects?: Json
+          daily_intention?: string | null
+          priority_summary?: string | null
+          generated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          briefing_date?: string
+          overdue_tasks?: Json
+          today_tasks?: Json
+          today_events?: Json
+          today_habits?: Json
+          upcoming_deadlines?: Json
+          active_projects?: Json
+          daily_intention?: string | null
+          priority_summary?: string | null
+          generated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_briefing_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      weekly_review: {
+        Row: {
+          id: string
+          user_id: string
+          week_start: string
+          week_end: string
+          completed_tasks: Json
+          incomplete_tasks: Json
+          habit_completion: Json
+          streak_changes: Json
+          project_progress: Json
+          goal_progress: Json
+          important_notes: Json
+          upcoming_deadlines: Json
+          summary_text: string | null
+          generated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          week_start: string
+          week_end: string
+          completed_tasks?: Json
+          incomplete_tasks?: Json
+          habit_completion?: Json
+          streak_changes?: Json
+          project_progress?: Json
+          goal_progress?: Json
+          important_notes?: Json
+          upcoming_deadlines?: Json
+          summary_text?: string | null
+          generated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          week_start?: string
+          week_end?: string
+          completed_tasks?: Json
+          incomplete_tasks?: Json
+          habit_completion?: Json
+          streak_changes?: Json
+          project_progress?: Json
+          goal_progress?: Json
+          important_notes?: Json
+          upcoming_deadlines?: Json
+          summary_text?: string | null
+          generated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_review_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      event_emission_logs: {
+        Row: {
+          id: string
+          user_id: string
+          event_type: string
+          entity_id: string
+          event_timestamp: string
+          payload: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          event_type: string
+          entity_id: string
+          event_timestamp: string
+          payload?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          event_type?: string
+          entity_id?: string
+          event_timestamp?: string
+          payload?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_emission_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      event_processing_logs: {
+        Row: {
+          id: string
+          user_id: string
+          event_idempotency_key: string
+          event_type: string
+          entity_id: string
+          status: string
+          matched_rules: number
+          executed_automations: number
+          error_message: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          event_idempotency_key: string
+          event_type: string
+          entity_id: string
+          status?: string
+          matched_rules?: number
+          executed_automations?: number
+          error_message?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          event_idempotency_key?: string
+          event_type?: string
+          entity_id?: string
+          status?: string
+          matched_rules?: number
+          executed_automations?: number
+          error_message?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_processing_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          },
+        ]
+      },
+      student_profile: {
+        Row: {
+          id: string
+          user_id: string
+          semester: string | null
+          academic_goals: string | null
+          study_availability: Json | null
+          preferred_session_length: number
+          exam_alert_days_before: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          semester?: string | null
+          academic_goals?: string | null
+          study_availability?: Json | null
+          preferred_session_length?: number
+          exam_alert_days_before?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          semester?: string | null
+          academic_goals?: string | null
+          study_availability?: Json | null
+          preferred_session_length?: number
+          exam_alert_days_before?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_profile_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "auth.users"
             referencedColumns: ["id"]
           },
         ]
