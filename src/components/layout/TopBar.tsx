@@ -14,11 +14,8 @@ import {
   Calendar,
   Target,
   Brain,
-  Command as CmdIcon2,
   Sun,
   Moon,
-  Bell,
-  User,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
-import { CommandPalette } from "@/components/ascend/CommandPalette";
+import CommandPalette from "@/components/ascend/CommandPalette";
 
 interface TopBarProps {
   onSearch: () => void;
@@ -82,7 +79,7 @@ export function TopBar({
             <Search className="h-4 w-4 text-muted-foreground/50 group-hover:text-muted-foreground" />
             <span className="text-muted-foreground group-hover:text-foreground">Search...</span>
             <kbd className="ml-auto text-[10px] font-mono text-muted-foreground/50 px-1.5 py-0.5 rounded">
-              <CmdIcon2 className="h-3 w-3" />K
+              <CmdIcon className="h-3 w-3" />K
             </kbd>
           </button>
         </div>

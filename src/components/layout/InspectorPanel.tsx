@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { cn } from "@/lib/utils";
-import { X, ChevronLeft, ChevronRight, Search, Filter, Settings, MoreVertical } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +11,7 @@ import { Input } from "@/components/ui/input";
 interface InspectorPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  ref?: React.RefObject<HTMLAsideElement>;
+  ref?: React.RefObject<HTMLElement | null>;
 }
 
 interface InspectorTab {

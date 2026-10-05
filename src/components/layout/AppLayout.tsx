@@ -3,11 +3,11 @@ import { cn } from "@/lib/utils";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { InspectorPanel } from "./InspectorPanel";
-import { CommandPalette } from "@/components/ascend/CommandPalette";
-import { NotificationPanel } from "@/components/ascend/NotificationPanel";
-import { FocusMode } from "@/components/ascend/FocusMode";
-import { PWAInstallBanner } from "@/components/ascend/PWAInstallBanner";
-import { OfflineBar } from "@/components/ascend/OfflineBar";
+import CommandPalette from "@/components/ascend/CommandPalette";
+import NotificationPanel from "@/components/ascend/NotificationPanel";
+import FocusMode from "@/components/ascend/FocusMode";
+import PWAInstallBanner from "@/components/ascend/PWAInstallBanner";
+import OfflineBar from "@/components/ascend/OfflineBar";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -24,8 +24,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const sidebarRef = useRef<HTMLAsideElement>(null);
-  const inspectorRef = useRef<HTMLAsideElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const inspectorRef = useRef<HTMLElement>(null);
 
   const handleNavigate = (view: string) => {
     setCurrentView(view);
@@ -183,8 +183,4 @@ export function AppLayout({ children }: AppLayoutProps) {
       <PWAInstallBanner />
     </div>
   );
-}
-
-export function AppLayout({ children }: { children: React.ReactNode }) {
-  return <AppLayout>{children}</AppLayout>;
 }

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { logDocumentError } from "./logger";
+import { documentRateLimit, aiRateLimit } from "./rate-limit";
 
 export const uploadDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, documentRateLimit])

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,22 +21,24 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   failed: <AlertCircle className="h-3 w-3" />,
 };
 
-const FILTER_TABS = ["today", "upcoming", "overdue", "completed"] as const;
+const FILTER_TABS = ["pending", "sent", "dismissed", "failed"] as const;
 
 export default function RemindersView() {
-  const listReminders = useServerFn(listReminders);
+  const listRemindersFn = useServerFn(listReminders);
   const dismissReminderFn = useServerFn(dismissReminder);
-  const [filter, setFilter] = useState<"today" | "upcoming" | "overdue" | "completed" | "all">(
-    "all",
-  );
+  const [filter, setFilter] = useState<"pending" | "sent" | "dismissed" | "failed" | "all">("all");
+
   const {
     data: reminders,
     isLoading,
     refetch,
-  } = listReminders({ status: filter === "all" ? undefined : filter });
+  } = useQuery({
+    queryKey: ["reminders", filter],
+    queryFn: () => listRemindersFn({ data: { status: filter === "all" ? undefined : filter } }),
+  });
 
   const handleDismiss = async (id: string) => {
-    await dismissReminderFn({ id });
+    await dismissReminderFn({ data: { id } });
     refetch();
   };
 
@@ -66,29 +69,37 @@ export default function RemindersView() {
               <p className="text-muted-foreground text-center py-8">No reminders.</p>
             ) : (
               <ul className="divide-y">
-                {reminders?.map((rem) => (
-                  <li key={rem.id} className="py-3 flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{rem.title}</p>
-                        <Badge className={STATUS_STYLE[rem.status]} variant="outline">
-                          {STATUS_ICON[rem.status]} {rem.status}
-                        </Badge>
+                {reminders?.map(
+                  (rem: {
+                    id: string;
+                    title: string;
+                    status: string;
+                    message?: string | null;
+                    trigger_at: string;
+                  }) => (
+                    <li key={rem.id} className="py-3 flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{rem.title}</p>
+                          <Badge className={STATUS_STYLE[rem.status]} variant="outline">
+                            {STATUS_ICON[rem.status]} {rem.status}
+                          </Badge>
+                        </div>
+                        {rem.message && (
+                          <p className="text-sm text-muted-foreground">{rem.message}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Due: {new Date(rem.trigger_at).toLocaleString()}
+                        </p>
                       </div>
-                      {rem.message && (
-                        <p className="text-sm text-muted-foreground">{rem.message}</p>
+                      {rem.status === "pending" && (
+                        <Button variant="ghost" size="sm" onClick={() => handleDismiss(rem.id)}>
+                          Dismiss
+                        </Button>
                       )}
-                      <p className="text-xs text-muted-foreground">
-                        Due: {new Date(rem.trigger_at).toLocaleString()}
-                      </p>
-                    </div>
-                    {rem.status === "pending" && (
-                      <Button variant="ghost" size="sm" onClick={() => handleDismiss(rem.id)}>
-                        Dismiss
-                      </Button>
-                    )}
-                  </li>
-                ))}
+                    </li>
+                  ),
+                )}
               </ul>
             )}
           </div>

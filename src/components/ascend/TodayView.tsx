@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { cn } from "@/lib/utils";
 import {
   Sun,
   Calendar,
@@ -18,6 +18,7 @@ import {
   Bookmark,
   Flame,
   X,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,7 @@ import { getWeakAreas } from "@/lib/weak.area";
 import { getDailyBriefing } from "@/lib/briefing.functions";
 import { getStudentProfile } from "@/lib/student.profile.functions";
 import { format, differenceInDays, addDays } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Task {
   id: string;
@@ -65,8 +67,8 @@ interface Goal {
 interface Project {
   id: string;
   name: string;
-  status: string;
-  progress: number;
+  status: string | null;
+  progress?: number;
   deadline: string | null;
   project_type: "academic" | "work";
 }
@@ -90,12 +92,12 @@ interface WeakArea {
 }
 
 interface DailyBriefingData {
-  overdue_tasks: any[];
-  today_tasks: any[];
-  today_events: any[];
-  today_habits: any[];
-  upcoming_deadlines: any[];
-  active_projects: any[];
+  overdue_tasks: unknown[];
+  today_tasks: unknown[];
+  today_events: unknown[];
+  today_habits: unknown[];
+  upcoming_deadlines: unknown[];
+  active_projects: unknown[];
   daily_intention: string | null;
 }
 
@@ -113,20 +115,10 @@ interface ExamIntelligence {
   revisionStatus: "NOT_STARTED" | "IN_PROGRESS" | "READY";
 }
 
-interface WeakArea {
-  topicId: string;
-  topic: string;
-  subject: string | null;
-  progress: number;
-  signals: string[];
-  severity: "LOW" | "MEDIUM" | "HIGH";
-  suggestedAction: string;
-}
-
 export default function TodayView() {
   const [date, setDate] = useState(new Date());
 
-  // Data fetching
+  // Data fetching - React Query hooks
   const tasksQ = useTasks();
   const examsQ = useExams();
   const habitsQ = useHabits();
@@ -136,12 +128,34 @@ export default function TodayView() {
   );
   const goalsQ = useGoals();
   const projectsQ = useProjects();
-  const examsIntelligenceQ = useServerFn(getExamIntelligence);
-  const weakAreasQ = useServerFn(getWeakAreas);
-  const dailyBriefingQ = useServerFn(getDailyBriefing);
-  const studentProfileQ = useServerFn(getStudentProfile);
+
+  // Server functions wrapped with useQuery
+  const examsIntelligenceFn = useServerFn(getExamIntelligence);
+  const weakAreasFn = useServerFn(getWeakAreas);
+  const dailyBriefingFn = useServerFn(getDailyBriefing);
+  const studentProfileFn = useServerFn(getStudentProfile);
+
+  const { data: examsIntelligence } = useQuery({
+    queryKey: ["examIntelligence"],
+    queryFn: () => examsIntelligenceFn({ data: { examId: undefined } }),
+  });
+
+  const { data: weakAreas } = useQuery({
+    queryKey: ["weakAreas"],
+    queryFn: () => weakAreasFn(),
+  });
 
   const today = todayISO();
+  const { data: dailyBriefing } = useQuery({
+    queryKey: ["dailyBriefing", today],
+    queryFn: () => dailyBriefingFn({ data: { date: today } }),
+  });
+
+  const { data: studentProfile } = useQuery({
+    queryKey: ["studentProfile"],
+    queryFn: () => studentProfileFn(),
+  });
+
   const todayDate = new Date();
 
   // Computed values
@@ -151,10 +165,8 @@ export default function TodayView() {
   const goals = goalsQ.list.data ?? [];
   const projects = projectsQ.list.data ?? [];
   const exams = examsQ.list.data ?? [];
-  const dailyBriefing = dailyBriefingQ.data;
 
   const todayStr = todayISO();
-  const todayDate = new Date();
 
   // Today's tasks
   const todayTasks = tasks.filter((t) => !t.done && t.due_date === todayStr);
@@ -183,8 +195,8 @@ export default function TodayView() {
     .slice(0, 3);
 
   // Today's habit progress
-  const completedHabitsToday = todayHabitLogs.filter((l) => l.done).length;
-  const totalHabits = habits.length;
+  const habitProgress =
+    totalHabits > 0 ? Math.round((completedHabitsToday / totalHabits) * 100) : 0;
 
   // Today's task progress
   const completedTasksToday = tasks.filter((t) => t.done && t.due_date === todayStr).length;
@@ -193,7 +205,10 @@ export default function TodayView() {
     totalTasksToday > 0 ? Math.round((completedTasksToday / totalTasksToday) * 100) : 0;
 
   // Daily intention
-  const dailyIntention = dailyBriefing?.daily_intention;
+  const dailyIntention = (dailyBriefing as DailyBriefingData | undefined)?.daily_intention;
+
+  // Focus sessions (placeholder)
+  const focusSessionsToday = 0;
 
   // Greeting based on time
   const hour = new Date().getHours();
@@ -237,7 +252,7 @@ export default function TodayView() {
         />
         <MetricCard
           title="Focus Sessions"
-          value={focusSessionsToday}
+          value={String(focusSessionsToday)}
           subtitle="Deep work today"
           icon={<Flame className="h-5 w-5" />}
           trend="+"
@@ -245,9 +260,11 @@ export default function TodayView() {
         />
         <MetricCard
           title="Upcoming Exams"
-          value={upcomingExams.length}
+          value={String(upcomingExams.length)}
           subtitle={
-            upcomingExams.length > 0 ? `${upcomingExams[0]?.daysRemaining ?? 0} days` : "None"
+            upcomingExams.length > 0 && upcomingExams[0]?.exam_date
+              ? `${differenceInDays(new Date(upcomingExams[0].exam_date), new Date())} days`
+              : "None"
           }
           icon={<Calendar className="h-5 w-5" />}
         />
@@ -347,14 +364,14 @@ export default function TodayView() {
                           </div>
                           <Badge
                             variant={
-                              exam.priority === "CRITICAL"
+                              exam.prep_status === "CRITICAL"
                                 ? "destructive"
-                                : exam.priority === "HIGH"
+                                : exam.prep_status === "HIGH"
                                   ? "default"
                                   : "secondary"
                             }
                           >
-                            {exam.priority}
+                            {exam.prep_status}
                           </Badge>
                         </div>
                       </div>
@@ -368,7 +385,7 @@ export default function TodayView() {
                 <div>
                   <h3 className="font-medium mb-3">Areas Needing Attention</h3>
                   <div className="space-y-2">
-                    {weakAreas.slice(0, 3).map((area) => (
+                    {weakAreas.slice(0, 3).map((area: WeakArea) => (
                       <div
                         key={area.topicId}
                         className="p-3 bg-red-50 border border-red-200 rounded-xl"
@@ -492,7 +509,7 @@ export default function TodayView() {
             <CardContent>
               {activeProjects.length > 0 ? (
                 <div className="space-y-3">
-                  {activeProjects.map((project) => (
+                  {activeProjects.map((project: Project) => (
                     <div key={project.id} className="p-3 bg-accent/30 rounded-xl">
                       <div className="flex items-center justify-between">
                         <div>
@@ -503,10 +520,12 @@ export default function TodayView() {
                               ? format(new Date(project.deadline), "MMM d")
                               : "No deadline"}
                           </p>
-                          <Progress value={project.progress} className="w-full h-1.5 mt-2" />
+                          {project.progress !== undefined && (
+                            <Progress value={project.progress} className="w-full h-1.5 mt-2" />
+                          )}
                         </div>
                         <Badge variant={project.progress === 100 ? "secondary" : "default"}>
-                          {project.progress}%
+                          {project.progress ?? 0}%
                         </Badge>
                       </div>
                     </div>
@@ -529,7 +548,7 @@ export default function TodayView() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {weakAreas.slice(0, 2).map((area) => (
+                  {weakAreas.slice(0, 2).map((area: WeakArea) => (
                     <div
                       key={area.topicId}
                       className="p-3 bg-white border border-red-200 rounded-xl"
@@ -608,10 +627,3 @@ function QuickActionButton({
     </Button>
   );
 }
-
-// Helper
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(" ");
-}
-
-const userName = "User";

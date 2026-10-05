@@ -3,7 +3,7 @@ export interface RetryOptions {
   baseDelayMs?: number;
   maxDelayMs?: number;
   backoffMultiplier?: number;
-  retryableErrors?: ((error: unknown) => boolean) | RegExp[];
+  retryableErrors?: RegExp[] | ((error: unknown) => boolean);
   onRetry?: (attempt: number, error: unknown) => void;
 }
 
@@ -30,7 +30,9 @@ export async function withRetry<T>(fn: () => Promise<T>, options: RetryOptions =
       }
 
       const isRetryable = retryableErrors
-        ? retryableErrors.some((r) => (r instanceof RegExp ? r.test(String(error)) : r(error)))
+        ? Array.isArray(retryableErrors)
+          ? retryableErrors.some((r) => r.test(String(error)))
+          : retryableErrors(error)
         : isDefaultRetryable(error);
 
       if (!isRetryable) {

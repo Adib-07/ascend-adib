@@ -1374,6 +1374,107 @@ export type Database = {
           },
         ];
       };
+      tutor_sessions: {
+        Row: {
+          id: string;
+          user_id: string;
+          mode: string;
+          subject: string | null;
+          language: string | null;
+          context_snapshot: Json | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          mode: string;
+          subject?: string | null;
+          language?: string | null;
+          context_snapshot?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          mode?: string;
+          subject?: string | null;
+          language?: string | null;
+          context_snapshot?: Json | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tutor_sessions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "auth.users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tutor_messages: {
+        Row: {
+          id: string;
+          session_id: string;
+          user_id: string;
+          role: string;
+          content: string;
+          sources: Json | null;
+          datasets: Json | null;
+          grounded: boolean | null;
+          syllabus_match: boolean | null;
+          mode: string | null;
+          metadata: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          user_id: string;
+          role: string;
+          content: string;
+          sources?: Json | null;
+          datasets?: Json | null;
+          grounded?: boolean | null;
+          syllabus_match?: boolean | null;
+          mode?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          session_id?: string;
+          user_id?: string;
+          role?: string;
+          content?: string;
+          sources?: Json | null;
+          datasets?: Json | null;
+          grounded?: boolean | null;
+          syllabus_match?: boolean | null;
+          mode?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tutor_messages_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "tutor_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tutor_messages_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "auth.users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

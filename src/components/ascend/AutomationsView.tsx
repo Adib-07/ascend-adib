@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,20 +11,37 @@ import {
 } from "@/lib/automation.execution.functions";
 import { Plus, Play, Eye, Zap, Trash2 } from "lucide-react";
 
+interface AutomationRule {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  enabled: boolean;
+  trigger_type: string;
+  trigger_config: unknown;
+  condition_config: unknown;
+  action_type: string;
+  action_config: unknown;
+  timezone: string;
+}
+
 export default function AutomationsView() {
-  const listAutomations = useServerFn(listAutomationRules);
-  const executeManual = useServerFn(executeManualAutomation);
-  const evaluateRule = useServerFn(evaluateAutomationRule);
-  const [rules, isLoading] = listAutomations();
+  const listAutomationsFn = useServerFn(listAutomationRules);
+  const executeManualFn = useServerFn(executeManualAutomation);
+  const evaluateRuleFn = useServerFn(evaluateAutomationRule);
+  const { data: rules, isLoading } = useQuery({
+    queryKey: ["automationRules"],
+    queryFn: () => listAutomationsFn({ data: {} }),
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleRun = async (ruleId: string) => {
-    const result = await executeManual({ ruleId });
+    const result = await executeManualFn({ data: { ruleId } });
     if (!result.success) alert(result.error || "Failed");
   };
 
   const handleEvaluate = async (ruleId: string) => {
-    const evalResult = await evaluateRule({ ruleId });
+    const evalResult = await evaluateRuleFn({ data: { ruleId } });
     alert(`Should execute: ${evalResult.shouldExecute}\nReason: ${evalResult.reason}`);
   };
 
@@ -42,7 +60,7 @@ export default function AutomationsView() {
               <p className="text-muted-foreground text-center py-8">No automations yet.</p>
             ) : (
               <div className="space-y-3">
-                {rules?.map((rule) => (
+                {rules?.map((rule: AutomationRule) => (
                   <div
                     key={rule.id}
                     className="flex items-center justify-between p-3 border rounded-lg bg-[var(--card)]"

@@ -1,20 +1,27 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { runFullAutomationSweepFn } from "@/lib/event.dispatcher.functions";
 import { format } from "date-fns";
 
+interface SweepResult {
+  scheduled?: { processedRules?: number; executedAutomations?: number };
+  reminders?: { processed?: number; errors?: unknown[] };
+  upcomingEvents?: { processed?: number; errors?: unknown[] };
+  overdueTasks?: { processed?: number; errors?: unknown[] };
+}
+
 export default function UpcomingScheduleView() {
-  const runSweep = useServerFn(runFullAutomationSweepFn);
-  const [sweepResult, setSweepResult] = useState<any>(null);
+  const runSweepFn = useServerFn(runFullAutomationSweepFn);
+  const [sweepResult, setSweepResult] = useState<SweepResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSweep = async () => {
     setIsLoading(true);
     try {
-      const result = await runFullAutomationSweepFn({ batchSize: 50, lookAheadMinutes: 60 });
-      setSweepResult(result);
+      const result = await runSweepFn({ data: { lookAheadMinutes: 60 } });
+      setSweepResult(result as SweepResult);
     } catch (e) {
       alert("Sweep failed: " + e);
     } finally {

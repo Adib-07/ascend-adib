@@ -331,8 +331,31 @@ export function useProjects() {
     }) => {
       const user_id = await uid();
       const table = input.project_type === "academic" ? "academic_projects" : "work_projects";
-      const { error } = await supabase.from(table).insert({ user_id, ...input });
-      if (error) throw error;
+      if (input.project_type === "academic") {
+        const academicFields = {
+          user_id,
+          name: input.name,
+          status: input.status,
+          deadline: input.deadline,
+          tech_stack: input.tech_stack,
+          notes: input.notes,
+        };
+        const { error } = await supabase.from("academic_projects").insert(academicFields);
+        if (error) throw error;
+      } else {
+        const workFields = {
+          user_id,
+          name: input.name,
+          type: input.type,
+          status: input.status,
+          client_id: input.client_id,
+          deadline: input.deadline,
+          revenue: input.revenue,
+          progress: input.progress,
+        };
+        const { error } = await supabase.from("work_projects").insert(workFields);
+        if (error) throw error;
+      }
     },
     onSuccess: inv,
   });

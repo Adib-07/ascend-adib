@@ -49,29 +49,16 @@ export function createRateLimitMiddleware(config: RateLimitConfig) {
     const remaining = Math.max(0, config.maxRequests - entry.count);
     const resetTime = new Date(entry.resetTime).toISOString();
 
+    if (entry.count > config.maxRequests) {
+      throw new Error("RATE_LIMIT_EXCEEDED");
+    }
+
     const response = await next({});
 
-    response.headers.set("X-RateLimit-Limit", config.maxRequests.toString());
-    response.headers.set("X-RateLimit-Remaining", remaining.toString());
-    response.headers.set("X-RateLimit-Reset", resetTime);
-
-    if (entry.count > config.maxRequests) {
-      return new Response(
-        JSON.stringify({
-          error: "Rate limit exceeded",
-          retryAfter: Math.ceil((entry.resetTime - now) / 1000),
-        }),
-        {
-          status: 429,
-          headers: {
-            "Content-Type": "application/json",
-            "Retry-After": Math.ceil((entry.resetTime - now) / 1000).toString(),
-            "X-RateLimit-Limit": config.maxRequests.toString(),
-            "X-RateLimit-Remaining": "0",
-            "X-RateLimit-Reset": resetTime,
-          },
-        },
-      );
+    if (response instanceof Response) {
+      response.headers.set("X-RateLimit-Limit", config.maxRequests.toString());
+      response.headers.set("X-RateLimit-Remaining", remaining.toString());
+      response.headers.set("X-RateLimit-Reset", resetTime);
     }
 
     return response;

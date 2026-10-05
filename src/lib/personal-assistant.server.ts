@@ -25,6 +25,7 @@ import {
   type ContextSource,
 } from "./context-engine-core";
 import { withAIRetry } from "./retry";
+import { ActionPayload, ActionType } from "./personal-assistant.types";
 
 export type AssistantIntent =
   | "WHAT_NOW"
@@ -41,18 +42,8 @@ export type AssistantIntent =
   | "ACTION_PROPOSAL";
 
 export interface AssistantAction {
-  type:
-    | "create_task"
-    | "create_reminder"
-    | "create_event"
-    | "create_habit"
-    | "create_goal"
-    | "create_project"
-    | "create_study_plan"
-    | "log_revision"
-    | "update_topic"
-    | "run_automation";
-  payload: Record<string, unknown>;
+  type: ActionType;
+  payload: ActionPayload;
   description: string;
   requiresConfirmation: boolean;
 }
@@ -507,7 +498,6 @@ function isGroundedSource(source: string): boolean {
 export interface ExecuteActionResult {
   success: boolean;
   message: string;
-  data?: Record<string, unknown>;
 }
 
 export async function executeActionImpl({
@@ -551,7 +541,7 @@ export async function executeActionImpl({
           .select()
           .single();
         if (error) throw error;
-        return { success: true, message: `Created task: ${payload.title}`, data: { id: data.id } };
+        return { success: true, message: `Created task: ${payload.title}` };
       }
 
       case "create_reminder": {
@@ -579,7 +569,6 @@ export async function executeActionImpl({
         return {
           success: true,
           message: `Created reminder: ${payload.title}`,
-          data: { id: data.id },
         };
       }
 
@@ -606,7 +595,7 @@ export async function executeActionImpl({
           .select()
           .single();
         if (error) throw error;
-        return { success: true, message: `Created event: ${payload.title}`, data: { id: data.id } };
+        return { success: true, message: `Created event: ${payload.title}` };
       }
 
       case "create_habit": {
@@ -634,7 +623,7 @@ export async function executeActionImpl({
           .select()
           .single();
         if (error) throw error;
-        return { success: true, message: `Created habit: ${payload.name}`, data: { id: data.id } };
+        return { success: true, message: `Created habit: ${payload.name}` };
       }
 
       case "create_goal": {
@@ -655,7 +644,7 @@ export async function executeActionImpl({
           .select()
           .single();
         if (error) throw error;
-        return { success: true, message: `Created goal: ${payload.text}`, data: { id: data.id } };
+        return { success: true, message: `Created goal: ${payload.text}` };
       }
 
       case "create_project": {
@@ -680,7 +669,6 @@ export async function executeActionImpl({
         return {
           success: true,
           message: `Created project: ${payload.name}`,
-          data: { id: data.id },
         };
       }
 
@@ -708,7 +696,6 @@ export async function executeActionImpl({
         return {
           success: true,
           message: `Logged revision for: ${payload.source_title}`,
-          data: { id: data.id },
         };
       }
 
@@ -732,7 +719,7 @@ export async function executeActionImpl({
           .select()
           .single();
         if (error) throw error;
-        return { success: true, message: `Updated topic progress`, data: { id: data.id } };
+        return { success: true, message: `Updated topic progress` };
       }
 
       case "run_automation": {
@@ -749,7 +736,6 @@ export async function executeActionImpl({
         return {
           success: true,
           message: `Automation ${data.name} queued for execution`,
-          data: { automation_id: data.id },
         };
       }
 
@@ -757,7 +743,6 @@ export async function executeActionImpl({
         return {
           success: true,
           message: "Study plan generated (view in response above)",
-          data: {},
         };
       }
 

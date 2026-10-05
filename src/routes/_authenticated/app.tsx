@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LogOut, Search, Focus, ChevronDown, Command as CmdIcon, Bell } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { getFocusSessions } from "@/components/ascend/FocusMode";
 
 const DailyTasks = lazy(() => import("@/components/ascend/DailyTasks"));
 const LearningHub = lazy(() => import("@/components/ascend/LearningHub"));

@@ -540,7 +540,7 @@ export async function askWithContextImpl({
   const user = buildUserPrompt(question, items);
 
   const gateway = createLovableAiGatewayProvider(key);
-  const { text } = await withAIRetry(async () => {
+  const { text } = await withAIRetry<{ text: string }>(async () => {
     const result = await generateText({
       model: gateway(MODEL),
       temperature: TEMPERATURE,
@@ -549,7 +549,7 @@ export async function askWithContextImpl({
       prompt: user,
     });
     if (!result.text?.trim()) throw new Error("Empty response from AI");
-    return result.text;
+    return { text: result.text };
   });
 
   return { text, sources: items, category };
