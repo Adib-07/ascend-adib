@@ -21,6 +21,9 @@ dist-ssr
 .nitro
 *.local
 
+# Vercel
+.vercel/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
