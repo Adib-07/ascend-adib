@@ -47,7 +47,7 @@ The Stage 4 goal is to introduce (a) structured, user-owned extensions to the ex
 17. `services` — service/pricing list (starter/standard/premium prices).
 18. `outreach` — outreach log: platform, lead_name, status, expected_value, niche, notes, message_type, outcome.
 
-**No:** storage buckets, views, enums, composite types, or DB functions beyond `set_updated_at()`. No pgvector/embeddings. `supabase/config.toml` contains only `project_id = "owjmmisthtfbcxloxasc"`.
+**No:** storage buckets, views, enums, composite types, or DB functions beyond `set_updated_at()`. No pgvector/embeddings. `supabase/config.toml` contains only `project_id = "akoskmxdfjuroeeniyjy"`.
 
 ---
 
