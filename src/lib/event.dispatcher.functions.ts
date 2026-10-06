@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const runScheduledAutomationSweepFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       batchSize: z.number().int().min(1).max(100).optional(),
       lookAheadMinutes: z.number().int().min(1).max(60).optional(),
@@ -31,7 +31,7 @@ export const processDueRemindersFn = createServerFn({ method: "POST" })
 
 export const processUpcomingEventsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       lookAheadMinutes: z.number().int().min(1).max(1440).optional(),
     }),
@@ -54,7 +54,7 @@ export const processOverdueTasksFn = createServerFn({ method: "POST" })
 
 export const runFullAutomationSweepFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       batchSize: z.number().int().min(1).max(100).optional(),
       lookAheadMinutes: z.number().int().min(1).max(60).optional(),

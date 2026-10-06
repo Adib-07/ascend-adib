@@ -6,7 +6,7 @@ import { documentRateLimit, aiRateLimit } from "./rate-limit";
 
 export const uploadDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, documentRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       filename: z.string().min(1).max(255),
       mimeType: z.enum(["application/pdf", "text/plain", "text/markdown"]),
@@ -61,7 +61,7 @@ export const uploadDocument = createServerFn({ method: "POST" })
 
 export const completeUpload = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, documentRateLimit])
-  .inputValidator(z.object({ documentId: z.string().uuid() }))
+  .validator(z.object({ documentId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { documentId } = data;
@@ -86,7 +86,7 @@ export const completeUpload = createServerFn({ method: "POST" })
 
 export const listDocuments = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({ status: z.enum(["pending", "processing", "ready", "failed"]).optional() }),
   )
   .handler(async ({ context, data }) => {
@@ -104,7 +104,7 @@ export const listDocuments = createServerFn({ method: "POST" })
 
 export const getDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ documentId: z.string().uuid() }))
+  .validator(z.object({ documentId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: doc, error } = await supabase
@@ -119,7 +119,7 @@ export const getDocument = createServerFn({ method: "POST" })
 
 export const processDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, documentRateLimit])
-  .inputValidator(z.object({ documentId: z.string().uuid() }))
+  .validator(z.object({ documentId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { processDocumentImpl } = await import("./document.server");
     return processDocumentImpl({
@@ -131,7 +131,7 @@ export const processDocument = createServerFn({ method: "POST" })
 
 export const deleteDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, documentRateLimit])
-  .inputValidator(z.object({ documentId: z.string().uuid() }))
+  .validator(z.object({ documentId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { deleteDocumentImpl } = await import("./document.server");
     return deleteDocumentImpl({
@@ -143,7 +143,7 @@ export const deleteDocument = createServerFn({ method: "POST" })
 
 export const askDocument = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, aiRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       question: z.string().min(1).max(4000),
       documentIds: z.array(z.string().uuid()).optional(),

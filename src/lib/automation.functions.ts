@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { automationRateLimit } from "./rate-limit";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
 const TRIGGER_TYPES = [
   "task_completed",
@@ -26,7 +27,7 @@ const ACTION_TYPES = [
 
 export const createAutomationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, automationRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       name: z.string().min(1).max(100),
       description: z.string().max(500).optional(),
@@ -44,9 +45,9 @@ export const createAutomationRule = createServerFn({ method: "POST" })
       .insert({
         ...data,
         user_id: userId,
-        trigger_config: data.trigger_config as any,
-        condition_config: data.condition_config as any,
-        action_config: data.action_config as any,
+        trigger_config: data.trigger_config as Json,
+        condition_config: data.condition_config as Json,
+        action_config: data.action_config as Json,
       })
       .select()
       .single();
@@ -56,7 +57,7 @@ export const createAutomationRule = createServerFn({ method: "POST" })
 
 export const updateAutomationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, automationRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       id: z.string().uuid(),
       name: z.string().min(1).max(100).optional(),
@@ -72,10 +73,10 @@ export const updateAutomationRule = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { id, ...patch } = data;
-    const updateData: any = { ...patch };
-    if (patch.trigger_config) updateData.trigger_config = patch.trigger_config as any;
-    if (patch.condition_config) updateData.condition_config = patch.condition_config as any;
-    if (patch.action_config) updateData.action_config = patch.action_config as any;
+    const updateData: TablesUpdate<"automation_rules"> = { ...patch } as TablesUpdate<"automation_rules">;
+    if (patch.trigger_config) updateData.trigger_config = patch.trigger_config as Json;
+    if (patch.condition_config) updateData.condition_config = patch.condition_config as Json;
+    if (patch.action_config) updateData.action_config = patch.action_config as Json;
     const { data: rule, error } = await supabase
       .from("automation_rules")
       .update(updateData)
@@ -89,7 +90,7 @@ export const updateAutomationRule = createServerFn({ method: "POST" })
 
 export const deleteAutomationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, automationRateLimit])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -103,7 +104,7 @@ export const deleteAutomationRule = createServerFn({ method: "POST" })
 
 export const listAutomationRules = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       enabled: z.boolean().optional(),
       limit: z.number().int().min(1).max(50).default(50),
@@ -125,7 +126,7 @@ export const listAutomationRules = createServerFn({ method: "POST" })
 
 export const listAutomationLogs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       rule_id: z.string().uuid().optional(),
       limit: z.number().int().min(1).max(100).default(50),

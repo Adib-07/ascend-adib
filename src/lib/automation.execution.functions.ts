@@ -44,7 +44,7 @@ function serializeExecutionResult(input: ExecutionResultInput): SerializedExecut
 
 export const executeAutomation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       ruleId: z.string().uuid(),
       triggerData: z.record(z.unknown()).optional(),
@@ -59,7 +59,7 @@ export const executeAutomation = createServerFn({ method: "POST" })
 
 export const executeManualAutomation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ ruleId: z.string().uuid() }))
+  .validator(z.object({ ruleId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { runManualAutomation } = await import("./automation.runner");
@@ -69,7 +69,7 @@ export const executeManualAutomation = createServerFn({ method: "POST" })
 
 export const evaluateAutomationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       ruleId: z.string().uuid(),
       triggerData: z.record(z.unknown()).optional(),

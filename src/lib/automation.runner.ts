@@ -563,7 +563,7 @@ export async function executeAutomation(
         break;
       }
       case "generate_briefing": {
-        const { data, error } = await (supabase as any).rpc("generate_daily_briefing", {
+        const { data, error } = await (supabase as SupabaseClient).rpc("generate_daily_briefing", {
           p_user_id: userId,
           p_date: actionConfig.briefing_date || new Date().toISOString().split("T")[0],
         });
@@ -572,7 +572,7 @@ export async function executeAutomation(
         break;
       }
       case "generate_review": {
-        const { data, error } = await (supabase as any).rpc("generate_weekly_review", {
+        const { data, error } = await (supabase as SupabaseClient).rpc("generate_weekly_review", {
           p_user_id: userId,
           p_week_start: actionConfig.review_week_start || new Date().toISOString().split("T")[0],
         });

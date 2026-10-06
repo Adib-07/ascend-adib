@@ -7,7 +7,7 @@ import { COACH_SYSTEM, MODEL } from "./english-coach.server";
 
 export const coachChat = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       messages: z
         .array(
@@ -41,7 +41,7 @@ export const coachChat = createServerFn({ method: "POST" })
 
 export const coachReply = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       kind: z.enum(["speaking", "interview", "general"]),
       prompt: z.string().min(1).max(6000),

@@ -17,7 +17,7 @@ import {
 
 export const teachTopic = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ topic: z.string().min(1).max(4000) }))
+  .validator(z.object({ topic: z.string().min(1).max(4000) }))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -35,7 +35,7 @@ export const teachTopic = createServerFn({ method: "POST" })
 
 export const practiceQuestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ topic: z.string().min(1).max(4000) }))
+  .validator(z.object({ topic: z.string().min(1).max(4000) }))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -58,7 +58,7 @@ export const practiceQuestions = createServerFn({ method: "POST" })
 
 export const generateQuiz = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ topic: z.string().min(1).max(4000) }))
+  .validator(z.object({ topic: z.string().min(1).max(4000) }))
   .handler(async ({ data }) => {
     const key = process.env.LOVABLE_API_KEY;
     if (!key) throw new Error("AI service not configured");
@@ -100,7 +100,7 @@ export const generateQuiz = createServerFn({ method: "POST" })
 
 export const chatTutor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       messages: z
         .array(
@@ -130,7 +130,7 @@ export const chatTutor = createServerFn({ method: "POST" })
 
 export const askTutor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       kind: z.enum(["coding", "debug", "exam", "project", "flashcards"]),
       prompt: z.string().min(1).max(4000),

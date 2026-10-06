@@ -17,7 +17,7 @@ export const getStudentProfile = createServerFn({ method: "POST" })
 
 export const upsertStudentProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       semester: z.string().optional(),
       academic_goals: z.string().optional(),

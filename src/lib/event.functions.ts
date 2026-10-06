@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const createEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       title: z.string().min(1).max(200),
       description: z.string().max(2000).optional(),
@@ -37,7 +37,7 @@ export const createEvent = createServerFn({ method: "POST" })
 
 export const updateEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       id: z.string().uuid(),
       title: z.string().min(1).max(200).optional(),
@@ -75,7 +75,7 @@ export const updateEvent = createServerFn({ method: "POST" })
 
 export const deleteEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -89,7 +89,7 @@ export const deleteEvent = createServerFn({ method: "POST" })
 
 export const listEvents = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       start: z.string().datetime().optional(),
       end: z.string().datetime().optional(),
@@ -113,7 +113,7 @@ export const listEvents = createServerFn({ method: "POST" })
 
 export const getEvent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: event, error } = await supabase

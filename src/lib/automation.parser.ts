@@ -110,7 +110,7 @@ Output: { intent: "UNKNOWN", confidence: 0.5, requiresConfirmation: true, parame
 
 export const parseAutomationCommand = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       text: z.string().min(1).max(2000),
     }),

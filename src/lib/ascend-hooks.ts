@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export type Note = Tables<"notes">;
 export type CodingProblem = Tables<"coding_problems">;
@@ -119,6 +119,8 @@ export function useHabits() {
   const create = useMutation({
     mutationFn: async (input: Partial<Habit>) => {
       const user_id = await uid();
+      // Supabase types don't include extended habit columns (metric_type, target, frequency, etc.)
+      // These columns exist in the database but types are outdated; cast is safe at runtime.
       const { error } = await supabase.from("habits").insert({
         user_id,
         name: input.name!,
@@ -135,6 +137,7 @@ export function useHabits() {
   });
   const update = useMutation({
     mutationFn: async ({ id, ...patch }: Partial<Habit> & { id: string }) => {
+      // Supabase types don't include extended habit columns; cast is safe at runtime.
       const { error } = await supabase
         .from("habits")
         .update(patch as any)
@@ -195,8 +198,9 @@ export function useLogHabit() {
         .maybeSingle();
       if (!habit) throw new Error("Habit not found");
 
-      const metricType = (habit as any).metric_type ?? "boolean";
-      const target = (habit as any).target ?? 1;
+      const extendedHabit = habit as Habit;
+      const metricType = extendedHabit.metric_type ?? "boolean";
+      const target = extendedHabit.target ?? 1;
       const logValue = value ?? (metricType === "boolean" ? 1 : target);
       const logDuration = duration_seconds ?? null;
       const logNotes = notes ?? null;
@@ -211,6 +215,7 @@ export function useLogHabit() {
         .maybeSingle();
 
       if (existing) {
+        // Supabase types don't include habit_logs extended columns (value, duration_seconds, notes)
         const { error } = await supabase
           .from("habit_logs")
           .update({ done, value: logValue, duration_seconds: logDuration, notes: logNotes } as any)
@@ -249,8 +254,9 @@ export function useLogHabit() {
       }
 
       const totalCompletions = logs?.length ?? 0;
-      const longestStreak = Math.max((habit as any).longest_streak ?? 0, streak);
+      const longestStreak = Math.max(extendedHabit.longest_streak ?? 0, streak);
 
+      // Supabase types don't include extended habit columns; cast is safe at runtime.
       await supabase
         .from("habits")
         .update({

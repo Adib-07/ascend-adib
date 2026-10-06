@@ -9,7 +9,7 @@ const QT_VALUES = ["mcq", "short", "conceptual", "numerical", "coding"] as const
 
 export const studentTutor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       mode: z.enum(MODE_VALUES),
       message: z.string().min(1).max(4000),
@@ -45,7 +45,7 @@ export const studentTutor = createServerFn({ method: "POST" })
 
 export const groundedTutor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       mode: z.enum(MODE_VALUES),
       message: z.string().min(1).max(4000),

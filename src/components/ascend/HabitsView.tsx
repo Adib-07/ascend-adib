@@ -39,10 +39,14 @@ export default function HabitsView() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Habit | null>(null);
-  const [draft, setDraft] = useState({
+  const [draft, setDraft] = useState<{
+    name: string;
+    category: string;
+    metric_type: "boolean" | "count" | "duration" | "numeric";
+  }>({
     name: "",
     category: "General",
-    metric_type: "boolean" as const,
+    metric_type: "boolean",
   });
 
   const habits = list.data ?? [];
@@ -64,7 +68,7 @@ export default function HabitsView() {
     setDraft({
       name: h.name,
       category: h.category ?? "General",
-      metric_type: (h as any).metric_type ?? "boolean",
+      metric_type: h.metric_type ?? "boolean",
     });
     setOpen(true);
   }
@@ -229,7 +233,7 @@ export default function HabitsView() {
               <Label>Metric Type</Label>
               <select
                 value={draft.metric_type}
-                onChange={(e) => setDraft({ ...draft, metric_type: e.target.value as any })}
+                onChange={(e) => setDraft({ ...draft, metric_type: e.target.value as "boolean" | "count" | "duration" | "numeric" })}
                 className="w-full px-3 py-2 border border-border rounded-md bg-[var(--card)] text-foreground"
               >
                 <option value="boolean">Boolean (done/not done)</option>

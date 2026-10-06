@@ -4,7 +4,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const createReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       title: z.string().min(1).max(200),
       message: z.string().max(1000).optional(),
@@ -28,7 +28,7 @@ export const createReminder = createServerFn({ method: "POST" })
 
 export const updateReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       id: z.string().uuid(),
       title: z.string().min(1).max(200).optional(),
@@ -55,7 +55,7 @@ export const updateReminder = createServerFn({ method: "POST" })
 
 export const dismissReminder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ id: z.string().uuid() }))
+  .validator(z.object({ id: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { error } = await supabase
@@ -69,7 +69,7 @@ export const dismissReminder = createServerFn({ method: "POST" })
 
 export const listReminders = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       status: z.enum(["pending", "sent", "dismissed", "failed"]).optional(),
       limit: z.number().int().min(1).max(100).default(50),

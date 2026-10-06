@@ -35,7 +35,7 @@ function calculatePriority(
 
 export const getExamIntelligence = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ examId: z.string().uuid().optional() }))
+  .validator(z.object({ examId: z.string().uuid().optional() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
 
@@ -51,8 +51,8 @@ export const getExamIntelligence = createServerFn({ method: "POST" })
 
     for (const exam of exams ?? []) {
       // get topics for this exam (via syllabus)
-      const syllabus = (exam.syllabus as any[]) ?? [];
-      const topicIds = syllabus.map((s: any) => s.id).filter(Boolean);
+      const syllabus = (exam.syllabus as unknown as Array<{ id: string }>) ?? [];
+      const topicIds = syllabus.map((s) => s.id).filter(Boolean);
       let completedTopics = 0;
       let incompleteTopics: string[] = [];
       if (topicIds.length) {
@@ -95,7 +95,7 @@ export const getExamIntelligence = createServerFn({ method: "POST" })
         subject: exam.subject,
         examDate: exam.exam_date,
         daysRemaining,
-        priority: priority as any,
+        priority,
         totalTopics: syllabus.length,
         completedTopics,
         incompleteTopics,

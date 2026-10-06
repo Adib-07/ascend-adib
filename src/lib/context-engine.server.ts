@@ -618,11 +618,11 @@ export async function getStudentProfile(
   ]);
 
   return {
-    topics: (topics.data ?? []) as any[],
-    exams: (exams.data ?? []) as any[],
-    goals: (goals.data ?? []) as any[],
-    recentErrors: (recentErrors.data ?? []) as any[],
-    dsaProgress: (dsaProgress.data ?? []) as any[],
+    topics: topics.data ?? [],
+    exams: exams.data ?? [],
+    goals: goals.data ?? [],
+    recentErrors: recentErrors.data ?? [],
+    dsaProgress: dsaProgress.data ?? [],
   };
 }
 
@@ -656,7 +656,7 @@ export async function getWeakAreas(supabase: SupabaseClient, userId: string): Pr
     .order("frequency", { ascending: false })
     .limit(10);
 
-  for (const e of (errors ?? []) as any[]) {
+  for (const e of errors ?? []) {
     weakAreas.push({
       type: e.error_type,
       concept: e.concept,
@@ -675,7 +675,7 @@ export async function getWeakAreas(supabase: SupabaseClient, userId: string): Pr
     .order("mastery_level", { ascending: true })
     .limit(10);
 
-  for (const t of (weakTopics ?? []) as any[]) {
+  for (const t of weakTopics ?? []) {
     weakAreas.push({
       type: "concept",
       concept: t.topic,
@@ -694,7 +694,7 @@ export async function getWeakAreas(supabase: SupabaseClient, userId: string): Pr
     .order("mastery_level", { ascending: true })
     .limit(10);
 
-  for (const d of (weakDsa ?? []) as any[]) {
+  for (const d of weakDsa ?? []) {
     if (d.pattern) {
       weakAreas.push({
         type: "pattern",

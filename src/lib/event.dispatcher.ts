@@ -280,20 +280,14 @@ export async function processDueReminders(
 
   for (const reminder of reminders ?? []) {
     try {
-      const event = {
-        type: "REMINDER_DUE" as const,
-        userId,
-        entityId: reminder.id,
-        timestamp: new Date().toISOString(),
-        payload: {
-          reminderId: reminder.id,
-          title: reminder.title,
-          message: reminder.message,
-          triggerAt: reminder.trigger_at,
-        },
-      };
+      const event = createEvent("REMINDER_DUE", userId, reminder.id, {
+        reminderId: reminder.id,
+        title: reminder.title,
+        message: reminder.message,
+        triggerAt: reminder.trigger_at,
+      });
 
-      const result = await dispatchEvent(supabase, userId, event as any);
+      const result = await dispatchEvent(supabase, userId, event);
       if (result.success) {
         processed++;
       } else {
@@ -333,21 +327,15 @@ export async function processUpcomingEvents(
 
   for (const event of events ?? []) {
     try {
-      const domainEvent = {
-        type: "EVENT_UPCOMING" as const,
-        userId,
-        entityId: event.id,
-        timestamp: new Date().toISOString(),
-        payload: {
-          eventId: event.id,
-          title: event.title,
-          startAt: event.start_at,
-          endAt: event.end_at,
-          location: event.location,
-        },
-      };
+      const domainEvent = createEvent("EVENT_UPCOMING", userId, event.id, {
+        eventId: event.id,
+        title: event.title,
+        startAt: event.start_at,
+        endAt: event.end_at,
+        location: event.location,
+      });
 
-      const result = await dispatchEvent(supabase, userId, domainEvent as any);
+      const result = await dispatchEvent(supabase, userId, domainEvent);
       if (result.success) {
         processed++;
       } else {
@@ -383,19 +371,13 @@ export async function processOverdueTasks(
 
   for (const task of tasks ?? []) {
     try {
-      const event = {
-        type: "TASK_OVERDUE" as const,
-        userId,
-        entityId: task.id,
-        timestamp: new Date().toISOString(),
-        payload: {
-          taskId: task.id,
-          title: task.title,
-          dueDate: task.due_date,
-        },
-      };
+      const domainEvent = createEvent("TASK_OVERDUE", userId, task.id, {
+        taskId: task.id,
+        title: task.title,
+        dueDate: task.due_date,
+      });
 
-      const result = await dispatchEvent(supabase, userId, event as any);
+      const result = await dispatchEvent(supabase, userId, domainEvent);
       if (result.success) {
         processed++;
       } else {

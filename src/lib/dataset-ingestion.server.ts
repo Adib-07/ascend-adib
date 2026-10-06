@@ -223,7 +223,7 @@ async function computeChecksum(buffer: ArrayBuffer): Promise<string> {
 
 export const ingestDataset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       externalDatasetId: z.string().uuid(),
       forceReingest: z.boolean().optional(),
@@ -389,7 +389,7 @@ export const ingestDataset = createServerFn({ method: "POST" })
 
 export const getDatasetFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ datasetFileId: z.string().uuid() }))
+  .validator(z.object({ datasetFileId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { data: file, error } = await supabase
@@ -407,7 +407,7 @@ export const getDatasetFile = createServerFn({ method: "POST" })
 
 export const listDatasetFiles = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ externalDatasetId: z.string().uuid().optional() }))
+  .validator(z.object({ externalDatasetId: z.string().uuid().optional() }))
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     let query = supabase
@@ -423,7 +423,7 @@ export const listDatasetFiles = createServerFn({ method: "POST" })
 
 export const deleteDatasetFile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ datasetFileId: z.string().uuid() }))
+  .validator(z.object({ datasetFileId: z.string().uuid() }))
   .handler(async ({ context, data }) => {
     const { supabase } = context;
     const { data: file } = await supabase
@@ -453,7 +453,7 @@ export const deleteDatasetFile = createServerFn({ method: "POST" })
 
 export const getDatasetSample = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       datasetFileId: z.string().uuid(),
       limit: z.number().int().min(1).max(100).optional(),

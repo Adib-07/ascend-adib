@@ -22,7 +22,7 @@ const ENABLE_UNIFIED_TUTOR = process.env.ENABLE_UNIFIED_TUTOR === "true";
 
 export const unifiedTutor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       mode: z.enum(MODE_VALUES),
       message: z.string().min(1).max(4000),

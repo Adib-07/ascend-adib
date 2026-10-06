@@ -21,7 +21,7 @@ const CATEGORY_VALUES = [
 
 export const askWithContext = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, aiRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       question: z.string().min(1).max(4000),
       subject: z.string().max(200).optional(),
@@ -43,7 +43,7 @@ export const askWithContext = createServerFn({ method: "POST" })
 
 export const getGroundedContext = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, aiRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       question: z.string().min(1).max(4000),
       subject: z.string().max(200).optional(),

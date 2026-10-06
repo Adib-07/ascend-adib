@@ -23,7 +23,7 @@ export interface SerializedParsedAutomationCommand {
 
 export const parseAutomationCommand = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       text: z.string().min(1).max(2000),
     }),

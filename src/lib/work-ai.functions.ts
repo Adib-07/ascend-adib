@@ -21,7 +21,7 @@ const researchSchema = z.object({
 
 export const workAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, aiRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       action: z.enum([
         "qualify",
@@ -133,7 +133,7 @@ async function workAssistantImpl(args: {
 
 export const workSaveResearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       leadId: z.string().uuid(),
       summary: z.string().max(8000).optional(),
@@ -155,7 +155,7 @@ export const workSaveResearch = createServerFn({ method: "POST" })
 
 export const workSaveOutreach = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       leadId: z.string().uuid().optional(),
       leadName: z.string().min(1).max(300),
@@ -179,7 +179,7 @@ export const workSaveOutreach = createServerFn({ method: "POST" })
 
 export const workSaveProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       leadId: z.string().uuid().optional(),
       clientId: z.string().uuid().optional(),
@@ -201,7 +201,7 @@ export const workSaveProposal = createServerFn({ method: "POST" })
 
 export const workConvertLead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       leadId: z.string().uuid(),
       name: z.string().min(1).max(300),
@@ -225,7 +225,7 @@ export const workConvertLead = createServerFn({ method: "POST" })
 
 export const workCreateProject = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       clientId: z.string().uuid(),
       name: z.string().min(1).max(300),
@@ -243,7 +243,7 @@ export const workCreateProject = createServerFn({ method: "POST" })
 
 export const workNextActions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({}))
+  .validator(z.object({}))
   .handler(async ({ context }) => {
     const { workNextActionsImpl } = await import("./work-ai.server");
     return workNextActionsImpl({ supabase: context.supabase, userId: context.userId });

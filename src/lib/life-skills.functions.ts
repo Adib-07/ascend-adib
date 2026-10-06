@@ -7,7 +7,7 @@ import { KIND_EXTENSIONS, LIFE_SKILLS_SYSTEM, MENTOR_SYSTEM, MODEL } from "./lif
 
 export const askProfessor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       kind: z.enum([
         "learn",
@@ -36,7 +36,7 @@ export const askProfessor = createServerFn({ method: "POST" })
 
 export const chatMentor = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       messages: z
         .array(

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface StudyBlock {
   day: string; // ISO date
@@ -30,7 +31,7 @@ function getAvailableMinutes(
 
 export const generateStudyPlan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       horizonDays: z.number().int().min(1).max(30).default(14),
     }),
@@ -76,8 +77,8 @@ export const generateStudyPlan = createServerFn({ method: "POST" })
         .gte("exam_date", new Date().toISOString().split("T")[0])
         .order("exam_date")
     ).data ?? []) {
-      const syllabus = (exam.syllabus as any[]) ?? [];
-      const topicIds = syllabus.map((s: any) => s.id).filter(Boolean);
+      const syllabus = (exam.syllabus as unknown as Array<{ id: string }>) ?? [];
+      const topicIds = syllabus.map((s) => s.id).filter(Boolean);
       const { data: topics } = await supabase
         .from("learn_topics")
         .select("id, topic, skill, progress, status")
@@ -87,7 +88,7 @@ export const generateStudyPlan = createServerFn({ method: "POST" })
     }
 
     // Build daily schedule for horizonDays
-    const blocks: any[] = [];
+    const blocks: Array<{ day: string; blocks: Array<{ subject: string; topic: string; durationMinutes: number; type: string }> }> = [];
     const today = new Date();
     for (let d = 0; d < horizonDays; d++) {
       const date = new Date();
@@ -116,7 +117,7 @@ export const generateStudyPlan = createServerFn({ method: "POST" })
 
       // upcoming exam topics
       for (const ew of examsWithTopics) {
-        for (const t of ew.topics.filter((tp: any) => tp.progress < 100 && tp.status !== "Done")) {
+        for (const t of ew.topics.filter((tp) => tp.progress < 100 && tp.status !== "Done")) {
           if (remaining <= 0) break;
           const dur = Math.min(45, remaining);
           dayBlocks.push({
@@ -156,7 +157,7 @@ export const generateStudyPlan = createServerFn({ method: "POST" })
   });
 
 // helper to fetch weak topics
-async function getWeakTopics(userId: string, supabase: any) {
+async function getWeakTopics(userId: string, supabase: SupabaseClient) {
   const { data } = await supabase
     .from("learn_topics")
     .select("id, topic, skill, progress")
@@ -164,7 +165,7 @@ async function getWeakTopics(userId: string, supabase: any) {
     .lt("progress", 50)
     .order("progress", { ascending: true })
     .limit(5);
-  return (data ?? []).map((t: any) => ({
+  return (data ?? []).map((t) => ({
     topicId: t.id,
     topic: t.topic,
     subject: t.skill,

@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const getDailyBriefing = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       date: z
         .string()
@@ -28,7 +29,7 @@ export const getDailyBriefing = createServerFn({ method: "POST" })
     }
 
     // Call the database function
-    const { data: result, error } = await (supabase as any).rpc("generate_daily_briefing", {
+    const { data: result, error } = await (supabase as SupabaseClient).rpc("generate_daily_briefing", {
       p_user_id: userId,
       p_date: date,
     });
@@ -38,7 +39,7 @@ export const getDailyBriefing = createServerFn({ method: "POST" })
 
 export const getWeeklyReview = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       week_start: z
         .string()
@@ -64,7 +65,7 @@ export const getWeeklyReview = createServerFn({ method: "POST" })
       if (existing) return existing;
     }
 
-    const { data: result, error } = await (supabase as any).rpc("generate_weekly_review", {
+    const { data: result, error } = await (supabase as SupabaseClient).rpc("generate_weekly_review", {
       p_user_id: userId,
       p_week_start: weekStart,
     });
@@ -74,7 +75,7 @@ export const getWeeklyReview = createServerFn({ method: "POST" })
 
 export const listDailyBriefings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       limit: z.number().int().min(1).max(30).default(7),
     }),
@@ -93,7 +94,7 @@ export const listDailyBriefings = createServerFn({ method: "POST" })
 
 export const listWeeklyReviews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(
+  .validator(
     z.object({
       limit: z.number().int().min(1).max(12).default(4),
     }),

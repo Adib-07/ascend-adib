@@ -27,7 +27,7 @@ const AskSchema = z.object({
 
 export const personalAssistant = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, aiRateLimit])
-  .inputValidator(AskSchema)
+  .validator(AskSchema)
   .handler(async ({ context, data }) => {
     const { personalAssistantImpl } = await import("./personal-assistant.server");
     return personalAssistantImpl({
@@ -51,7 +51,7 @@ export interface ExecuteActionInput {
 
 export const executeAssistantAction = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, automationRateLimit])
-  .inputValidator(
+  .validator(
     z.object({
       action: z.object({
         type: z.enum(ACTION_TYPES),
