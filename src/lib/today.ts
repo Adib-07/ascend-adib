@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Tables } from "@/integrations/supabase/types";
+import { getOwnerUser } from "@/lib/owner-session";
 
 export type Task = Tables<"tasks">;
 export type Habit = Tables<"habits">;
@@ -44,9 +45,8 @@ export function weekBounds(): { start: string; end: string } {
 }
 
 async function getUserId(): Promise<string> {
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error("Not signed in");
-  return data.user.id;
+  const user = await getOwnerUser();
+  return user.id;
 }
 
 async function fetchTodayData(): Promise<TodayData> {

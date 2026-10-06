@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Tables } from "@/integrations/supabase/types";
+import { getOwnerUser } from "@/lib/owner-session";
 
 export type Task = Tables<"tasks">;
 export type Intention = Tables<"daily_intentions">;
@@ -14,9 +15,8 @@ export function todayISO() {
 }
 
 async function uid() {
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error("Not signed in");
-  return data.user.id;
+  const user = await getOwnerUser();
+  return user.id;
 }
 
 /* TASKS */

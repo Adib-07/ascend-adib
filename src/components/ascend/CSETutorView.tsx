@@ -43,7 +43,7 @@ import {
   chatTutor,
   askTutor,
 } from "@/lib/tutor.functions";
-import { supabase } from "@/integrations/supabase/client";
+import { ensureOwnerSession } from "@/lib/owner-session";
 import { useNotes, useExams } from "@/lib/ascend-hooks";
 import { useLearnTopics, useDecks, useCards, useDeckMutations } from "@/lib/ascend-data";
 import { mapAuthError } from "@/lib/auth-errors";
@@ -54,15 +54,12 @@ import { mapAuthError } from "@/lib/auth-errors";
 // errors are mapped through the shared `mapAuthError` util so raw JWT errors are
 // never shown to users.
 
-// Guard: only fire a CSE server function when there is a live Supabase session.
-// Prevents firing a call before the session has loaded. (The global
-// `attachSupabaseAuth` middleware also refreshes an expired token before the
-// request leaves the browser, so an expired token here is rare.)
+// Guard: only fire a CSE server function when the owner session is live.
+// Prevents firing a call before the session has been established. (The global
+// `attachSupabaseAuth` middleware attaches the current token before the request
+// leaves the browser.)
 async function requireCseSession(): Promise<void> {
-  const { data } = await supabase.auth.getSession();
-  if (!data.session?.access_token) {
-    throw new Error("Your session expired. Please sign in again.");
-  }
+  await ensureOwnerSession();
 }
 
 // ---------- localStorage utilities ----------
@@ -574,11 +571,11 @@ function LearnAI({ initial, consumeInitial }: { initial: string; consumeInitial:
     if (initial) {
       setTopic(initial);
       consumeInitial();
-      // Only auto-start once a Supabase session is ready. Otherwise the server
+      // Only auto-start once the owner session is ready. Otherwise the server
       // call would be made with no/invalid token and surface a raw JWT error.
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session?.access_token) run(initial);
-      });
+      ensureOwnerSession()
+        .then(() => run(initial))
+        .catch(() => undefined);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

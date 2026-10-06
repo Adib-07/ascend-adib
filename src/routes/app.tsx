@@ -1,12 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LogOut, Search, Focus, ChevronDown, Command as CmdIcon, Bell } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { Search, Focus, ChevronDown, Command as CmdIcon, Bell } from "lucide-react";
 import { getFocusSessions } from "@/components/ascend/FocusMode";
+import { ensureOwnerSession } from "@/lib/owner-session";
 
 const DailyTasks = lazy(() => import("@/components/ascend/DailyTasks"));
 const LearningHub = lazy(() => import("@/components/ascend/LearningHub"));
@@ -42,7 +40,11 @@ import {
   type AppNotification,
 } from "@/lib/notifications";
 
-export const Route = createFileRoute("/_authenticated/app")({
+export const Route = createFileRoute("/app")({
+  // The owner access token lives in browser memory only, so this route cannot
+  // be server-rendered. Same behaviour the route previously inherited from the
+  // deleted `_authenticated` wrapper.
+  ssr: false,
   head: () => ({ meta: [{ title: "Ascend" }] }),
   component: AppShell,
 });
@@ -90,8 +92,6 @@ function AppShell() {
   const [readIds, setReadIds] = useState<Set<string>>(new Set());
   const [focusSessionsToday, setFocusSessionsToday] = useState(0);
   const [email, setEmail] = useState<string>("");
-  const navigate = useNavigate();
-  const qc = useQueryClient();
 
   const tasksQ = useTasks();
   const examsQ = useExams().list;
@@ -99,7 +99,9 @@ function AppShell() {
   const tabs = mode === "student" ? STUDENT_TABS : mode === "work" ? WORK_TABS : SCHEDULE_TABS;
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? ""));
+    ensureOwnerSession()
+      .then((owner) => setEmail(owner.email ?? ""))
+      .catch(() => setEmail(""));
     requestNotificationPermission();
   }, []);
 
@@ -161,13 +163,6 @@ function AppShell() {
       setMode("schedule");
       setTab(prevScheduleTab);
     }
-  }
-
-  async function signOut() {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
   }
 
   const initial = (email?.[0] ?? "A").toUpperCase();
@@ -295,18 +290,8 @@ function AppShell() {
                     <p className="text-[10px] tracking-widest uppercase text-muted-foreground">
                       Signed in as
                     </p>
-                    <p className="text-sm text-primary truncate">{email || "—"}</p>
+                    <p className="text-sm text-primary truncate">{email || "Owner"}</p>
                   </div>
-                  <button
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      signOut().catch(() => toast.error("Sign out failed"));
-                    }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-secondary text-left"
-                  >
-                    <LogOut className="h-4 w-4 text-muted-foreground" />
-                    Sign out
-                  </button>
                 </div>
               )}
             </div>

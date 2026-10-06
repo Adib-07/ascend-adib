@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { processDocument, deleteDocument as deleteDocumentFn } from "./document.functions";
 import type { Tables } from "@/integrations/supabase/types";
 import { ALLOWED_MIME, DOCUMENT_TYPES, MAX_FILE_BYTES, type DocStatus } from "./document.server";
+import { getOwnerUser } from "@/lib/owner-session";
 
 export type UserDocument = Tables<"user_documents">;
 
@@ -12,9 +13,8 @@ export { DOCUMENT_TYPES, ALLOWED_MIME, MAX_FILE_BYTES };
 export type UploadPhase = "idle" | "uploading" | "processing" | "done" | "error";
 
 async function uid() {
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) throw new Error("Not signed in");
-  return data.user.id;
+  const user = await getOwnerUser();
+  return user.id;
 }
 
 export function useDocuments() {

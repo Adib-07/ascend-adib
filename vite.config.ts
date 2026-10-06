@@ -13,7 +13,9 @@ export default defineConfig({
     server: { entry: "server" },
   },
   nitro: {
-    // Deploy to Vercel instead of Cloudflare
-    preset: "vercel",
+    // Default keeps the existing Vercel build (used for preview/dev only).
+    // `npm run build:private` sets ASCEND_NITRO_PRESET=node-server so the private
+    // host gets a standalone Node server in .output/server.
+    preset: process.env.ASCEND_NITRO_PRESET === "node-server" ? "node-server" : "vercel",
   },
 });

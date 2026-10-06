@@ -7,11 +7,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { supabase } from "@/integrations/supabase/client";
+import { ensureOwnerSession, subscribeOwnerSession } from "@/lib/owner-session";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -135,15 +135,86 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const router = useRouter();
+  const [sessionState, setSessionState] = useState<"pending" | "ready" | "failed">("pending");
+  const [failure, setFailure] = useState<"unavailable" | "credentials" | null>(null);
+
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
-    });
-    return () => sub.subscription.unsubscribe();
-  }, [router, queryClient]);
+    let active = true;
+
+    const classify = (err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.includes("OWNER_SESSION_not_configured")) return "credentials";
+      if (
+        message.includes("OWNER_SESSION_invalid_credentials") ||
+        message.includes("OWNER_SESSION_owner_mismatch")
+      ) {
+        return "credentials";
+      }
+      return "unavailable";
+    };
+
+    const establish = () => {
+      if (!active) return;
+      ensureOwnerSession()
+        .then(() => {
+          if (!active) return;
+          setSessionState("ready");
+          void queryClient.invalidateQueries();
+        })
+        .catch((err: unknown) => {
+          if (!active) return;
+          // Fail closed: no session means no data, never a bypass.
+          reportLovableError(err instanceof Error ? err : new Error(String(err)), {
+            boundary: "owner_session_bootstrap",
+          });
+          setFailure(classify(err));
+          setSessionState("failed");
+        });
+    };
+
+    void queryClient.cancelQueries();
+    establish();
+    // Restore the session if it is cleared or rotated while the tab is open.
+    const unsubscribe = subscribeOwnerSession(establish);
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [queryClient]);
+
+  if (sessionState === "pending") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (sessionState === "failed") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <h1 className="font-serif text-2xl text-primary">Ascend is not ready</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {failure === "credentials"
+              ? "Ascend could not establish the private owner session. Check OWNER_REFRESH_TOKEN on this host."
+              : "Ascend is temporarily unable to connect to its data service."}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Ascend is available only on your private network.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-6 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />

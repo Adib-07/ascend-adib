@@ -18,6 +18,7 @@ import { Plus, Trash2, Pencil } from "lucide-react";
 import { SectionHeader, EmptyState, Card } from "./ui-bits";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { getOwnerUser } from "@/lib/owner-session";
 
 /* North star stored as a goal with scope='north_star' */
 function useNorthStar() {
@@ -36,8 +37,7 @@ function useNorthStar() {
   });
   const save = useMutation({
     mutationFn: async (text: string) => {
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) throw new Error("No user");
+      const u = await getOwnerUser();
       if (q.data) {
         const { error } = await supabase.from("goals").update({ text }).eq("id", q.data.id);
         if (error) throw error;
@@ -45,7 +45,7 @@ function useNorthStar() {
         const { error } = await supabase
           .from("goals")
           .upsert(
-            { user_id: u.user.id, scope: "north_star", text, done: false },
+            { user_id: u.id, scope: "north_star", text, done: false },
             { onConflict: "user_id,scope" },
           );
         if (error) throw error;

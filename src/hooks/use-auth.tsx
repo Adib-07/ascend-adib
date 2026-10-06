@@ -1,30 +1,29 @@
-"use client";
-
 import * as React from "react";
-import { supabase } from "@/integrations/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import {
+  subscribeOwnerSession,
+  ensureOwnerSession,
+  getOwnerUserSync,
+  type OwnerUser,
+} from "@/lib/owner-session";
 
+// Retained because `components/layout/*` imports it. Single-owner semantics:
+// there is no sign-out (the owner session is the app), and `loading` reflects
+// whether the private owner session has been established.
 export function useAuth() {
-  const [user, setUser] = React.useState<User | null>(null);
-  const [loading, setLoading] = React.useState(true);
+  const [user, setUser] = React.useState<OwnerUser | null>(getOwnerUserSync());
+  const [loading, setLoading] = React.useState(!getOwnerUserSync());
 
   React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user);
-      setLoading(false);
+    const unsubscribe = subscribeOwnerSession(() => {
+      setUser(getOwnerUserSync());
+      setLoading(!getOwnerUserSync());
     });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => sub.subscription.unsubscribe();
+    ensureOwnerSession()
+      .then(() => undefined)
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+    return unsubscribe;
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-  };
-
-  return { user, loading, signOut };
+  return { user, loading, signOut: async () => undefined };
 }
