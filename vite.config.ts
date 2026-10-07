@@ -6,6 +6,15 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Runs at startup in the built Node server. srvx swallows a failed
+// server.listen(), which makes `npm start` exit 0 silently with nothing
+// listening; this turns that into a loud, non-zero failure. `plugins` is a
+// valid Nitro option that this wrapper's (deliberately narrow) type omits, so it
+// is spread from a variable rather than added to the object literal.
+const nitroLifecycle = {
+  plugins: ["./src/lib/server-lifecycle.ts"],
+};
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -17,5 +26,6 @@ export default defineConfig({
     // `npm run build:private` sets ASCEND_NITRO_PRESET=node-server so the private
     // host gets a standalone Node server in .output/server.
     preset: process.env.ASCEND_NITRO_PRESET === "node-server" ? "node-server" : "vercel",
+    ...nitroLifecycle,
   },
 });
