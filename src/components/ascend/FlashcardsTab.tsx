@@ -160,7 +160,11 @@ function DeckView({ deckId }: { deckId: string }) {
     if (idx >= cards.length && cards.length > 0) setIdx(0);
   }, [cards.length, idx]);
 
-  const current = cards[idx];
+  // Clamp during render, not in an effect. Deleting the card you are currently
+  // on shrinks `cards` before the bounds-guard effect runs, so `cards[idx]` used
+  // to be `undefined` and the `current.front` / `current.id` reads below threw a
+  // TypeError that took down the whole app at the root error boundary.
+  const current = cards.length > 0 ? cards[Math.min(idx, cards.length - 1)] : undefined;
   const knownCount = cards.filter((c) => c.known).length;
 
   function next() {
@@ -222,7 +226,7 @@ function DeckView({ deckId }: { deckId: string }) {
         </Dialog>
       </div>
 
-      {cards.length === 0 ? (
+      {cards.length === 0 || !current ? (
         <div className="card-elegant p-10 text-center">
           <p className="font-serif text-lg text-primary">A blank deck.</p>
           <p className="text-sm text-muted-foreground mt-1">Add your first card.</p>

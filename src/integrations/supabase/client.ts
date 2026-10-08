@@ -25,6 +25,25 @@ function isNewSupabaseApiKey(value: string): boolean {
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
+  // ONE forced owner-session refresh per wave. Without this, every concurrent
+  // 401 that landed *after* the previous refresh resolved started its own
+  // forced bootstrap (`force` skips the freshness check), so a burst of parallel
+  // queries produced a 401 -> refresh -> 401 storm.
+  let refreshWave: Promise<unknown> | null = null;
+
+  const refreshOnce = (): Promise<unknown> => {
+    if (!refreshWave) {
+      const wave = ensureOwnerSession(true).catch(() => undefined);
+      refreshWave = wave;
+      // Release the slot once this wave settles, so a later, genuinely separate
+      // 401 can start a new one.
+      void wave.then(() => {
+        if (refreshWave === wave) refreshWave = null;
+      });
+    }
+    return refreshWave;
+  };
+
   return async (input, init) => {
     const send = async (): Promise<Response> => {
       const headers = new Headers(
@@ -54,14 +73,12 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
     let response = await send();
 
-    // One retry: the in-memory token may have expired since it was issued.
+    // Exactly one retry per original request. Requests that 401 while a refresh
+    // is in flight await that same promise; if the retry 401s again it is
+    // surfaced as-is and must NOT trigger a second refresh.
     if (response.status === 401) {
-      try {
-        await ensureOwnerSession(true);
-        response = await send();
-      } catch {
-        // Fail closed — surface the original 401.
-      }
+      await refreshOnce();
+      response = await send();
     }
 
     return response;
@@ -109,3 +126,6 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
 });
 
 export { isOwnerSessionFresh };
+
+// Exported so the 401 single-flight behaviour is directly regression-testable.
+export { createSupabaseFetch };

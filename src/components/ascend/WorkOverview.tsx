@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useClients, useWorkProjects, useFinanceEntries, useOutreach } from "@/lib/ascend-hooks";
 import { useTasks, todayISO } from "@/lib/ascend-data";
 import {
@@ -49,18 +49,27 @@ export default function WorkOverview({
     return () => window.clearInterval(id);
   }, []);
 
+  // Error toasts must be deduped. `makeCrud` returns a fresh object every render
+  // and `useQuery` returns a fresh result object every render, so these deps
+  // change on every render -- and the 1 Hz `now` clock above forces a render
+  // every second. Without a guard, one failed query appended a new toast every
+  // second for as long as it stayed in error.
+  const toastedErrors = useRef<WeakSet<object>>(new WeakSet());
   useEffect(() => {
-    const resources = [clients, projects, finance, outreach];
-    for (const q of resources) {
-      if (q.list?.error)
-        toast.error("Failed to load some data — tap to retry", {
-          action: { label: "Retry", onClick: () => q.list?.refetch?.() },
-        });
-    }
-    if (tasksQ.error)
-      toast.error("Failed to load tasks — tap to retry", {
-        action: { label: "Retry", onClick: () => tasksQ.refetch() },
+    const showOnce = (error: unknown, message: string, retry?: () => void) => {
+      if (!error || typeof error !== "object") return;
+      if (toastedErrors.current.has(error)) return;
+      toastedErrors.current.add(error);
+      toast.error(message, retry ? { action: { label: "Retry", onClick: retry } } : undefined);
+    };
+    for (const q of [clients, projects, finance, outreach]) {
+      showOnce(q.list?.error, "Failed to load some data — tap to retry", () => {
+        void q.list?.refetch?.();
       });
+    }
+    showOnce(tasksQ.error, "Failed to load tasks — tap to retry", () => {
+      void tasksQ.refetch();
+    });
   }, [clients, projects, finance, outreach, tasksQ]);
 
   const month = new Date().toISOString().slice(0, 7);

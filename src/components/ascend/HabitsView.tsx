@@ -233,7 +233,12 @@ export default function HabitsView() {
               <Label>Metric Type</Label>
               <select
                 value={draft.metric_type}
-                onChange={(e) => setDraft({ ...draft, metric_type: e.target.value as "boolean" | "count" | "duration" | "numeric" })}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    metric_type: e.target.value as "boolean" | "count" | "duration" | "numeric",
+                  })
+                }
                 className="w-full px-3 py-2 border border-border rounded-md bg-[var(--card)] text-foreground"
               >
                 <option value="boolean">Boolean (done/not done)</option>

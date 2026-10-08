@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOutreach, type Outreach } from "@/lib/ascend-hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,11 +128,23 @@ export default function PipelineView() {
   const outreach = useOutreach();
   const all = outreach.list.data ?? [];
 
+  // Dedupe: `outreach.list` is a fresh object on every render, so this effect
+  // re-ran on every render and appended a new toast each time the query stayed
+  // in error. Keyed on the error object identity.
+  const toastedPipelineError = useRef<object | null>(null);
   useEffect(() => {
-    if (outreach.list.error)
-      toast.error("Failed to load pipeline — tap to retry", {
-        action: { label: "Retry", onClick: () => outreach.list.refetch() },
-      });
+    const error = outreach.list.error;
+    if (!error || typeof error !== "object") return;
+    if (toastedPipelineError.current === error) return;
+    toastedPipelineError.current = error;
+    toast.error("Failed to load pipeline — tap to retry", {
+      action: {
+        label: "Retry",
+        onClick: () => {
+          void outreach.list.refetch();
+        },
+      },
+    });
   }, [outreach.list.error, outreach.list]);
 
   // Kanban leads = outreach where status is one of pipeline STAGES
@@ -294,7 +306,16 @@ export default function PipelineView() {
   const [services, setServices] = useState<Service[]>(() => {
     if (typeof window === "undefined") return DEFAULT_SERVICES;
     const stored = localStorage.getItem("ascend_services_v1");
-    return stored ? (JSON.parse(stored) as Service[]) : DEFAULT_SERVICES;
+    // Guard the parse: this runs during render, so a corrupt or truncated value
+    // would throw a SyntaxError and replace the whole app with the root error
+    // screen. Matches the existing pattern in FocusMode.getFocusSessions.
+    if (!stored) return DEFAULT_SERVICES;
+    try {
+      const parsed = JSON.parse(stored) as Service[];
+      return Array.isArray(parsed) ? parsed : DEFAULT_SERVICES;
+    } catch {
+      return DEFAULT_SERVICES;
+    }
   });
   useEffect(() => {
     if (typeof window !== "undefined")

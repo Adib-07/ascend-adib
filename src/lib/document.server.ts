@@ -102,9 +102,13 @@ export function chunkPages(
   let currentHeading: string | null = null;
   let currentPage: number | null = null;
 
-  const flush = () => {
+  const flush = (force = false) => {
     const text = current.trim();
-    if (text.length >= MIN || chunks.length === 0) {
+    // `force` keeps the final partial chunk. Without it, a document whose last
+    // paragraph is shorter than MIN and which already has at least one chunk
+    // silently dropped that trailing text -- permanent content loss, because the
+    // document is still marked `ready` afterwards.
+    if (text.length >= MIN || chunks.length === 0 || force) {
       chunks.push({
         document_id: documentId,
         user_id: userId,
@@ -133,7 +137,8 @@ export function chunkPages(
       }
     }
   }
-  if (current.trim().length > 0) flush();
+  // Final flush is forced so a short trailing chunk is never discarded.
+  if (current.trim().length > 0) flush(true);
   return chunks;
 }
 

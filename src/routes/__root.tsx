@@ -7,12 +7,18 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { ensureOwnerSession, subscribeOwnerSession } from "@/lib/owner-session";
+import {
+  ensureOwnerSession,
+  isOwnerSessionFresh,
+  subscribeOwnerSession,
+} from "@/lib/owner-session";
 import { Toaster } from "@/components/ui/sonner";
+
+type SessionState = "pending" | "ready" | "failed";
 
 function NotFoundComponent() {
   return (
@@ -137,6 +143,9 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const [sessionState, setSessionState] = useState<"pending" | "ready" | "failed">("pending");
   const [failure, setFailure] = useState<"unavailable" | "credentials" | null>(null);
+  // Read inside the subscription callback without re-subscribing on every
+  // state change.
+  const sessionStateRef = useRef<SessionState>("pending");
 
   useEffect(() => {
     let active = true;
@@ -153,13 +162,19 @@ function RootComponent() {
       return "unavailable";
     };
 
-    const establish = () => {
+    // The root is the single owner of the initial bootstrap.
+    const establish = (options: { initial: boolean }) => {
       if (!active) return;
       ensureOwnerSession()
         .then(() => {
           if (!active) return;
           setSessionState("ready");
-          void queryClient.invalidateQueries();
+          // The initial bootstrap resolves before <Outlet/> ever mounts, so the
+          // query cache is still empty: invalidating it there could only force an
+          // immediate full-graph refetch for no correctness gain. A later
+          // re-establish (session cleared or rotated while the tab is open) runs
+          // with live queries mounted, so it must invalidate.
+          if (!options.initial) void queryClient.invalidateQueries();
         })
         .catch((err: unknown) => {
           if (!active) return;
@@ -173,15 +188,27 @@ function RootComponent() {
     };
 
     void queryClient.cancelQueries();
-    establish();
+    establish({ initial: true });
+
     // Restore the session if it is cleared or rotated while the tab is open.
-    const unsubscribe = subscribeOwnerSession(establish);
+    // A failed bootstrap is terminal for this page load -- the failure screen
+    // offers an explicit reload. Re-bootstrapping from here is what turned one
+    // failure into an unbounded owner-session request loop.
+    const unsubscribe = subscribeOwnerSession(() => {
+      if (!active) return;
+      if (sessionStateRef.current === "failed") return;
+      if (!isOwnerSessionFresh()) establish({ initial: false });
+    });
 
     return () => {
       active = false;
       unsubscribe();
     };
   }, [queryClient]);
+
+  useEffect(() => {
+    sessionStateRef.current = sessionState;
+  }, [sessionState]);
 
   if (sessionState === "pending") {
     return (

@@ -295,7 +295,6 @@ export async function processDueReminders(
       }
 
       await supabase.from("reminders").update({ status: "sent" }).eq("id", reminder.id);
-      processed++;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       errors.push(`Reminder ${reminder.id}: ${err.message}`);
@@ -341,7 +340,6 @@ export async function processUpcomingEvents(
       } else {
         errors.push(...result.errors);
       }
-      processed++;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       errors.push(`Event ${event.id}: ${err.message}`);
@@ -383,7 +381,6 @@ export async function processOverdueTasks(
       } else {
         errors.push(...result.errors);
       }
-      processed++;
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       errors.push(`Task ${task.id}: ${err.message}`);

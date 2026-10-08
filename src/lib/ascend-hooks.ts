@@ -204,7 +204,11 @@ export function useLogHabit() {
       const logValue = value ?? (metricType === "boolean" ? 1 : target);
       const logDuration = duration_seconds ?? null;
       const logNotes = notes ?? null;
-      const done = metricType === "boolean" ? true : logValue >= target;
+      // `done` was hard-coded `true` for boolean metrics, so unchecking a boolean
+      // habit (which passes value: 0) wrote done = true and the checkbox could
+      // never be cleared. `logValue` still defaults to 1 when no value is given,
+      // so the "log a boolean habit" path is unchanged.
+      const done = metricType === "boolean" ? logValue > 0 : logValue >= target;
 
       // upsert by (user_id, habit_id, day)
       const { data: existing } = await supabase

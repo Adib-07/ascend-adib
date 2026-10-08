@@ -355,7 +355,7 @@ export default function DocumentsView() {
                         <StatusBadge status={doc.status} />
                         {doc.page_count && <span>· {doc.page_count} pages</span>}
                         {doc.document_type && <span>· {doc.document_type}</span>}
-                        <span>· {(doc.size_bytes ?? 0 / 1024).toFixed(1)} KB</span>
+                        <span>· {((doc.size_bytes ?? 0) / 1024).toFixed(1)} KB</span>
                       </p>
                     </div>
                   </div>

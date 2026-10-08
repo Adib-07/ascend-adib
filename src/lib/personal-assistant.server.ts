@@ -727,7 +727,12 @@ export async function executeActionImpl({
           automation_id: string;
         };
         const { data, error } = await supabase
-          .from("automations")
+          // The table is `automation_rules` (created by
+          // 20261006120003_automation.sql); there has never been an
+          // `automations` table in any migration, so this query failed with a
+          // Postgres 42P01 "relation does not exist" every time the assistant
+          // proposed a run_automation action.
+          .from("automation_rules")
           .select("*")
           .eq("id", payload.automation_id)
           .eq("user_id", userId)

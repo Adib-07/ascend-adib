@@ -25,6 +25,17 @@ const ACTION_TYPES = [
   "send_notification",
 ] as const;
 
+// `condition_config` is read by the runner as a LIST of conditions
+// (automation.runner.ts: `rule.condition_config as ConditionConfig[]` and then
+// `conditions.length > 0`). It was validated with `z.record(z.unknown())`, which
+// only accepts objects, so an array could never be stored and the whole
+// condition-evaluation block was unreachable for every rule created through the
+// app -- and the AI parser, which emits an array, could not round-trip through
+// createAutomationRule at all. Accept both shapes; default to an empty list.
+const conditionConfigSchema = z
+  .union([z.array(z.record(z.unknown())), z.record(z.unknown())])
+  .default([]);
+
 export const createAutomationRule = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, automationRateLimit])
   .validator(
@@ -33,7 +44,7 @@ export const createAutomationRule = createServerFn({ method: "POST" })
       description: z.string().max(500).optional(),
       trigger_type: z.enum(TRIGGER_TYPES),
       trigger_config: z.record(z.unknown()).default({}),
-      condition_config: z.record(z.unknown()).default({}),
+      condition_config: conditionConfigSchema,
       action_type: z.enum(ACTION_TYPES),
       action_config: z.record(z.unknown()).default({}),
     }),
@@ -65,7 +76,7 @@ export const updateAutomationRule = createServerFn({ method: "POST" })
       enabled: z.boolean().optional(),
       trigger_type: z.enum(TRIGGER_TYPES).optional(),
       trigger_config: z.record(z.unknown()).optional(),
-      condition_config: z.record(z.unknown()).optional(),
+      condition_config: z.union([z.array(z.record(z.unknown())), z.record(z.unknown())]).optional(),
       action_type: z.enum(ACTION_TYPES).optional(),
       action_config: z.record(z.unknown()).optional(),
     }),
@@ -73,7 +84,9 @@ export const updateAutomationRule = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { supabase, userId } = context;
     const { id, ...patch } = data;
-    const updateData: TablesUpdate<"automation_rules"> = { ...patch } as TablesUpdate<"automation_rules">;
+    const updateData: TablesUpdate<"automation_rules"> = {
+      ...patch,
+    } as TablesUpdate<"automation_rules">;
     if (patch.trigger_config) updateData.trigger_config = patch.trigger_config as Json;
     if (patch.condition_config) updateData.condition_config = patch.condition_config as Json;
     if (patch.action_config) updateData.action_config = patch.action_config as Json;

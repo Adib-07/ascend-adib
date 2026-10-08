@@ -75,11 +75,25 @@ create index if not exists idx_weekly_review_user_week on public.weekly_review (
 
 -- ---------------------------------------------------------------------------
 -- Helper function: generate daily briefing (server-side)
+--
+-- SECURITY (set at creation time, not retrofitted by a later patch):
+-- This function is SECURITY DEFINER, so table RLS does NOT apply to it and it
+-- must police its own caller. Every statement below filters on the p_user_id
+-- *parameter* alone, so without the explicit guard any caller able to reach
+-- PostgREST -- including an anonymous one holding only the project's public
+-- publishable key -- could pass an arbitrary p_user_id and read another user's
+-- tasks/events/habits/goals/projects/notes out of the returned jsonb, then
+-- overwrite their briefing row via the upsert. `set search_path = public`
+-- closes the SECURITY DEFINER search_path hijack class. service_role is exempt
+-- so admin tooling keeps working; the app only ever calls this from a
+-- requireSupabaseAuth-guarded server function, which attaches the owner's
+-- bearer token, so auth.uid() is already the p_user_id being passed in.
 -- ---------------------------------------------------------------------------
 create or replace function public.generate_daily_briefing(p_user_id uuid, p_date date)
 returns jsonb
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_briefing jsonb;
@@ -91,6 +105,13 @@ declare
   v_projects jsonb;
   v_intention text;
 begin
+  -- Authorization. Must be the first statement, before p_user_id is trusted.
+  if auth.role() <> 'service_role'
+    and auth.uid() is distinct from p_user_id then
+    raise exception 'not authorized: p_user_id must match the authenticated user'
+      using errcode = '42501';
+  end if;
+
   -- Overdue tasks
   select coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb) into v_overdue
   from (
@@ -228,11 +249,16 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Helper function: generate weekly review
+--
+-- SECURITY: identical contract to generate_daily_briefing above. SECURITY
+-- DEFINER bypasses RLS, so the auth.uid() guard and the pinned search_path are
+-- mandatory, not optional. See the comment above for the full rationale.
 -- ---------------------------------------------------------------------------
 create or replace function public.generate_weekly_review(p_user_id uuid, p_week_start date)
 returns jsonb
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_review jsonb;
@@ -246,6 +272,13 @@ declare
   v_notes jsonb;
   v_deadlines jsonb;
 begin
+  -- Authorization. Must be the first statement, before p_user_id is trusted.
+  if auth.role() <> 'service_role'
+    and auth.uid() is distinct from p_user_id then
+    raise exception 'not authorized: p_user_id must match the authenticated user'
+      using errcode = '42501';
+  end if;
+
   -- Completed tasks this week
   select coalesce(jsonb_agg(to_jsonb(t)), '[]'::jsonb) into v_completed
   from (
@@ -381,6 +414,22 @@ begin
   return v_review;
 end;
 $$;
+
+-- ---------------------------------------------------------------------------
+-- Defence in depth: least-privilege EXECUTE grants on both RPCs.
+--
+-- PostgreSQL grants EXECUTE on a new function to PUBLIC by default, and PUBLIC
+-- includes `anon`. Since these functions are SECURITY DEFINER, leaving that
+-- default in place would re-open the cross-tenant read even if the in-body guard
+-- were ever dropped by a later edit. Explicitly deny PUBLIC/anon and allow only
+-- the two roles that legitimately need them.
+-- ---------------------------------------------------------------------------
+revoke execute on function public.generate_daily_briefing(uuid, date) from public;
+revoke execute on function public.generate_daily_briefing(uuid, date) from anon;
+revoke execute on function public.generate_weekly_review(uuid, date) from public;
+revoke execute on function public.generate_weekly_review(uuid, date) from anon;
+grant execute on function public.generate_daily_briefing(uuid, date) to authenticated, service_role;
+grant execute on function public.generate_weekly_review(uuid, date) to authenticated, service_role;
 
 -- ============================================================================
 -- ROLLBACK
