@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { getOwnerUser } from "@/lib/owner-session";
+import { computeStreak, todayISO } from "./date-core";
 
 export type Note = Tables<"notes">;
 export type CodingProblem = Tables<"coding_problems">;
@@ -247,15 +248,12 @@ export function useLogHabit() {
         .order("day", { ascending: false })
         .limit(365);
 
-      let streak = 0;
-      const checkDate = new Date();
-      for (const log of logs ?? []) {
-        const logDay = new Date(log.day + "T00:00:00").toDateString();
-        if (logDay === checkDate.toDateString()) {
-          streak++;
-          checkDate.setDate(checkDate.getDate() - 1);
-        } else break;
-      }
+      // Streak walk in the business timezone: date strings are compared
+      // directly instead of mixing UTC-stored days with device-local "now".
+      const streak = computeStreak(
+        (logs ?? []).map((l) => l.day),
+        todayISO(),
+      );
 
       const totalCompletions = logs?.length ?? 0;
       const longestStreak = Math.max(extendedHabit.longest_streak ?? 0, streak);

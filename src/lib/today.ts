@@ -2,6 +2,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Tables } from "@/integrations/supabase/types";
 import { getOwnerUser } from "@/lib/owner-session";
+import { todayISO, weekBounds } from "./date-core";
+
+// Canonical business-timezone date helpers live in ./date-core.
+export { todayISO, weekBounds };
 
 export type Task = Tables<"tasks">;
 export type Habit = Tables<"habits">;
@@ -26,22 +30,6 @@ export interface TodayData {
   intention: Intention | null;
   streakInfo: { currentStreak: number; longestStreak: number; totalCompletions: number };
   exams: Exam[];
-}
-
-export function todayISO(): string {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
-
-export function weekBounds(): { start: string; end: string } {
-  const now = new Date();
-  const dow = (now.getDay() + 6) % 7;
-  const mon = new Date(now);
-  mon.setDate(now.getDate() - dow);
-  const sun = new Date(mon);
-  sun.setDate(mon.getDate() + 6);
-  const fmt = (d: Date) => d.toISOString().slice(0, 10);
-  return { start: fmt(mon), end: fmt(sun) };
 }
 
 async function getUserId(): Promise<string> {

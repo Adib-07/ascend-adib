@@ -25,7 +25,7 @@ import {
   type ContextSource,
 } from "./context-engine-core";
 import { withAIRetry } from "./retry";
-import { ActionPayload, ActionType } from "./personal-assistant.types";
+import { ACTION_TYPES, ActionPayload, ActionType } from "./personal-assistant.types";
 
 export type AssistantIntent =
   | "WHAT_NOW"
@@ -500,6 +500,14 @@ export interface ExecuteActionResult {
   message: string;
 }
 
+// Server-side confirmation gate. The requiresConfirmation flag supplied by the
+// model/client is never trusted on its own: every action type in ACTION_TYPES
+// mutates data or triggers a consequential operation (there are no read-only
+// action types), so confirmation is enforced here for all of them regardless of
+// the incoming flag. A request cannot bypass the gate by sending
+// requiresConfirmation=false.
+const MUTATING_ACTION_TYPES: ReadonlySet<string> = new Set(ACTION_TYPES);
+
 export async function executeActionImpl({
   supabase,
   userId,
@@ -511,7 +519,9 @@ export async function executeActionImpl({
   action: AssistantAction;
   confirm: boolean;
 }): Promise<ExecuteActionResult> {
-  if (action.requiresConfirmation && !confirm) {
+  const requiresConfirmation =
+    action.requiresConfirmation === true || MUTATING_ACTION_TYPES.has(action.type);
+  if (requiresConfirmation && !confirm) {
     return { success: false, message: "Action requires confirmation" };
   }
 

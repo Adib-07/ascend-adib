@@ -7,6 +7,12 @@ import {
   useTaskMutations,
   type Task,
 } from "@/lib/ascend-data";
+import {
+  BUSINESS_TIMEZONE,
+  instantToTimeInput,
+  instantToWallClock,
+  wallClockToInstant,
+} from "@/lib/date-core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -48,11 +54,21 @@ function isToday(iso: string) {
   return iso === todayISO();
 }
 function fmtShortDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  // Date-only strings parse as UTC midnight; formatting them with timeZone
+  // "UTC" is exact regardless of the device timezone.
+  return new Date(iso).toLocaleDateString("en-IN", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+  });
 }
 function fmtTime(ts: string | null | undefined) {
   if (!ts) return "";
-  return new Date(ts).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+  return new Date(ts).toLocaleTimeString("en-IN", {
+    timeZone: BUSINESS_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 // Overdue = past due date, or due today but the due time has already passed.
@@ -638,17 +654,20 @@ function TaskDialog({
               <Label className="text-xs">Due time (optional)</Label>
               <Input
                 type="time"
-                value={form.due_time ? new Date(form.due_time).toISOString().slice(11, 16) : ""}
+                value={
+                  form.due_time ? instantToTimeInput(new Date(form.due_time), BUSINESS_TIMEZONE) : ""
+                }
                 onChange={(e) => {
                   const time = e.target.value; // "HH:mm"
                   if (!time) {
                     setForm({ ...form, due_time: null });
                     return;
                   }
-                  // Combine with the chosen due date (defaults to today) and
-                  // store as a timezone-safe timestamptz.
+                  // Interpret the input as a business-timezone wall clock and
+                  // store the true UTC instant (timestamptz). Never
+                  // `new Date(wall)`, which would use the device timezone.
                   const base = form.due_date ?? todayISO();
-                  const dt = new Date(`${base}T${time}:00`);
+                  const dt = wallClockToInstant(`${base}T${time}`, BUSINESS_TIMEZONE);
                   setForm({ ...form, due_time: dt.toISOString() });
                 }}
                 className="mt-1"
@@ -662,12 +681,16 @@ function TaskDialog({
               <Input
                 type="datetime-local"
                 value={
-                  form.reminder_time ? new Date(form.reminder_time).toISOString().slice(0, 16) : ""
+                  form.reminder_time
+                    ? instantToWallClock(new Date(form.reminder_time), BUSINESS_TIMEZONE)
+                    : ""
                 }
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    reminder_time: e.target.value ? new Date(e.target.value).toISOString() : null,
+                    reminder_time: e.target.value
+                      ? wallClockToInstant(e.target.value, BUSINESS_TIMEZONE).toISOString()
+                      : null,
                   })
                 }
                 className="mt-1"

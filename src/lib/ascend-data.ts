@@ -9,10 +9,8 @@ export type LearnTopic = Tables<"learn_topics">;
 export type Deck = Tables<"flashcard_decks">;
 export type Card = Tables<"flashcards">;
 
-export function todayISO() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
+// Canonical business-timezone date helpers live in ./date-core.
+export { todayISO } from "./date-core";
 
 async function uid() {
   const user = await getOwnerUser();

@@ -3,6 +3,7 @@ import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 import { generateText } from "ai";
 import { MAX_TOKENS, MODEL, TEMPERATURE } from "./tutor.server";
+import { todayISO } from "./date-core";
 import { logAutomationError, logAIError } from "./logger";
 
 export type AutomationTriggerType =
@@ -145,6 +146,10 @@ export interface SerializedExecutionResult {
   error?: string;
 }
 
+// Idempotency check: only a SUCCESSFUL execution blocks the time window.
+// The previous implementation treated any existing row with the execution_id
+// as "already executed", so a "skipped" or "failed" run poisoned the rest of
+// the hour and blocked every retry. Only "success" rows claim the window.
 export async function checkIdempotency(
   supabase: SupabaseClient,
   ruleId: string,
@@ -155,17 +160,93 @@ export async function checkIdempotency(
     .select("id")
     .eq("rule_id", ruleId)
     .eq("execution_id", executionId)
+    .eq("status", "success")
     .maybeSingle();
   if (error) throw error;
   return !!data;
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === "23505";
+}
+
+// Atomically claim the execution window BEFORE the action runs. The partial
+// unique index on (rule_id, execution_id) where execution_id is not null
+// (20261006120005_automation_idempotency.sql) makes this insert the arbiter:
+// if a concurrent run already holds the claim, the insert fails with 23505 and
+// the caller must NOT execute the action. The claim precedes execution, so
+// at-most-once per (rule, hour) is enforced by the database, not by a catch
+// block after the side effect.
+// Returns the claim's log id, or null when the window is already claimed.
+export async function claimExecution(
+  supabase: SupabaseClient,
+  userId: string,
+  ruleId: string,
+  executionId: string,
+  triggerData: Record<string, unknown> | null,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("automation_logs")
+    .insert({
+      user_id: userId,
+      rule_id: ruleId,
+      execution_id: executionId,
+      status: "running",
+      trigger_data: triggerData,
+      condition_result: true,
+      action_result: null,
+      error_message: null,
+    })
+    .select("id")
+    .single();
+  if (error) {
+    if (isUniqueViolation(error)) return null;
+    // Unrelated database errors still propagate to the caller.
+    throw error;
+  }
+  return data.id;
+}
+
+// Finalize a claimed execution. A failed execution releases the idempotency
+// claim (execution_id -> null) so the hour is not poisoned and a retry can
+// run; the log row itself is preserved with its failure details. A success
+// keeps the execution_id, which is what deduplicates the rest of the hour.
+// The action has already run at this point, so a finalize failure is logged
+// but never discarded or rethrown.
+export async function finalizeExecution(
+  supabase: SupabaseClient,
+  ruleId: string,
+  logId: string,
+  status: "success" | "failed",
+  actionResult: Record<string, unknown> | null,
+  errorMessage: string | null,
+): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from("automation_logs")
+      .update({
+        status,
+        action_result: actionResult,
+        error_message: errorMessage,
+        ...(status === "failed" ? { execution_id: null } : {}),
+      })
+      .eq("id", logId);
+    if (error) throw error;
+  } catch (err) {
+    logAutomationError(ruleId, err instanceof Error ? err : new Error(String(err)), {
+      context: "finalize_execution",
+      logId,
+      status,
+    });
+  }
 }
 
 export async function logExecution(
   supabase: SupabaseClient,
   userId: string,
   ruleId: string,
-  executionId: string,
-  status: "success" | "failed" | "skipped",
+  executionId: string | null,
+  status: "success" | "failed" | "skipped" | "running",
   triggerData: Record<string, unknown> | null,
   conditionResult: boolean | null,
   actionResult: Record<string, unknown> | null,
@@ -522,7 +603,8 @@ export async function executeAutomation(
             {
               user_id: userId,
               habit_id: actionConfig.habit_id,
-              day: new Date().toISOString().split("T")[0],
+              // Business-timezone day, consistent with habit logging everywhere else.
+              day: todayISO(),
               done: true,
               value: actionConfig.habit_value || 1,
             },
@@ -640,11 +722,14 @@ export async function runAutomation(
 
   const evaluation = await evaluateAutomation(supabase, userId, rule, triggerData ?? null);
   if (!evaluation.shouldExecute) {
+    // Skipped evaluations never claim the execution window: the log row is
+    // written with execution_id null so it cannot block a later retry in the
+    // same hour (the partial unique index only covers non-null execution_id).
     await logExecution(
       supabase,
       userId,
       rule.id,
-      evaluation.executionId,
+      null,
       "skipped",
       triggerData ?? null,
       null,
@@ -660,6 +745,27 @@ export async function runAutomation(
     };
   }
 
+  // Claim BEFORE executing the action. The database's partial unique index
+  // makes the claim atomic: a concurrent duplicate receives null here and
+  // returns without executing, which is what guarantees the action runs at
+  // most once per (rule, hour) window.
+  const claimLogId = await claimExecution(
+    supabase,
+    userId,
+    rule.id,
+    evaluation.executionId,
+    triggerData ?? null,
+  );
+  if (claimLogId === null) {
+    return {
+      success: false,
+      actionsExecuted: 0,
+      actionsFailed: 0,
+      results: [],
+      error: "Already executed in this time window (idempotency)",
+    };
+  }
+
   const executionResult = await executeAutomation(
     supabase,
     userId,
@@ -668,14 +774,11 @@ export async function runAutomation(
     evaluation.executionId,
   );
 
-  await logExecution(
+  await finalizeExecution(
     supabase,
-    userId,
     rule.id,
-    evaluation.executionId,
+    claimLogId,
     executionResult.success ? "success" : "failed",
-    triggerData ?? null,
-    true,
     { results: executionResult.results },
     executionResult.error || null,
   );
@@ -689,7 +792,7 @@ export async function runAutomation(
     })
     .eq("id", ruleId);
 
-  return { ...executionResult, logId: undefined };
+  return { ...executionResult, logId: claimLogId };
 }
 
 export async function runManualAutomation(

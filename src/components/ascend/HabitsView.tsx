@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useHabits, useHabitLogs, useLogHabit, type Habit } from "@/lib/ascend-hooks";
+import { todayISO, weekDaysInTz } from "@/lib/date-core";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -15,26 +16,15 @@ import { Plus, Pencil, Trash2, Flame } from "lucide-react";
 import { SectionHeader, EmptyState, Card } from "./ui-bits";
 import { toast } from "sonner";
 
-function weekDays() {
-  const now = new Date();
-  const dow = (now.getDay() + 6) % 7;
-  const mon = new Date(now);
-  mon.setDate(now.getDate() - dow);
-  return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(mon);
-    d.setDate(mon.getDate() + i);
-    return d;
-  });
-}
-
 const LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const fmt = (d: Date) => d.toISOString().slice(0, 10);
-const today = fmt(new Date());
 
 export default function HabitsView() {
   const { list, create, update, remove } = useHabits();
-  const days = useMemo(() => weekDays(), []);
-  const logs = useHabitLogs(fmt(days[0]), fmt(days[6]));
+  // Recompute the week when the business-timezone day changes, so a tab left
+  // open across midnight cannot keep logging into a stale week.
+  const todayStr = todayISO();
+  const days = useMemo(() => weekDaysInTz(), [todayStr]);
+  const logs = useHabitLogs(days[0], days[6]);
   const logHabit = useLogHabit();
 
   const [open, setOpen] = useState(false);
@@ -95,7 +85,7 @@ export default function HabitsView() {
 
   const overall = habits.length
     ? Math.round(
-        (habits.reduce((s, h) => s + days.filter((d) => logMap[`${h.id}|${fmt(d)}`]).length, 0) /
+        (habits.reduce((s, h) => s + days.filter((d) => logMap[`${h.id}|${d}`]).length, 0) /
           (habits.length * 7)) *
           100,
       )
@@ -134,7 +124,9 @@ export default function HabitsView() {
                     {days.map((d, i) => (
                       <th key={i} className="font-normal pb-2 text-center w-12">
                         <div>{LABELS[i]}</div>
-                        <div className="text-[9px] text-muted-foreground/70">{d.getDate()}</div>
+                        <div className="text-[9px] text-muted-foreground/70">
+                          {Number(d.slice(8, 10))}
+                        </div>
                       </th>
                     ))}
                     <th className="text-right font-normal pb-2 pr-1">Score</th>
@@ -142,7 +134,7 @@ export default function HabitsView() {
                 </thead>
                 <tbody>
                   {habits.map((h) => {
-                    const score = days.filter((d) => logMap[`${h.id}|${fmt(d)}`]).length;
+                    const score = days.filter((d) => logMap[`${h.id}|${d}`]).length;
                     return (
                       <tr key={h.id} className="border-t border-border/50">
                         <td className="py-2 pl-1">
@@ -153,13 +145,13 @@ export default function HabitsView() {
                           </div>
                         </td>
                         {days.map((d, i) => {
-                          const key = `${h.id}|${fmt(d)}`;
+                          const key = `${h.id}|${d}`;
                           const checked = logMap[key] ?? false;
                           return (
                             <td key={i} className="text-center py-2">
                               <Checkbox
                                 checked={checked}
-                                onCheckedChange={() => toggleDay(h, fmt(d), checked)}
+                                onCheckedChange={() => toggleDay(h, d, checked)}
                               />
                             </td>
                           );

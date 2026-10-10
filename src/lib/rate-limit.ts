@@ -9,6 +9,11 @@ interface RateLimitConfig {
 
 const memoryStore = new Map<string, { count: number; resetTime: number }>();
 
+// NOTE: this store is process-local (in-memory). It does NOT provide
+// distributed or globally consistent rate limiting — limits reset on process
+// restart and are enforced per server instance. On a single private host this
+// is sufficient; do not treat it as a distributed limiter.
+
 function cleanupExpiredEntries() {
   const now = Date.now();
   for (const [key, value] of memoryStore.entries()) {
@@ -19,6 +24,34 @@ function cleanupExpiredEntries() {
 }
 
 setInterval(cleanupExpiredEntries, 60000);
+
+const keyEncoder = new TextEncoder();
+
+// SHA-256 hex (truncated) of the FULL Authorization credential. The previous
+// implementation keyed on `authHeader.slice(0, 32)` — the constant JWT header
+// segment ("Bearer eyJhbGciOi..."), which is identical for every token, so all
+// users shared one bucket. Hashing the full credential gives a stable,
+// collision-resistant, per-token key without ever storing or logging the raw
+// token.
+export async function credentialBucketKey(credential: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", keyEncoder.encode(credential));
+  return Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+}
+
+// Bucket key resolution: authenticated requests key on the full credential
+// (hashed); requests without an Authorization header keep the IP fallback.
+export async function resolveRateLimitKey(
+  authHeader: string | null,
+  ip: string,
+): Promise<string> {
+  if (authHeader) {
+    return `user:${await credentialBucketKey(authHeader)}`;
+  }
+  return `ip:${ip}`;
+}
 
 export function createRateLimitMiddleware(config: RateLimitConfig) {
   return createMiddleware({ type: "function" }).server(async ({ next }) => {
@@ -32,7 +65,7 @@ export function createRateLimitMiddleware(config: RateLimitConfig) {
     const ip = forwardedFor?.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
 
     const authHeader = request.headers.get("authorization");
-    const userKey = authHeader ? `user:${authHeader.slice(0, 32)}` : `ip:${ip}`;
+    const userKey = await resolveRateLimitKey(authHeader, ip);
 
     const key = `${config.keyPrefix}:${userKey}`;
     const now = Date.now();

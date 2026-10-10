@@ -16,6 +16,7 @@ import {
   createEvent,
 } from "./events.types";
 import { logAutomationError, logSchedulerError } from "./logger";
+import { todayISO } from "./date-core";
 
 export interface EventDispatchResult {
   success: boolean;
@@ -353,7 +354,8 @@ export async function processOverdueTasks(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<{ processed: number; errors: string[] }> {
-  const today = new Date().toISOString().split("T")[0];
+  // Business-timezone "today", consistent with task due-date logic elsewhere.
+  const today = todayISO();
 
   const { data: tasks, error } = await supabase
     .from("tasks")
